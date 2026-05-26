@@ -1,0 +1,68 @@
+{
+  "name": "grpc-studio-backend",
+  "version": "1.0.0",
+  "description": "Production-ready backend for gRPC Studio - A modern interface for testing gRPC services",
+  "type": "module",
+  "main": "dist/server/httpServer.js",
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=8.0.0"
+  },
+  "scripts": {
+    "start": "tsx src/server/httpServer.ts",
+    "dev": "tsx watch src/server/httpServer.ts",
+    "debug": "tsx --inspect src/server/httpServer.ts",
+    "build": "tsc",
+    "test": "GRPC_STUDIO_CONFIG=../config/backend.yaml tsx --test src/test/*.test.ts",
+    "lint": "eslint src/ --ext .ts",
+    "format": "prettier --write src/",
+    "health": "curl -f http://localhost:3001/health || exit 1",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@bufbuild/protobuf": "^2.9.0",
+    "@connectrpc/connect": "^2.1.1",
+    "@connectrpc/connect-node": "^2.1.1",
+    "@grpc-studio/shared": "*",
+    "@grpc/grpc-js": "^1.14.3",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "grpc-js-reflection-client": "^1.3.5",
+    "helmet": "^8.1.0",
+    "js-yaml": "^4.1.0",
+    "prom-client": "^15.1.3",
+    "ws": "^8.18.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^22.0.0",
+    "@types/ws": "^8.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.59.2",
+    "@typescript-eslint/parser": "^8.59.2",
+    "eslint": "^8.57.0",
+    "prettier": "^3.0.0",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.3"
+  },
+  "keywords": [
+    "grpc",
+    "protobuf",
+    "api-testing",
+    "microservices",
+    "reflection",
+    "backend",
+    "production"
+  ],
+  "author": "gRPC Studio",
+  "license": "BSD-3-Clause",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/prsawant/gRPC-Studio.git"
+  },
+  "bugs": {
+    "url": "https://github.com/prsawant/gRPC-Studio/issues"
+  },
+  "homepage": "https://github.com/prsawant/gRPC-Studio#readme"
+}

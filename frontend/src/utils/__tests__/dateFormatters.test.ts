@@ -1,0 +1,235 @@
+// Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
+
+import { describe, it, expect } from 'vitest'
+import { formatTime, formatDate, formatDateTime, formatBytes } from '../dateFormatters'
+
+describe('dateFormatters', () => {
+  describe('formatTime', () => {
+    it('should format time with hours, minutes, and seconds', () => {
+      const date = new Date('2026-05-21T14:30:45')
+      const result = formatTime(date)
+
+      // Should include time components
+      expect(result).toMatch(/\d{1,2}:\d{2}:\d{2}/)
+    })
+
+    it('should handle midnight', () => {
+      const date = new Date('2026-05-21T00:00:00')
+      const result = formatTime(date)
+
+      expect(result).toBeTruthy()
+      expect(result).toMatch(/\d{1,2}:\d{2}:\d{2}/)
+    })
+
+    it('should handle noon', () => {
+      const date = new Date('2026-05-21T12:00:00')
+      const result = formatTime(date)
+
+      expect(result).toBeTruthy()
+      expect(result).toMatch(/\d{1,2}:\d{2}:\d{2}/)
+    })
+
+    it('should format different times consistently', () => {
+      const dates = [
+        new Date('2026-01-01T09:15:30'),
+        new Date('2026-06-15T18:45:00'),
+        new Date('2026-12-31T23:59:59')
+      ]
+
+      dates.forEach(date => {
+        const result = formatTime(date)
+        expect(result).toBeTruthy()
+        expect(typeof result).toBe('string')
+      })
+    })
+  })
+
+  describe('formatDate', () => {
+    it('should format date string in en-US format', () => {
+      const result = formatDate('2026-05-21T12:00:00Z')
+
+      expect(result).toContain('2026')
+      expect(result).toContain('May')
+      // Result depends on timezone
+      expect(result).toMatch(/\d{1,2}/)
+    })
+
+    it('should return "Unknown" for undefined', () => {
+      const result = formatDate(undefined)
+      expect(result).toBe('Unknown')
+    })
+
+    it('should return "Unknown" for empty string', () => {
+      const result = formatDate('')
+      expect(result).toBe('Unknown')
+    })
+
+    it('should handle ISO date strings', () => {
+      const result = formatDate('2026-12-25T12:00:00Z')
+
+      expect(result).toContain('2026')
+      expect(result).toContain('Dec')
+      // Day might vary by timezone, just check it's valid
+      expect(result).toMatch(/\d{1,2}/)
+    })
+
+    it('should handle different month names', () => {
+      const dates = [
+        '2026-01-15', // Jan
+        '2026-06-15', // Jun
+        '2026-12-15'  // Dec
+      ]
+
+      dates.forEach(dateStr => {
+        const result = formatDate(dateStr)
+        expect(result).toBeTruthy()
+        expect(result).not.toBe('Unknown')
+      })
+    })
+
+    it('should format leap year date', () => {
+      const result = formatDate('2024-02-29T12:00:00Z')
+
+      expect(result).toContain('2024')
+      expect(result).toContain('Feb')
+      // Day might vary by timezone, just ensure it's a valid date
+      expect(result).toMatch(/\d{1,2}/)
+    })
+  })
+
+  describe('formatDateTime', () => {
+    it('should format timestamp with time and date', () => {
+      const timestamp = new Date('2026-05-21T14:30:00').getTime()
+      const result = formatDateTime(timestamp)
+
+      // Should contain separator
+      expect(result).toContain('-')
+
+      // Should have both time and date parts
+      const parts = result.split(' - ')
+      expect(parts.length).toBe(2)
+      expect(parts[0]).toBeTruthy() // Time part
+      expect(parts[1]).toBeTruthy() // Date part
+    })
+
+    it('should handle timestamp at epoch', () => {
+      const timestamp = 0
+      const result = formatDateTime(timestamp)
+
+      expect(result).toBeTruthy()
+      expect(result).toContain('-')
+    })
+
+    it('should handle recent timestamps', () => {
+      const timestamp = Date.now()
+      const result = formatDateTime(timestamp)
+
+      expect(result).toBeTruthy()
+      expect(result).toContain('-')
+      expect(typeof result).toBe('string')
+    })
+
+    it('should format past dates', () => {
+      const timestamp = new Date('2020-01-01T00:00:00').getTime()
+      const result = formatDateTime(timestamp)
+
+      expect(result).toBeTruthy()
+      expect(result).toContain('-')
+    })
+
+    it('should format future dates', () => {
+      const timestamp = new Date('2030-12-31T23:59:59').getTime()
+      const result = formatDateTime(timestamp)
+
+      expect(result).toBeTruthy()
+      expect(result).toContain('-')
+    })
+  })
+
+  describe('formatBytes', () => {
+    it('should format bytes under 1KB', () => {
+      expect(formatBytes(0)).toBe('0 B')
+      expect(formatBytes(100)).toBe('100 B')
+      expect(formatBytes(512)).toBe('512 B')
+      expect(formatBytes(1023)).toBe('1023 B')
+    })
+
+    it('should format KB correctly', () => {
+      expect(formatBytes(1024)).toBe('1.0 KB')
+      expect(formatBytes(2048)).toBe('2.0 KB')
+      expect(formatBytes(5120)).toBe('5.0 KB')
+      expect(formatBytes(10240)).toBe('10.0 KB')
+    })
+
+    it('should format fractional KB', () => {
+      expect(formatBytes(1536)).toBe('1.5 KB')
+      expect(formatBytes(2560)).toBe('2.5 KB')
+      expect(formatBytes(3584)).toBe('3.5 KB')
+    })
+
+    it('should format MB correctly', () => {
+      expect(formatBytes(1024 * 1024)).toBe('1.0 MB')
+      expect(formatBytes(2 * 1024 * 1024)).toBe('2.0 MB')
+      expect(formatBytes(10 * 1024 * 1024)).toBe('10.0 MB')
+    })
+
+    it('should format fractional MB', () => {
+      expect(formatBytes(1.5 * 1024 * 1024)).toBe('1.5 MB')
+      expect(formatBytes(3.7 * 1024 * 1024)).toBe('3.7 MB')
+    })
+
+    it('should handle large byte values', () => {
+      expect(formatBytes(100 * 1024 * 1024)).toBe('100.0 MB')
+      expect(formatBytes(500 * 1024 * 1024)).toBe('500.0 MB')
+      expect(formatBytes(1024 * 1024 * 1024)).toBe('1024.0 MB')
+    })
+
+    it('should round to one decimal place', () => {
+      expect(formatBytes(1536)).toMatch(/^\d+\.\d KB$/)
+      expect(formatBytes(1.555 * 1024 * 1024)).toMatch(/^\d+\.\d MB$/)
+    })
+
+    it('should handle edge cases at boundaries', () => {
+      // Just below 1KB
+      expect(formatBytes(1023)).toBe('1023 B')
+
+      // Exactly 1KB
+      expect(formatBytes(1024)).toBe('1.0 KB')
+
+      // Just below 1MB
+      expect(formatBytes(1024 * 1024 - 1)).toMatch(/KB$/)
+
+      // Exactly 1MB
+      expect(formatBytes(1024 * 1024)).toBe('1.0 MB')
+    })
+  })
+
+  describe('edge cases and error handling', () => {
+    it('should handle invalid date strings gracefully', () => {
+      const result = formatDate('invalid-date')
+
+      // May return Invalid Date representation or Unknown depending on implementation
+      expect(typeof result).toBe('string')
+    })
+
+    it('should handle negative timestamps', () => {
+      const timestamp = -1000000
+      const result = formatDateTime(timestamp)
+
+      expect(result).toBeTruthy()
+      expect(typeof result).toBe('string')
+    })
+
+    it('should handle very large timestamps', () => {
+      const timestamp = Number.MAX_SAFE_INTEGER
+      const result = formatDateTime(timestamp)
+
+      expect(result).toBeTruthy()
+      expect(typeof result).toBe('string')
+    })
+
+    it('should handle zero bytes', () => {
+      expect(formatBytes(0)).toBe('0 B')
+    })
+  })
+})

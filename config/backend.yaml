@@ -1,0 +1,72 @@
+# gRPC Studio Backend Configuration - Local Development
+# Use this for local development without mTLS certificates
+
+# Server configuration
+server:
+  port: 3001
+  host: "0.0.0.0"
+  shutdownGracePeriodMs: 10000  # ms to wait for graceful shutdown before forcing exit
+  cors:
+    enabled: true
+    origins:
+      - "http://localhost:3000"
+      - "http://localhost:4173"
+  http:
+    responseTimeoutMs: 30000  # ms before an HTTP route returns a timeout response
+    bodyLimitBytes: 10485760  # max JSON/form request body size
+  websocket:
+    maxConnections: 100
+    maxPayloadBytes: 10485760
+    heartbeatIntervalMs: 25000  # ms between server ping frames; stale sockets are terminated on missed heartbeat
+
+# Outbound gRPC client configuration
+# Change these to point to your gRPC server
+client:
+  mode: plaintext  # plaintext | tls | mtls
+  target:
+    host: localhost
+    port: 50051  # Your gRPC server port
+  rpc:
+    unaryDeadlineMs: 30000        # ms max duration for unary RPCs
+    streamDeadlineMs: 120000      # ms max duration for server/client/bidi streaming RPCs
+  reflection:
+    deadlineMs: 25000             # ms max duration for backend reflection requests; must be below server.http.responseTimeoutMs
+  keepalive:
+    pingIntervalMs: 30000  # ms between HTTP/2 keepalive pings
+    pingTimeoutMs: 10000   # ms to wait for a keepalive ping ack
+
+# Authentication for outgoing gRPC calls
+auth:
+  plugins: {}
+
+# Cache configuration
+cache:
+  reflection:
+    ttlMs: 600000  # ms to cache reflection metadata/descriptors (10 minutes)
+    maxEntries: 1000
+  certificate:
+    ttlMs: 60000  # ms to cache mTLS client certificate metadata reads
+    maxEntries: 1
+
+# Certificate inspection/validation configuration
+certificate:
+  certReadTimeoutMs: 5000  # ms before certificate metadata reading is terminated
+  warnDaysCritical: 7
+  warnDaysWarning: 30
+
+# Health check configuration
+health:
+  enabled: true
+  endpoint: "/health"
+
+# Observability configuration (metrics)
+observability:
+  enabled: true
+  metrics:
+    enabled: true
+    path: /metrics
+    includeSystemMetrics: true
+
+  performance:
+    trackSlowOperations: true
+    slowThresholdMs: 1000
