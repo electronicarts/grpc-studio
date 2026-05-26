@@ -1,0 +1,88 @@
+# Git
+.git
+.gitignore
+.github
+
+# CI/CD
+.gitlab-ci.yml
+.gitlab
+
+# Documentation
+*.md
+!docker/README.md
+docs/
+demo/
+
+# Dependencies
+node_modules
+**/node_modules
+
+# Build outputs (will be built inside container)
+dist
+**/dist
+build
+**/build
+.next
+.nuxt
+out
+
+# Testing
+coverage
+**/.nyc_output
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+**/test/
+**/__tests__/
+**/__mocks__/
+
+# Development
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+pnpm-debug.log*
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Cache
+.npm
+.eslintcache
+.cache
+*.tsbuildinfo
+.turbo
+
+# Temporary
+tmp/
+temp/
+
+# Example services
+example/
+
+# Scripts
+scripts/
+
+# Production readiness docs
+PRODUCTION_READINESS_ASSESSMENT.md
+OBSERVABILITY_IMPLEMENTATION_SUMMARY.md

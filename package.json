@@ -1,0 +1,57 @@
+{
+  "name": "grpc-studio",
+  "version": "1.0.0",
+  "description": "A modern web interface for testing and exploring gRPC services using server reflection",
+  "type": "module",
+  "workspaces": [
+    "shared",
+    "frontend",
+    "backend",
+    "example"
+  ],
+  "scripts": {
+    "quickstart": "node ./scripts/quick-start.mjs",
+    "dev": "npm run build:shared && concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
+    "dev:all": "npm run build:shared && concurrently \"npm run dev:frontend\" \"npm run dev:backend\" \"npm run dev:example\"",
+    "dev:connect": "npm run build:shared && sh -c 'TARGET_HOST=${npm_config_target%:*} TARGET_PORT=${npm_config_target#*:} concurrently \"npm run dev:frontend\" \"npm run dev:backend\"'",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && GRPC_STUDIO_CONFIG=../config/backend.yaml npm run dev",
+    "dev:example": "cd example && npm start",
+    "build": "npm run build:frontend",
+    "build:shared": "cd shared && npm run build",
+    "build:frontend": "npm run build:shared && cd frontend && npm run build",
+    "start": "cd backend && GRPC_STUDIO_CONFIG=../config/backend.yaml npm start",
+    "install:all": "npm install",
+    "lint": "cd frontend && npm run lint",
+    "test": "cd frontend && npm test"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "playwright": "^1.59.1"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/prsawant/gRPC-Studio.git"
+  },
+  "keywords": [
+    "grpc",
+    "testing",
+    "ui",
+    "react",
+    "node",
+    "typescript",
+    "protobuf",
+    "server-reflection",
+    "developer-tools"
+  ],
+  "author": "Prasad Sawant",
+  "license": "BSD-3-Clause",
+  "dependencies": {
+    "helmet": "^8.1.0",
+    "zod": "^4.4.3"
+  }
+}

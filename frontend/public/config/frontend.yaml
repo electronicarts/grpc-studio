@@ -1,0 +1,18 @@
+# gRPC Studio Frontend Configuration
+
+# Backend API configuration
+api:
+  baseUrl: "http://localhost:3001"
+  endpoints:
+    config: "/api/grpc/config"
+    discover: "/api/grpc/discover"
+    invoke: "/api/grpc/invoke"
+    descriptorSet: "/api/grpc/descriptor-set"
+    status: "/api/grpc/status"
+    health: "/health"
+  timeout: 120000  # ms (2 minutes for streaming responses)
+  websocketTimeout: 5000  # ms — WebSocket connection timeout
+
+# Authentication (disabled by default for local development)
+auth:
+  enabled: false

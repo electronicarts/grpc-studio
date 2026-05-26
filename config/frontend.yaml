@@ -1,0 +1,31 @@
+# gRPC Studio Frontend Configuration
+# Copy this to frontend/public/config/frontend.yaml or mount as a ConfigMap
+
+# Backend API configuration
+api:
+  baseUrl: "http://localhost:3001"
+  endpoints:
+    config: "/api/grpc/config"
+    discover: "/api/grpc/discover"
+    invoke: "/api/grpc/invoke"
+    descriptorSet: "/api/grpc/descriptor-set"
+    status: "/api/grpc/status"
+    health: "/health"
+  timeout: 120000  # ms for HTTP API requests only
+  websocketTimeout: 5000  # ms to wait for the WebSocket connection to open
+
+# Authentication (disabled by default)
+# Supports: entra-id (Microsoft Entra ID / Azure AD)
+auth:
+  enabled: false
+  # To enable Entra ID SSO, uncomment below:
+  # provider: entra-id
+  # entraId:
+  #   tenantId: "your-tenant-id"
+  #   clientId: "your-client-id"
+  #   redirectUri: "http://localhost:3000"
+  #   scopes:
+  #     - openid
+  #     - profile
+  #     - email
+  #   cloud: "public"
