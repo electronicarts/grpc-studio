@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#9333ea"/>
+    </linearGradient>
+    <linearGradient id="bolt" x1="220" y1="120" x2="310" y2="400" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#e0f2fe"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Rounded square background -->
+  <rect x="16" y="16" width="480" height="480" rx="96" fill="url(#bg)"/>
+
+  <!-- Left angle bracket < -->
+  <path d="M168 256 L100 256" stroke="none"/>
+  <polyline points="195,160 115,256 195,352"
+    fill="none" stroke="#ffffff" stroke-width="36" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>
+
+  <!-- Right angle bracket > -->
+  <polyline points="317,160 397,256 317,352"
+    fill="none" stroke="#ffffff" stroke-width="36" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>
+
+  <!-- Center lightning bolt (RPC) -->
+  <polygon points="280,130 220,270 268,270 232,382 312,230 262,230 280,130"
+    fill="url(#bolt)" opacity="0.95"/>
+</svg>

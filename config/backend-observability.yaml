@@ -1,0 +1,66 @@
+# gRPC Studio Backend Configuration with Observability Enabled
+# This is an example configuration showing how to enable metrics and performance monitoring
+
+server:
+  port: 3001
+  host: 0.0.0.0
+  shutdownGracePeriodMs: 10000
+
+  http:
+    responseTimeoutMs: 30000
+    bodyLimitBytes: 10485760
+
+  cors:
+    enabled: true
+    origins:
+      - http://localhost:3000
+      - http://localhost:4173
+    credentials: true
+    strict: true
+
+  websocket:
+    maxPayloadBytes: 10485760
+    maxConnections: 100
+    heartbeatIntervalMs: 25000
+
+client:
+  mode: plaintext
+  target:
+    host: localhost
+    port: 50051
+
+  timeout:
+    defaultMs: 30000
+
+  reflection:
+    deadlineMs: 10000
+
+auth:
+  plugins: []
+
+cache:
+  reflection:
+    ttlMs: 300000
+    maxEntries: 100
+
+health:
+  enabled: true
+
+certificate:
+  enabled: false
+
+# Observability configuration
+observability:
+  enabled: true
+
+  metrics:
+    enabled: true
+    path: /metrics
+    includeSystemMetrics: true
+    defaultLabels:
+      env: development
+      region: local
+
+  performance:
+    trackSlowOperations: true
+    slowThresholdMs: 1000

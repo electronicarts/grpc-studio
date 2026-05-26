@@ -1,0 +1,63 @@
+# gRPC Studio Backend Configuration - TLS Example
+# Use this when your target gRPC server requires TLS
+
+# Server configuration
+server:
+  port: 3001
+  host: "0.0.0.0"
+  shutdownGracePeriodMs: 10000  # ms to wait for graceful shutdown before forcing exit
+  cors:
+    enabled: true
+    origins: ["https://your-domain.com"]
+  http:
+    responseTimeoutMs: 30000  # ms before an HTTP route returns a timeout response
+    bodyLimitBytes: 10485760  # max JSON/form request body size
+  websocket:
+    maxConnections: 100
+    maxPayloadBytes: 10485760
+    heartbeatIntervalMs: 25000  # ms between server ping frames; stale sockets are terminated on missed heartbeat
+
+# Outbound gRPC client configuration
+client:
+  mode: tls  # plaintext | tls | mtls
+  target:
+    host: your-grpc-server.example.com
+    port: 443
+  rpc:
+    unaryDeadlineMs: 30000        # ms max duration for unary RPCs
+    streamDeadlineMs: 120000      # ms max duration for server/client/bidi streaming RPCs
+  keepalive:
+    pingIntervalMs: 30000  # ms between HTTP/2 keepalive pings
+    pingTimeoutMs: 10000   # ms to wait for a keepalive ping ack
+  security:
+    clientCertPath: "/path/to/client-cert.pem"
+    clientKeyPath: "/path/to/client-key.pem"
+    caCertPath: "/path/to/ca-cert.pem"
+
+# Authentication for outgoing gRPC calls
+auth:
+  plugins:
+    bearer-token:
+      enabled: true
+      config:
+        token: "your-bearer-token"
+
+# Cache configuration
+cache:
+  reflection:
+    ttlMs: 3600000  # ms to cache reflection metadata/descriptors (1 hour)
+    maxEntries: 1000
+  certificate:
+    ttlMs: 60000  # ms to cache mTLS client certificate metadata reads
+    maxEntries: 1
+
+# Certificate inspection/validation configuration
+certificate:
+  certReadTimeoutMs: 5000  # ms before certificate metadata reading is terminated
+  warnDaysCritical: 7
+  warnDaysWarning: 30
+
+# Health check configuration
+health:
+  enabled: true
+  endpoint: "/health"

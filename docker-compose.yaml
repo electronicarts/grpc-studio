@@ -1,0 +1,32 @@
+version: "3.8"
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: docker/backend/Dockerfile
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./config/backend.yaml:/config/backend.yaml:ro
+    environment:
+      - TARGET_HOST=${TARGET_HOST:-host.docker.internal}
+      - TARGET_PORT=${TARGET_PORT:-6565}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend/Dockerfile
+    ports:
+      - "80:80"
+    volumes:
+      - ./config/frontend.yaml:/config/frontend.yaml:ro
+    environment:
+      - BACKEND_URL=backend:3001
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped

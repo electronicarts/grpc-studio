@@ -1,0 +1,20 @@
+{
+  "name": "@grpc-studio/shared",
+  "version": "1.0.0",
+  "description": "Shared types for gRPC Studio — single source of truth for API contracts",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b --force",
+    "prepare": "tsc -b --force",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3"
+  }
+}

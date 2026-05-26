@@ -1,0 +1,238 @@
+syntax = "proto3";
+
+package petstore.v1;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/empty.proto";
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum Species {
+  SPECIES_UNSPECIFIED = 0;
+  SPECIES_DOG = 1;
+  SPECIES_CAT = 2;
+  SPECIES_BIRD = 3;
+  SPECIES_REPTILE = 4;
+  SPECIES_FISH = 5;
+}
+
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+  STATUS_AVAILABLE = 1;
+  STATUS_ADOPTED = 2;
+  STATUS_PENDING = 3;
+  STATUS_MEDICAL_HOLD = 4;
+}
+
+// ---------------------------------------------------------------------------
+// Nested messages (3 levels deep: Pet → Owner → Address → Coordinates)
+// ---------------------------------------------------------------------------
+
+message Coordinates {
+  double latitude = 1;
+  double longitude = 2;
+}
+
+message Address {
+  string street = 1;
+  string city = 2;
+  string state = 3;
+  string zip_code = 4;
+  string country = 5;
+  Coordinates coordinates = 6;
+}
+
+message Owner {
+  string id = 1;
+  string name = 2;
+  string email = 3;
+  string phone = 4;
+  Address address = 5;
+  google.protobuf.Timestamp registered_at = 6;
+}
+
+// ---------------------------------------------------------------------------
+// OneOf example
+// ---------------------------------------------------------------------------
+
+message CollarInfo {
+  string color = 1;
+  string material = 2;
+  bool has_gps = 3;
+}
+
+message Identification {
+  oneof method {
+    string microchip_id = 1;
+    string tattoo_code = 2;
+    int32 tag_number = 3;
+    CollarInfo collar = 4;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Repeated message types
+// ---------------------------------------------------------------------------
+
+message Vaccination {
+  string name = 1;
+  google.protobuf.Timestamp administered_at = 2;
+  google.protobuf.Timestamp expires_at = 3;
+  string veterinarian = 4;
+  google.protobuf.StringValue batch_number = 5;
+}
+
+message MedicalRecord {
+  string id = 1;
+  string diagnosis = 2;
+  string treatment = 3;
+  google.protobuf.Timestamp date = 4;
+  google.protobuf.Duration recovery_time = 5;
+  google.protobuf.FloatValue cost = 6;
+  bool follow_up_required = 7;
+}
+
+// ---------------------------------------------------------------------------
+// Main Pet message — exercises every proto3 feature
+// ---------------------------------------------------------------------------
+
+message Pet {
+  string id = 1;
+  string name = 2;
+  Species species = 3;
+  string breed = 4;
+  Status status = 5;
+
+  // Nested message (3 levels: Owner → Address → Coordinates)
+  Owner owner = 6;
+
+  // Scalar types
+  int32 age_months = 7;
+  double weight_kg = 8;
+  bool is_neutered = 9;
+  bytes photo_thumbnail = 10;
+
+  // Well-known types
+  google.protobuf.Timestamp created_at = 11;
+  google.protobuf.Timestamp updated_at = 12;
+  google.protobuf.StringValue description = 13;
+  google.protobuf.Int32Value microchip_frequency = 14;
+
+  // OneOf (via wrapper message)
+  Identification identification = 15;
+
+  // Repeated scalar
+  repeated string nicknames = 16;
+
+  // Repeated messages
+  repeated Vaccination vaccinations = 17;
+  repeated MedicalRecord medical_history = 18;
+
+  // Map<string, string>
+  map<string, string> tags = 19;
+
+  // Map<string, message>
+  map<string, MedicalRecord> records_by_vet = 20;
+
+  // Struct — arbitrary JSON-like metadata
+  google.protobuf.Struct metadata = 21;
+}
+
+// ---------------------------------------------------------------------------
+// Request / Response messages
+// ---------------------------------------------------------------------------
+
+message CreatePetRequest {
+  Pet pet = 1;
+}
+
+message GetPetRequest {
+  string id = 1;
+}
+
+message UpdatePetRequest {
+  Pet pet = 1;
+}
+
+message DeletePetRequest {
+  string id = 1;
+}
+
+message ListPetsRequest {
+  int32 page_size = 1;
+  string page_token = 2;
+  Species species_filter = 3;
+  Status status_filter = 4;
+}
+
+message ListPetsResponse {
+  repeated Pet pets = 1;
+  string next_page_token = 2;
+  int32 total_count = 3;
+}
+
+message SearchPetsRequest {
+  string query = 1;
+  repeated Species species = 2;
+  google.protobuf.Int32Value max_age_months = 3;
+  google.protobuf.DoubleValue max_weight_kg = 4;
+}
+
+// Streaming messages
+
+message WatchPetsRequest {
+  repeated Species species_filter = 1;
+}
+
+message PetEvent {
+  string pet_id = 1;
+  string event_type = 2;
+  google.protobuf.Timestamp timestamp = 3;
+  google.protobuf.Struct details = 4;
+}
+
+message BulkCreatePetsResponse {
+  int32 created_count = 1;
+  repeated string ids = 2;
+  repeated string errors = 3;
+}
+
+message HealthCheckRequest {
+  string pet_id = 1;
+  repeated string vital_signs = 2;
+}
+
+message HealthCheckResponse {
+  string pet_id = 1;
+  map<string, double> vitals = 2;
+  google.protobuf.Timestamp checked_at = 3;
+  bool is_healthy = 4;
+}
+
+// ---------------------------------------------------------------------------
+// Service — all four RPC patterns
+// ---------------------------------------------------------------------------
+
+service PetStoreService {
+  // Unary RPCs
+  rpc CreatePet(CreatePetRequest) returns (Pet);
+  rpc GetPet(GetPetRequest) returns (Pet);
+  rpc UpdatePet(UpdatePetRequest) returns (Pet);
+  rpc DeletePet(DeletePetRequest) returns (google.protobuf.Empty);
+  rpc ListPets(ListPetsRequest) returns (ListPetsResponse);
+  rpc SearchPets(SearchPetsRequest) returns (ListPetsResponse);
+
+  // Server streaming — live pet event feed
+  rpc WatchPets(WatchPetsRequest) returns (stream PetEvent);
+
+  // Client streaming — bulk pet upload
+  rpc BulkCreatePets(stream CreatePetRequest) returns (BulkCreatePetsResponse);
+
+  // Bidirectional streaming — live health monitoring
+  rpc MonitorHealth(stream HealthCheckRequest) returns (stream HealthCheckResponse);
+}
