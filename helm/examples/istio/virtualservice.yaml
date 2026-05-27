@@ -1,3 +1,5 @@
+# Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
+
 # Istio VirtualService for gRPC Studio. See README.md for setup instructions.
 # All traffic routes to the frontend; nginx proxies /api/* to the backend internally.
 apiVersion: networking.istio.io/v1beta1

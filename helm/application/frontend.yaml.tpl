@@ -1,3 +1,5 @@
+# Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
+
 ###
 # gRPC Studio Frontend Configuration Template
 # This file is processed through Helm templating and mounted into the frontend container.

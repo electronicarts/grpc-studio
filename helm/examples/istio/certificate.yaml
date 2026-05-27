@@ -1,3 +1,5 @@
+# Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
+
 # cert-manager ClusterIssuer + Certificate for Istio Gateway TLS termination.
 # The Secret is created in istio-system (required by Istio).
 # The secretName must match gateway.yaml credentialName.
