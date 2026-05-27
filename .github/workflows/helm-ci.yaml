@@ -102,6 +102,7 @@ jobs:
         run: >
           ct install
           --config .github/ct.yaml
+          --all
           --helm-extra-set-args "
             --set backend.image.repository=grpc-studio-backend
             --set backend.image.tag=ci
