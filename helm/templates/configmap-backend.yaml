@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "grpc-studio.backendConfigName" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "grpc-studio.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
+data:
+  backend.yaml: |
+{{ tpl (.Files.Get "application/backend.yaml.tpl") . | indent 4 }}

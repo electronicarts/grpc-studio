@@ -1,0 +1,1 @@
+{{/* Namespace management is handled by helm install --create-namespace */}}

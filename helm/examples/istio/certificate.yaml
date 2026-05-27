@@ -1,0 +1,35 @@
+# cert-manager ClusterIssuer + Certificate for Istio Gateway TLS termination.
+# The Secret is created in istio-system (required by Istio).
+# The secretName must match gateway.yaml credentialName.
+# See README.md for setup instructions.
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: ops@example.com   # <-- change this
+    privateKeySecretRef:
+      name: letsencrypt-prod-account-key
+    solvers:
+      # DNS-01 recommended for Istio — see README.md for DNS provider options
+      - dns01: {}
+
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: grpc-studio-tls
+  namespace: istio-system
+spec:
+  secretName: grpc-studio-tls   # must match gateway.yaml credentialName
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+    group: cert-manager.io
+  commonName: grpc-studio.example.com      # <-- change this
+  dnsNames:
+    - grpc-studio.example.com              # <-- change this
+  duration: "2160h"
+  renewBefore: "360h"

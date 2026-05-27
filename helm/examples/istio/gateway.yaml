@@ -1,0 +1,29 @@
+# Istio Gateway for gRPC Studio. See README.md for setup instructions.
+# hosts and credentialName must match certificate.yaml.
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: grpc-studio
+  namespace: istio-system
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    - port:
+        number: 80
+        name: http
+        protocol: HTTP
+      hosts:
+        - "grpc-studio.example.com"  # change to your domain
+      tls:
+        httpsRedirect: true
+    - port:
+        number: 443
+        name: https
+        protocol: HTTPS
+      hosts:
+        - "grpc-studio.example.com"  # change to your domain
+      tls:
+        mode: SIMPLE
+        credentialName: grpc-studio-tls  # must match certificate.yaml secretName
+        minProtocolVersion: TLSV1_2

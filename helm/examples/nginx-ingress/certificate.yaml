@@ -1,0 +1,35 @@
+# cert-manager ClusterIssuer + Certificate for ingress-nginx TLS termination.
+# The secretName must match ingress.tls[].secretName in values.yaml.
+# See README.md for setup instructions.
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: ops@example.com   # <-- change this
+    privateKeySecretRef:
+      name: letsencrypt-prod-account-key
+    solvers:
+      - http01:
+          ingress:
+            ingressClassName: nginx
+
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: grpc-studio-tls
+  namespace: grpc-studio
+spec:
+  secretName: grpc-studio-tls   # must match values.yaml ingress.tls[].secretName
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+    group: cert-manager.io
+  commonName: grpc-studio.example.com      # <-- change this
+  dnsNames:
+    - grpc-studio.example.com              # <-- change this
+  duration: "2160h"    # 90 days
+  renewBefore: "360h"  # 15 days

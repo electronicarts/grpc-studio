@@ -83,6 +83,9 @@ example/
 # Scripts
 scripts/
 
+# Helm chart (not needed in Docker images)
+helm/
+
 # Production readiness docs
 PRODUCTION_READINESS_ASSESSMENT.md
 OBSERVABILITY_IMPLEMENTATION_SUMMARY.md
