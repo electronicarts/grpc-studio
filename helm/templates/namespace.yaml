@@ -1,4 +1,0 @@
-{{/*
-Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
-Namespace management is handled by helm install --create-namespace
-*/}}
