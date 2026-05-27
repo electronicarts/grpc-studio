@@ -3,9 +3,9 @@
 # chart-testing configuration
 # https://github.com/helm/chart-testing
 
-# The chart lives in helm/ within this monorepo
+# ct scans repo root and finds helm/ as the chart directory
 chart-dirs:
-  - helm
+  - .
 
 target-branch: main
 
