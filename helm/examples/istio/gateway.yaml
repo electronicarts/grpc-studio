@@ -1,3 +1,5 @@
+# Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
+
 # Istio Gateway for gRPC Studio. See README.md for setup instructions.
 # hosts and credentialName must match certificate.yaml.
 apiVersion: networking.istio.io/v1beta1
