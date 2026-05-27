@@ -6,6 +6,11 @@ on:
     paths:
       - 'helm/**'
       - '.github/workflows/helm-release.yaml'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Chart version to publish (e.g. 0.2.0). Must match helm/Chart.yaml.'
+        required: true
 
 permissions:
   contents: write
@@ -16,6 +21,8 @@ jobs:
   release-please:
     name: Release Please
     runs-on: ubuntu-latest
+    # Skip when triggered manually — release-please is not involved in manual publishes
+    if: github.event_name == 'push'
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
@@ -26,14 +33,31 @@ jobs:
         with:
           config-file: helm/release-please-config.json
           manifest-file: helm/.release-please-manifest.json
+          # Use a PAT if available so release-please PRs can trigger CI.
+          # Fall back to GITHUB_TOKEN for repos that don't have the secret set.
+          token: ${{ secrets.HELM_RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
 
   chart:
     name: Publish Helm chart
     runs-on: ubuntu-latest
-    needs: release-please
-    if: needs.release-please.outputs.release_created
+    needs: [release-please]
+    # Runs on automated release or manual dispatch
+    if: |
+      always() && (
+        needs.release-please.outputs.release_created ||
+        github.event_name == 'workflow_dispatch'
+      )
     steps:
       - uses: actions/checkout@v4
+
+      - name: Resolve chart version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=${{ needs.release-please.outputs.version }}" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Set up Helm
         uses: azure/setup-helm@v4
@@ -42,13 +66,14 @@ jobs:
 
       - name: Log in to GHCR
         run: |
-          echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io \
+          TOKEN="${{ secrets.HELM_RELEASE_TOKEN || secrets.GITHUB_TOKEN }}"
+          echo "$TOKEN" | helm registry login ghcr.io \
             --username "${{ github.actor }}" --password-stdin
 
       - name: Package chart
-        run: helm package ./helm --version "${{ needs.release-please.outputs.version }}"
+        run: helm package ./helm --version "${{ steps.version.outputs.version }}"
 
       - name: Push chart to GHCR
         run: |
-          helm push grpc-studio-${{ needs.release-please.outputs.version }}.tgz \
+          helm push grpc-studio-${{ steps.version.outputs.version }}.tgz \
             oci://ghcr.io/electronicarts/helm-charts
