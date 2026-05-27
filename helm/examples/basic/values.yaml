@@ -1,0 +1,11 @@
+connection:
+  mode: insecure
+  target:
+    host: my-grpc-server.default.svc.cluster.local
+    port: 50051
+
+auth:
+  defaultPlugin: none
+
+ingress:
+  enabled: false

@@ -1,0 +1,13 @@
+# chart-testing configuration
+# https://github.com/helm/chart-testing
+
+# The chart lives in helm/ within this monorepo
+chart-dirs:
+  - helm
+
+target-branch: main
+
+helm-extra-args: "--timeout 120s"
+
+# Validate maintainers field against GitHub
+validate-maintainers: false
