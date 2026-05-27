@@ -15,7 +15,7 @@ This chart deploys the backend and frontend as separate Deployments with Cluster
 helm upgrade --install my-grpc-studio oci://ghcr.io/electronicarts/helm-charts/grpc-studio \
   --set connection.target.host=my-grpc-server.default.svc.cluster.local \
   --set connection.target.port=50051 \
-  --set connection.mode=insecure \
+  --set connection.mode=plaintext \
   --namespace grpc-studio --create-namespace
 ```
 
@@ -41,7 +41,7 @@ All available options are documented in [`values.yaml`](values.yaml).
 
 ```yaml
 connection:
-  mode: insecure   # insecure | tls | mtls
+  mode: plaintext   # plaintext | tls | mtls
   target:
     host: my-grpc-server.default.svc.cluster.local
     port: 50051

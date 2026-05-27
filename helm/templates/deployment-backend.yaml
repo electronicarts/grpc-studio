@@ -48,7 +48,7 @@ spec:
               containerPort: {{ .Values.backend.port }}
               protocol: TCP
           env:
-            - name: CONFIG_PATH
+            - name: GRPC_STUDIO_CONFIG
               value: "/config/backend.yaml"
             - name: NODE_ENV
               value: "production"

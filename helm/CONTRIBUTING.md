@@ -52,7 +52,7 @@ helm install grpc-studio ./helm \
   --set frontend.image.pullPolicy=Never \
   --set connection.target.host=my-grpc-server.default.svc.cluster.local \
   --set connection.target.port=50051 \
-  --set connection.mode=insecure \
+  --set connection.mode=plaintext \
   --namespace grpc-studio --create-namespace
 ```
 
