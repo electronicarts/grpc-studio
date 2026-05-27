@@ -62,10 +62,6 @@ spec:
               mountPath: /config/frontend.yaml
               subPath: frontend.yaml
               readOnly: true
-            - name: nginx-config
-              mountPath: /etc/nginx/nginx.conf
-              subPath: nginx.conf
-              readOnly: true
           {{- with .Values.frontend.livenessProbe }}
           livenessProbe:
             {{- toYaml . | nindent 12 }}
@@ -82,9 +78,6 @@ spec:
         - name: config
           configMap:
             name: {{ include "grpc-studio.frontendConfigName" . }}
-        - name: nginx-config
-          configMap:
-            name: {{ include "grpc-studio.frontendName" . }}-nginx
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

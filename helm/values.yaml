@@ -69,9 +69,6 @@ frontend:
     tag: ""  # defaults to appVersion
     pullPolicy: IfNotPresent
   port: 80
-  server:
-    root: /usr/share/html
-    indexFile: index.html
   env: []
   livenessProbe:
     httpGet:
