@@ -10,8 +10,10 @@ server:
   host: {{ .Values.backend.server.host | quote }}
   cors:
     enabled: {{ .Values.backend.server.cors.enabled }}
+    {{- if .Values.backend.server.cors.origins }}
     origins:
       {{- toYaml .Values.backend.server.cors.origins | nindent 6 }}
+    {{- end }}
 
 client:
   mode: {{ .Values.connection.mode }}

@@ -32,8 +32,7 @@ backend:
     environment: production
     cors:
       enabled: true
-      origins:
-        - "*"
+      origins: []  # empty = use backend default (localhost:3000, localhost:4173)
   env: []
   livenessProbe:
     httpGet:
