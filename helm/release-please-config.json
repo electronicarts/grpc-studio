@@ -1,0 +1,17 @@
+{
+  "packages": {
+    "helm": {
+      "release-type": "helm",
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true,
+      "changelog-sections": [
+        { "type": "feat",     "section": "Features" },
+        { "type": "fix",      "section": "Bug Fixes" },
+        { "type": "refactor", "section": "Refactoring" },
+        { "type": "docs",     "section": "Documentation" },
+        { "type": "chore",    "section": "Maintenance", "hidden": true },
+        { "type": "ci",       "section": "CI",          "hidden": true }
+      ]
+    }
+  }
+}

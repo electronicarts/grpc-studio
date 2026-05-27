@@ -1,0 +1,54 @@
+name: Helm Release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'helm/**'
+      - '.github/workflows/helm-release.yaml'
+
+permissions:
+  contents: write
+  packages: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    name: Release Please
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+      version: ${{ steps.release.outputs.version }}
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          config-file: helm/release-please-config.json
+          manifest-file: helm/.release-please-manifest.json
+
+  chart:
+    name: Publish Helm chart
+    runs-on: ubuntu-latest
+    needs: release-please
+    if: needs.release-please.outputs.release_created
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: "3.17.0"
+
+      - name: Log in to GHCR
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io \
+            --username "${{ github.actor }}" --password-stdin
+
+      - name: Package chart
+        run: helm package ./helm --version "${{ needs.release-please.outputs.version }}"
+
+      - name: Push chart to GHCR
+        run: |
+          helm push grpc-studio-${{ needs.release-please.outputs.version }}.tgz \
+            oci://ghcr.io/electronicarts/helm-charts

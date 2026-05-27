@@ -1,0 +1,24 @@
+# Istio VirtualService for gRPC Studio. See README.md for setup instructions.
+# All traffic routes to the frontend; nginx proxies /api/* to the backend internally.
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: grpc-studio
+  namespace: grpc-studio
+spec:
+  hosts:
+    - "grpc-studio.example.com"   # <-- change this (must match Gateway hosts)
+  gateways:
+    - istio-system/grpc-studio   # <-- namespace/name of the Gateway above
+  http:
+    - route:
+        - destination:
+            # Format: <release-name>-grpc-studio-frontend.<namespace>.svc.cluster.local
+            host: my-grpc-studio-grpc-studio-frontend.grpc-studio.svc.cluster.local
+            port:
+              number: 80
+      timeout: 60s
+      retries:
+        attempts: 3
+        perTryTimeout: 15s
+        retryOn: "5xx,reset,connect-failure,refused-stream"

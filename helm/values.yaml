@@ -1,0 +1,228 @@
+nameOverride: ""
+fullnameOverride: ""
+
+imagePullSecrets: []
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext: {}
+  # fsGroup: 1000
+
+securityContext: {}
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+backend:
+  replicaCount: 1
+  image:
+    repository: ghcr.io/electronicarts/grpc-studio/backend
+    tag: ""  # defaults to appVersion
+    pullPolicy: IfNotPresent
+  port: 3001
+  server:
+    host: "0.0.0.0"
+    environment: production
+    cors:
+      enabled: true
+      origins:
+        - "*"
+  env: []
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: http
+    initialDelaySeconds: 60
+    periodSeconds: 30
+    timeoutSeconds: 10
+    failureThreshold: 5
+  readinessProbe:
+    httpGet:
+      path: /health
+      port: http
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 10
+    failureThreshold: 3
+  resources: {}
+    # requests:
+    #   memory: "256Mi"
+    #   cpu: "200m"
+    # limits:
+    #   memory: "512Mi"
+    #   cpu: "500m"
+  service:
+    type: ClusterIP
+    nameOverride: ""  # override the Service name used as the nginx upstream
+    annotations: {}
+
+frontend:
+  replicaCount: 1
+  image:
+    repository: ghcr.io/electronicarts/grpc-studio/frontend
+    tag: ""  # defaults to appVersion
+    pullPolicy: IfNotPresent
+  port: 80
+  server:
+    root: /usr/share/html
+    indexFile: index.html
+  env: []
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: http
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  readinessProbe:
+    httpGet:
+      path: /health
+      port: http
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 3
+  resources: {}
+    # requests:
+    #   memory: "128Mi"
+    #   cpu: "100m"
+    # limits:
+    #   memory: "512Mi"
+    #   cpu: "500m"
+  service:
+    type: ClusterIP
+    annotations: {}
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: grpc-studio.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+# connection.mode: insecure | tls | mtls
+connection:
+  mode: tls
+  target:
+    host: your-grpc-server.example.com
+    port: 443
+  timeout:
+    connect: 10000
+    request: 30000
+  tls:
+    verifyServerCert: true
+    serverName: ""
+
+# auth.defaultPlugin: none | bearer-token | oauth2-client-credentials
+auth:
+  defaultPlugin: none
+  bearerToken:
+    enabled: false
+    secretRef: ""  # name of a Secret with key "token"
+  oauth2:
+    enabled: false
+    tokenUrl: ""
+    clientId: ""
+    clientSecretRef: ""  # name of a Secret with key "clientSecret"
+    scope: ""
+    tokenCacheTimeMs: 300000
+    requestTimeoutMs: 10000
+    maxRetries: 3
+    retryDelayMs: 1000
+
+# Required when connection.mode is "mtls".
+# Provide an existing Secret containing client certificates (e.g. from cert-manager, Vault, or kubectl create secret).
+secrets:
+  existingSecret: ""  # name of a Secret containing the client certificate
+  keys:
+    cert: tls.crt
+    key: tls.key
+    ca: ""  # leave empty if no CA cert is needed
+
+app:
+  logging:
+    level: info  # debug | info | warn | error
+    format: json  # json | text
+    console:
+      enabled: true
+      colorize: false
+    file:
+      enabled: false
+  cache:
+    schema:
+      ttl: 3600
+      maxEntries: 1000
+    protoset:
+      ttl: 3600
+      maxEntries: 1000
+  health:
+    enabled: true
+    endpoint: /health
+    interval: 30
+
+ui:
+  api:
+    baseUrl: ""
+    endpoints:
+      config: "/api/grpc/config"
+      discover: "/api/grpc/discover"
+      invoke: "/api/grpc/invoke"
+      schema: "/api/grpc/schema"
+      status: "/api/grpc/status"
+      health: "/api/health"
+      generateCommand: "/api/grpc/generate-command"
+    timeout: 30000
+  auth:
+    enabled: false
+    provider: none  # none | oidc
+    oidc:
+      issuerUrl: ""
+      clientId: ""
+      redirectUri: ""
+      scopes:
+        - openid
+        - profile
+        - email
+  proxy:
+    enabled: true
+    pathPrefix: "/api"
+  theme:
+    default: dark
+    primary: "#1976d2"
+  forms:
+    autoSave: true
+    validateOnChange: true
+  display:
+    maxResponseSize: "10MB"
+    syntaxHighlighting: true
+    lineNumbers: true
+  security:
+    cors:
+      enabled: true
+      allowedOrigins:
+        - "*"
+  features:
+    reflection: true
+    protosets: true
+    history: true
+    export: true
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+extraVolumes: []
+
+extraVolumeMounts: []

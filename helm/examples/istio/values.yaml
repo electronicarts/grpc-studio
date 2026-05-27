@@ -1,0 +1,13 @@
+connection:
+  mode: tls
+  target:
+    host: my-grpc-server.example.com
+    port: 443
+  tls:
+    verifyServerCert: true
+
+auth:
+  defaultPlugin: none
+
+ingress:
+  enabled: false
