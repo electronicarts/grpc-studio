@@ -90,6 +90,8 @@ jobs:
 
       - name: Create kind cluster
         uses: helm/kind-action@v1
+        with:
+          cluster_name: kind
 
       - name: Load images into kind
         run: |
