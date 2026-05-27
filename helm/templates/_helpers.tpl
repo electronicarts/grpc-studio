@@ -1,6 +1,6 @@
-# Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
-
 {{/*
+Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
+
 Expand the name of the chart.
 */}}
 {{- define "grpc-studio.name" -}}
