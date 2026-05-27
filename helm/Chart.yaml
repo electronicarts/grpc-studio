@@ -23,5 +23,5 @@ maintainers:
   - name: gRPC Studio Maintainers
     url: https://github.com/electronicarts/grpc-studio
 annotations:
-  artifacthub.io/license: MIT
+  artifacthub.io/license: BSD-3-Clause
   artifacthub.io/category: developer-tools

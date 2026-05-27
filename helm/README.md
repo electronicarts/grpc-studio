@@ -161,5 +161,5 @@ helm uninstall my-grpc-studio -n grpc-studio
 
 ## License
 
-[MIT](https://opensource.org/licenses/MIT)
+[BSD-3-Clause](https://opensource.org/licenses/BSD-3-Clause)
 
