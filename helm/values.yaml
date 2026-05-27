@@ -112,7 +112,7 @@ ingress:
           pathType: Prefix
   tls: []
 
-# connection.mode: insecure | tls | mtls
+# connection.mode: plaintext | tls | mtls
 connection:
   mode: tls
   target:

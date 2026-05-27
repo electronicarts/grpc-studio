@@ -112,5 +112,5 @@ jobs:
             --set frontend.image.pullPolicy=Never
             --set connection.target.host=my-grpc-server
             --set connection.target.port=50051
-            --set connection.mode=insecure
+            --set connection.mode=plaintext
           "

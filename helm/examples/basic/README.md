@@ -26,4 +26,4 @@ open http://localhost:8080
 |---|---|
 | `connection.target.host` | Hostname of your gRPC server |
 | `connection.target.port` | Port of your gRPC server |
-| `connection.mode` | `insecure`, `tls`, or `mtls` |
+| `connection.mode` | `plaintext`, `tls`, or `mtls` |
