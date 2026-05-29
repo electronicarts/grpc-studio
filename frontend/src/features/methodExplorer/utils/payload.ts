@@ -5,6 +5,7 @@ import type { DescMessage, JsonObject as BufJsonObject } from '@bufbuild/protobu
 import type { JsonObject } from '@grpc-studio/shared'
 import { cloneJsonObject, isJsonObject, isRecord } from '../../../utils/jsonUtils'
 import { schemaCache } from '../../schemaLoader/lib/schemaCache'
+import { cleanFormData } from '../../../utils/cleanFormData'
 
 export interface Payload {
   display: JsonObject
@@ -27,7 +28,11 @@ export function canonicalizeProtoJson(
     return cloneJsonObject(data)
   }
 
-  const message = fromJson(schema, data as BufJsonObject, { ignoreUnknownFields: false })
+  // Clean undefined values before passing to fromJson
+  // Protobuf JSON format doesn't support undefined - fields should be omitted
+  const cleanedData = cleanFormData(data) as BufJsonObject
+
+  const message = fromJson(schema, cleanedData, { ignoreUnknownFields: false })
   const json = toJson(schema, message, {
     useProtoFieldName: true,
     alwaysEmitImplicit: options.alwaysEmitImplicit ?? false,
