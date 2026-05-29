@@ -2,12 +2,12 @@
 
 import React from 'react'
 import type { DescMessage, DescField } from '@bufbuild/protobuf'
-import { useProtoMessageRendererContext } from '../stores/schemaRendererContext'
-import { setFieldValue } from '../utils'
-import { getFieldValue } from '../utils/fieldLookup'
-import { filterFields } from '../utils/fieldFiltering'
+import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
+import { setFieldValue } from '../../utils'
+import { getFieldValue } from '../../utils/fieldOperations'
+import { filterFields } from '../../utils/fieldFiltering'
 import FieldRenderer from './FieldRenderer'
-import OneOfField from './OneOfField'
+import OneOfField from '../fields/OneOfField'
 
 interface MessageRendererProps {
   schema: DescMessage

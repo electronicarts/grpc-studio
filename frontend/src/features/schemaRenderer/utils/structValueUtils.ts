@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-import { isRecord } from '../../../../utils/jsonUtils'
+import { ScalarType } from '@bufbuild/protobuf'
+import { isRecord } from '../../../utils/jsonUtils'
 
 export type StructKind = 'null' | 'number' | 'string' | 'bool' | 'struct' | 'list'
 
@@ -15,10 +16,10 @@ export const STRUCT_KIND_OPTIONS: Array<{ kind: StructKind; fieldName: string; l
 
 export const isJsonObject = isRecord
 
-export function scalarType(value: unknown): string {
-  if (typeof value === 'boolean') return 'bool'
-  if (typeof value === 'number') return 'double'
-  return 'string'
+export function scalarType(value: unknown): ScalarType {
+  if (typeof value === 'boolean') return ScalarType.BOOL
+  if (typeof value === 'number') return ScalarType.DOUBLE
+  return ScalarType.STRING
 }
 
 export function structKind(value: unknown): StructKind {

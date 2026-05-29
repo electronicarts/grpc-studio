@@ -5,7 +5,7 @@
  */
 import type { DescField } from '@bufbuild/protobuf'
 import { fieldTypeName } from '../../../utils/descUtils'
-import { getNestedValue } from './fieldLookup'
+import { getNestedValue } from './fieldOperations'
 
 /**
  * Check if a value matches a search query recursively.

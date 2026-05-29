@@ -5,20 +5,17 @@
  * while the actual implementations live in focused single-responsibility modules.
  */
 
-// Field lookup
-export { getFieldValue, setFieldValue, getNestedValue } from './fieldLookup'
+// Field operations (get/set)
+export { getFieldValue, setFieldValue, getNestedValue } from './fieldOperations'
 
 // OneOf detection
 export { detectOneOfSelections } from './oneOfDetection'
 
-// Value utilities
-export { isScalar, getInputType, parseValue, isEmptyValue } from './valueUtils'
+// Scalar type utilities
+export { getInputType, parseValue, isEmpty } from './scalarTypeUtils'
 
 // Search utilities
 export { valueMatchesSearch, fieldMatchesSearch } from './searchUtils'
-
-// Form mutation
-export { updateValueAtPath } from './formMutation'
 
 // Path analysis
 export { collectExpandablePaths, hasDataAtPath } from './pathAnalysis'
@@ -31,3 +28,17 @@ export { isCompositeField, forEachNestedMessageValue } from './descriptorTravers
 
 // Collection mutation helpers
 export { replaceArrayItem, removeArrayItem, setObjectEntry, removeObjectEntry } from './collectionMutation'
+
+// Map utilities
+export { filterMapEntries } from './mapUtils'
+
+// Struct utilities (google.protobuf.Struct)
+export {
+  STRUCT_KIND_OPTIONS,
+  defaultStructValue,
+  isJsonObject,
+  scalarType,
+  structKind,
+  structKindFieldName,
+  type StructKind,
+} from './structValueUtils'

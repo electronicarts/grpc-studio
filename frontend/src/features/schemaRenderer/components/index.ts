@@ -1,14 +1,24 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-export { default as ScalarField } from './ScalarField'
-export { default as EnumField } from './EnumField'
-export { default as TimestampField } from './TimestampField'
-export { default as OneOfField } from './OneOfField'
-export { default as RepeatedField } from './RepeatedField'
-export { default as MapField } from './MapField'
-export { default as MessageFieldFrame } from './MessageFieldFrame'
-export { default as NestedMessageField } from './NestedMessageField'
-export { default as StructField } from './StructField'
-export { default as WrapperField } from './WrapperField'
-export { default as FieldRenderer } from './FieldRenderer'
-export { default as MessageRenderer } from './MessageRenderer'
+// Core components
+export { default as SchemaRenderer } from './core/SchemaRenderer'
+export { default as MessageRenderer } from './core/MessageRenderer'
+export { default as FieldRenderer } from './core/FieldRenderer'
+
+// Field components
+export { default as ScalarField } from './fields/ScalarField'
+export { default as EnumField } from './fields/EnumField'
+export { default as ListField } from './fields/ListField'
+export { default as MapField } from './fields/MapField'
+export { default as MessageField } from './fields/MessageField'
+export { default as OneOfField } from './fields/OneOfField'
+
+// Well-known types
+export { default as TimestampField } from './wellKnown/TimestampField'
+export { default as WrapperField } from './wellKnown/WrapperField'
+
+// Struct subsystem
+export { default as StructField } from './struct/StructField'
+
+// Shared UI components
+export { default as MessageFieldFrame } from './shared/MessageFieldFrame'

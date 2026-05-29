@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { FormField } from '@/components/shared'
 import { X } from 'lucide-react'
 import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
-import ScalarField from '../ScalarField'
+import ScalarField from '../fields/ScalarField'
 import { StructArrayItems } from './StructArrayItems'
 import { StructObjectFields } from './StructObjectFields'
 import {
@@ -17,7 +17,7 @@ import {
   structKind,
   structKindFieldName,
   type StructKind,
-} from './structValueUtils'
+} from '../../utils/structValueUtils'
 
 interface StructValueProps {
   label: string
@@ -51,7 +51,7 @@ export function StructValue({ label, value, onChange, onRemove }: StructValuePro
     return (
       <ScalarField
         name={selectedFieldName}
-        type={scalarType(value)}
+        scalar={scalarType(value)}
         value={value}
         onChange={onChange}
       />

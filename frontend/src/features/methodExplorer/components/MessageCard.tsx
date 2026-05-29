@@ -106,7 +106,8 @@ const MessageCard: React.FC<MessageCardProps> = ({
                 data={msg as Record<string, unknown>}
                 onChange={() => {}}
                 readOnly={true}
-                defaultCollapsed={true}
+                defaultCollapsed={false}
+                showControls={true}
                 hideEmptyFields={true}
               />
             </div>

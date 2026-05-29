@@ -1,12 +1,25 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-import { valueMatchesSearch } from '../../utils/searchUtils'
+/**
+ * Utilities for working with protobuf map fields.
+ */
 
-interface UseMapEntriesParams {
+import { valueMatchesSearch } from './searchUtils'
+
+interface FilterMapEntriesParams {
   mapValue: Record<string, unknown>
   searchQuery: string
 }
 
+interface FilterMapEntriesResult {
+  allEntries: [string, unknown][]
+  entries: [string, unknown][]
+  countDisplay: string
+}
+
+/**
+ * Check if a map entry (key-value pair) matches the search query.
+ */
 function mapEntryMatchesSearch(key: string, value: unknown, query: string): boolean {
   if (!query) return true
 
@@ -16,7 +29,11 @@ function mapEntryMatchesSearch(key: string, value: unknown, query: string): bool
   return valueMatchesSearch(value, query)
 }
 
-export function useMapEntries({ mapValue, searchQuery }: UseMapEntriesParams) {
+/**
+ * Filter map entries based on search query.
+ * Returns all entries, filtered entries, and a display count string.
+ */
+export function filterMapEntries({ mapValue, searchQuery }: FilterMapEntriesParams): FilterMapEntriesResult {
   const allEntries = Object.entries(mapValue)
   const entries = searchQuery
     ? allEntries.filter(([key, value]) => mapEntryMatchesSearch(key, value, searchQuery))

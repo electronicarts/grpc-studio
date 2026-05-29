@@ -5,6 +5,7 @@ import ReactDOM from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import App from './App.tsx'
 import { AuthProvider, initializeAuthFromYaml } from './features/auth'
+import { DarkModeProvider } from './features/theme'
 import { loadConfig } from './config'
 import { createLogger } from './utils/debugLogger'
 import './globals.css'
@@ -25,11 +26,13 @@ const root = ReactDOM.createRoot(document.getElementById('root')!)
 function renderApp(configError: string | null = null) {
   root.render(
     <React.StrictMode>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <App configError={configError} />
-        </AuthProvider>
-      </QueryClientProvider>
+      <DarkModeProvider>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <App configError={configError} />
+          </AuthProvider>
+        </QueryClientProvider>
+      </DarkModeProvider>
     </React.StrictMode>,
   )
 }

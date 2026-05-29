@@ -12,7 +12,8 @@ const PROTO_KEYWORDS = new Set([
   'repeated', 'map', 'stream', 'reserved', 'option', 'import', 'syntax', 'package',
 ])
 
-const SCALAR_TYPES = new Set([
+// Proto scalar type names for syntax highlighting (not type checking)
+const PROTO_SCALARS = new Set([
   'string', 'bytes', 'bool',
   'double', 'float',
   'int32', 'int64', 'uint32', 'uint64',
@@ -42,7 +43,7 @@ function highlightProto(text: string): React.ReactNode[] {
       } else if (word) {
         if (PROTO_KEYWORDS.has(word)) {
           tokens.push(<span key={key} className="text-purple-600 dark:text-purple-400 font-semibold">{word}</span>)
-        } else if (SCALAR_TYPES.has(word)) {
+        } else if (PROTO_SCALARS.has(word)) {
           tokens.push(<span key={key} className="text-blue-600 dark:text-blue-400">{word}</span>)
         } else if (word[0] === word[0].toUpperCase() && /^[A-Z]/.test(word)) {
           // PascalCase → message/enum type name

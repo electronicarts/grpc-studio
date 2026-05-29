@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import type { DescMessage, DescField } from '@bufbuild/protobuf'
-import { getFieldValue } from './fieldLookup'
+import { getFieldValue } from './fieldOperations'
 import { forEachNestedMessageValue, isCompositeField } from './descriptorTraversal'
 
 export const detectOneOfSelections = (

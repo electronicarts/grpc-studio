@@ -1,6 +1,6 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import ViewTabs, { type ViewTab } from './ViewTabs'
@@ -20,6 +20,15 @@ const UnaryMessageDisplay: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ViewTab>(hasSchema ? 'form' : 'json')
   const effectiveTab = activeTab === 'form' && !hasSchema ? 'json' : activeTab
   const [expanded, setExpanded] = useState(true)
+  const prevHasSchemaRef = useRef(hasSchema)
+
+  // Switch to form view when schema first loads (only when schema transitions from false to true)
+  useEffect(() => {
+    if (hasSchema && !prevHasSchemaRef.current && activeTab === 'json') {
+      setActiveTab('form')
+    }
+    prevHasSchemaRef.current = hasSchema
+  }, [hasSchema, activeTab])
 
   return (
     <div className="space-y-2">

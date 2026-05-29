@@ -1,48 +1,93 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import type { DescField, DescMessage } from '@bufbuild/protobuf'
-import { getFieldValue } from './fieldLookup'
-import { forEachNestedMessageValue, isCompositeField } from './descriptorTraversal'
+import { isCompositeField } from './descriptorTraversal'
+import get from 'lodash-es/get'
 
+/**
+ * Collect all expandable paths from schema AND data.
+ * For repeated fields, generates paths for each array item (e.g., items[0], items[1]).
+ */
 export function collectExpandablePaths(
   schema: DescMessage,
-  formData: Record<string, unknown>
+  data?: Record<string, unknown>
 ): Set<string> {
   const pathsFound = new Set<string>()
 
-  const processField = (field: DescField, fieldValue: unknown, fieldPath: string) => {
+  const processField = (field: DescField, fieldPath: string, fieldData?: unknown) => {
+    // Add composite fields as expandable
     if (isCompositeField(field)) {
       pathsFound.add(fieldPath)
     }
 
-    forEachNestedMessageValue(field, fieldValue, fieldPath, findPopulated)
-  }
-
-  const findPopulated = (
-    messageSchema: DescMessage,
-    value: Record<string, unknown>,
-    basePath: string = ''
-  ) => {
-    if (!value || typeof value !== 'object') return
-
-    for (const field of messageSchema.fields) {
-      if (field.oneof !== undefined) continue
-      const fieldValue = getFieldValue(value, field.name)
-      const fieldPath = basePath ? `${basePath}.${field.name}` : field.name
-      processField(field, fieldValue, fieldPath)
+    // For repeated fields with messages, generate paths for each array item
+    if (field.fieldKind === 'list' && field.listKind === 'message') {
+      const arrayData = fieldData as unknown[] | undefined
+      if (Array.isArray(arrayData)) {
+        arrayData.forEach((_, index) => {
+          const itemPath = `${fieldPath}[${index}]`
+          pathsFound.add(itemPath)
+          // Recursively collect from nested fields in array items
+          collectFromMessage(field.message, itemPath, arrayData[index] as Record<string, unknown>)
+        })
+      } else {
+        // No data yet, just collect schema paths
+        collectFromMessage(field.message, fieldPath)
+      }
+    }
+    // For regular nested messages
+    else if (field.fieldKind === 'message') {
+      collectFromMessage(field.message, fieldPath, fieldData as Record<string, unknown>)
+    }
+    // For maps with message values
+    else if (field.fieldKind === 'map' && field.mapKind === 'message') {
+      const mapData = fieldData as Record<string, unknown> | undefined
+      if (mapData && typeof mapData === 'object') {
+        Object.keys(mapData).forEach(key => {
+          const entryPath = `${fieldPath}[${key}]`
+          pathsFound.add(entryPath)
+          collectFromMessage(field.message, entryPath, mapData[key] as Record<string, unknown>)
+        })
+      } else {
+        collectFromMessage(field.message, fieldPath)
+      }
     }
   }
 
-  findPopulated(schema, formData)
+  const collectFromMessage = (
+    messageSchema: DescMessage,
+    basePath: string = '',
+    messageData?: Record<string, unknown>
+  ) => {
+    // Guard against incomplete schema (e.g., placeholder message types)
+    if (!messageSchema.fields) return
+
+    for (const field of messageSchema.fields) {
+      // Skip oneOf fields - they'll be collected from the oneOf groups below
+      if (field.oneof !== undefined) continue
+      const fieldPath = basePath ? `${basePath}.${field.name}` : field.name
+      const fieldData = messageData ? get(messageData, field.name) : undefined
+      processField(field, fieldPath, fieldData)
+    }
+
+    // Collect paths from oneOf groups
+    for (const oneof of messageSchema.oneofs) {
+      for (const field of oneof.fields as unknown as DescField[]) {
+        const fieldPath = basePath ? `${basePath}.${field.name}` : field.name
+        const fieldData = messageData ? get(messageData, field.name) : undefined
+        // Only process if this field has data (i.e., it's the selected oneOf option)
+        if (fieldData !== undefined) {
+          processField(field, fieldPath, fieldData)
+        }
+      }
+    }
+  }
+
+  collectFromMessage(schema, '', data)
   return pathsFound
 }
 
 export function hasDataAtPath(data: Record<string, unknown>, path: string): boolean {
-  const parts = path.split(/[.[\]]+/).filter(Boolean)
-  let current: unknown = data
-  for (const part of parts) {
-    if (current == null || typeof current !== 'object') return false
-    current = (current as Record<string, unknown>)[part]
-  }
-  return current !== undefined && current !== null
+  const value = get(data, path)
+  return value !== undefined && value !== null
 }
