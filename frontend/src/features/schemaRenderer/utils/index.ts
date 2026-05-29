@@ -17,9 +17,6 @@ export { getInputType, parseValue, isEmpty } from './scalarTypeUtils'
 // Search utilities
 export { valueMatchesSearch, fieldMatchesSearch } from './searchUtils'
 
-// Form mutation
-export { updateValueAtPath } from './formMutation'
-
 // Path analysis
 export { collectExpandablePaths, hasDataAtPath } from './pathAnalysis'
 

@@ -1,7 +1,6 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-import { createContext, useContext, ReactNode, useCallback, useMemo } from 'react'
-import { updateValueAtPath } from '../utils/formMutation'
+import { createContext, useContext, ReactNode, useMemo } from 'react'
 
 export interface ProtoMessageRendererContextValue {
   readOnly: boolean
@@ -12,7 +11,6 @@ export interface ProtoMessageRendererContextValue {
   oneOfSelections: Map<string, string>
   searchQuery: string
   toggleExpand: (path: string) => void
-  updateValue: (path: string, value: unknown) => void
   setOneOfSelection: (groupPath: string, fieldName: string) => void
 }
 
@@ -35,7 +33,6 @@ interface ProtoMessageRendererProviderProps {
   readOnly: boolean
   hideEmptyFields: boolean
   onToggleExpand: (path: string) => void
-  onUpdateForm: (data: Record<string, unknown>) => void
   onSetOneOfSelection: (groupPath: string, fieldName: string) => void
   children: ReactNode
 }
@@ -49,14 +46,9 @@ export function ProtoMessageRendererProvider({
   readOnly,
   hideEmptyFields,
   onToggleExpand,
-  onUpdateForm,
   onSetOneOfSelection,
   children
 }: ProtoMessageRendererProviderProps) {
-  const updateValue = useCallback((path: string, value: unknown) => {
-    onUpdateForm(updateValueAtPath(formData, path, value))
-  }, [formData, onUpdateForm])
-
   const value = useMemo<ProtoMessageRendererContextValue>(() => ({
     readOnly,
     hideEmptyFields,
@@ -66,12 +58,11 @@ export function ProtoMessageRendererProvider({
     oneOfSelections,
     searchQuery,
     toggleExpand: onToggleExpand,
-    updateValue,
     setOneOfSelection: onSetOneOfSelection,
   }), [
     readOnly, hideEmptyFields, formData, schemasLoaded,
     expanded, oneOfSelections, searchQuery,
-    onToggleExpand, updateValue, onSetOneOfSelection,
+    onToggleExpand, onSetOneOfSelection,
   ])
 
   return (

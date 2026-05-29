@@ -226,6 +226,103 @@ describe('pathAnalysis', () => {
       expect(paths.size).toBe(3)
     })
 
+    it('generates paths for array items when data is provided', () => {
+      const schema: Partial<DescMessage> = {
+        typeName: 'TestMessage',
+        fields: [
+          {
+            name: 'users',
+            fieldKind: 'list',
+            listKind: 'message',
+            message: {
+              typeName: 'User',
+              fields: [
+                {
+                  name: 'name',
+                  fieldKind: 'scalar',
+                } as any,
+              ],
+              oneofs: [],
+              nestedMessages: [],
+              nestedEnums: [],
+            } as DescMessage,
+          } as any,
+        ],
+        oneofs: [],
+        nestedMessages: [],
+        nestedEnums: [],
+      }
+
+      const data = {
+        users: [
+          { name: 'Alice' },
+          { name: 'Bob' },
+          { name: 'Charlie' },
+        ],
+      }
+
+      const paths = collectExpandablePaths(schema as DescMessage, data)
+
+      // Should include container and each array item
+      expect(paths.has('users')).toBe(true)
+      expect(paths.has('users[0]')).toBe(true)
+      expect(paths.has('users[1]')).toBe(true)
+      expect(paths.has('users[2]')).toBe(true)
+      expect(paths.size).toBe(4)
+    })
+
+    it('generates paths for nested arrays', () => {
+      const schema: Partial<DescMessage> = {
+        typeName: 'TestMessage',
+        fields: [
+          {
+            name: 'groups',
+            fieldKind: 'list',
+            listKind: 'message',
+            message: {
+              typeName: 'Group',
+              fields: [
+                {
+                  name: 'members',
+                  fieldKind: 'list',
+                  listKind: 'message',
+                  message: {
+                    typeName: 'Member',
+                    fields: [],
+                    oneofs: [],
+                    nestedMessages: [],
+                    nestedEnums: [],
+                  } as DescMessage,
+                } as any,
+              ],
+              oneofs: [],
+              nestedMessages: [],
+              nestedEnums: [],
+            } as DescMessage,
+          } as any,
+        ],
+        oneofs: [],
+        nestedMessages: [],
+        nestedEnums: [],
+      }
+
+      const data = {
+        groups: [
+          {
+            members: [{ name: 'Alice' }, { name: 'Bob' }],
+          },
+        ],
+      }
+
+      const paths = collectExpandablePaths(schema as DescMessage, data)
+
+      expect(paths.has('groups')).toBe(true)
+      expect(paths.has('groups[0]')).toBe(true)
+      expect(paths.has('groups[0].members')).toBe(true)
+      expect(paths.has('groups[0].members[0]')).toBe(true)
+      expect(paths.has('groups[0].members[1]')).toBe(true)
+    })
+
     it('skips oneof fields', () => {
       const schema: Partial<DescMessage> = {
         typeName: 'TestMessage',

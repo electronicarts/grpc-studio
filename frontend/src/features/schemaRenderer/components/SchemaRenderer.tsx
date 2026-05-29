@@ -71,7 +71,6 @@ const SchemaRenderer: React.FC<ProtoMessageRendererProps> = ({
       readOnly={readOnly}
       hideEmptyFields={hideEmptyFields}
       onToggleExpand={toggleExpand}
-      onUpdateForm={updateForm}
       onSetOneOfSelection={setOneOfSelection}
     >
       <div className="space-y-4">
