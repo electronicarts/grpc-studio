@@ -1,23 +1,9 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-import { createContext, useContext, ReactNode, useState, useEffect, useCallback } from 'react'
+import { ReactNode, useState, useEffect, useCallback } from 'react'
+import { DarkModeContext } from './darkModeContext'
 
 const STORAGE_KEY = 'darkMode'
-
-interface DarkModeContextValue {
-  darkMode: boolean
-  toggleDarkMode: () => void
-}
-
-const DarkModeContext = createContext<DarkModeContextValue | null>(null)
-
-export function useDarkModeContext(): DarkModeContextValue {
-  const context = useContext(DarkModeContext)
-  if (!context) {
-    throw new Error('useDarkModeContext must be used within DarkModeProvider')
-  }
-  return context
-}
 
 export function DarkModeProvider({ children }: { children: ReactNode }) {
   const [darkMode, setDarkMode] = useState(() => {

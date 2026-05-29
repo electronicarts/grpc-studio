@@ -14,7 +14,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import type { DescMessage, DescField, DescEnum, DescOneof } from '@bufbuild/protobuf'
+import type { DescMessage, DescField, DescEnum } from '@bufbuild/protobuf'
 import SchemaRenderer from '../components/SchemaRenderer'
 
 // ScalarType enum values

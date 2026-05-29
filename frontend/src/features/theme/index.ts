@@ -2,4 +2,4 @@
 
 export { DarkModeToggle } from './components/DarkModeToggle'
 export { useDarkMode } from './hooks/useDarkMode'
-export { DarkModeProvider } from './contexts/DarkModeContext'
+export { DarkModeProvider } from './contexts/DarkModeProvider'

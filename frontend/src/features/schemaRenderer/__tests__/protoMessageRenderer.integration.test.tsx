@@ -372,7 +372,7 @@ describe('ProtoMessageRenderer Integration Tests', () => {
   describe('Rendering Timestamp Fields', () => {
     it('should render timestamp fields with MUI date picker', () => {
       const onChange = vi.fn()
-      const { container } = render(
+      render(
         <ProtoMessageRenderer
           schema={wellKnownTypesSchema}
           data={{ id: 'test' }}
