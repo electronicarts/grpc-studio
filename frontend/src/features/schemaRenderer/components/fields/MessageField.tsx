@@ -2,25 +2,25 @@
 
 import React from 'react'
 import type { DescField } from '@bufbuild/protobuf'
-import { isStructType, isTimestampType, wrapperPrimitiveType } from '../../../utils/descUtils'
-import TimestampField from './TimestampField'
-import MessageRenderer from './MessageRenderer'
-import MessageFieldFrame from './MessageFieldFrame'
-import StructField from './StructField'
-import WrapperField from './WrapperField'
+import { isStructType, isTimestampType, wrapperPrimitiveType } from '../../../../utils/descUtils'
+import TimestampField from '../wellKnown/TimestampField'
+import MessageRenderer from '../core/MessageRenderer'
+import MessageFieldFrame from '../shared/MessageFieldFrame'
+import StructField from '../struct/StructField'
+import WrapperField from '../wellKnown/WrapperField'
 
-interface NestedMessageFieldProps {
+interface MessageFieldProps {
   field: DescField & { fieldKind: 'message' }
   value: unknown
   onChange: (value: unknown) => void
   path: string
 }
 
-const NestedMessageField: React.FC<NestedMessageFieldProps> = ({ field, value, onChange, path }) => {
+const MessageField: React.FC<MessageFieldProps> = ({ field, value, onChange, path }) => {
   const typeName = field.message.typeName
 
   if (isTimestampType(typeName)) {
-    return <TimestampField fieldName={field.name} value={value} onChange={onChange} />
+    return <TimestampField name={field.name} value={value} onChange={onChange} />
   }
 
   if (isStructType(typeName)) {
@@ -51,4 +51,4 @@ const NestedMessageField: React.FC<NestedMessageFieldProps> = ({ field, value, o
   )
 }
 
-export default NestedMessageField
+export default MessageField

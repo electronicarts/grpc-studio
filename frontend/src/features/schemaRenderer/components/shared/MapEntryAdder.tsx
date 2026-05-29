@@ -1,6 +1,6 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-import { KeyInputAdder } from '../fieldControls/KeyInputAdder'
+import { KeyInputAdder } from './KeyInputAdder'
 import { setObjectEntry } from '../../utils/collectionMutation'
 
 interface MapEntryAdderProps {

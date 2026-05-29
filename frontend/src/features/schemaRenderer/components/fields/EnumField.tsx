@@ -2,8 +2,8 @@
 
 import React from 'react'
 import type { DescEnum } from '@bufbuild/protobuf'
-import { useProtoMessageRendererContext } from '../stores/schemaRendererContext'
-import { FormField } from '../../../components/shared'
+import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
+import { FormField } from '../../../../components/shared'
 
 interface EnumFieldProps {
   name: string

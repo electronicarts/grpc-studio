@@ -1,9 +1,9 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import React from 'react'
-import MessageFieldFrame from './MessageFieldFrame'
-import { StructObjectFields } from './structField/StructObjectFields'
-import { isJsonObject } from './structField/structValueUtils'
+import MessageFieldFrame from '../shared/MessageFieldFrame'
+import { StructObjectFields } from './StructObjectFields'
+import { isJsonObject } from '../../utils/structValueUtils'
 
 interface StructFieldProps {
   name: string

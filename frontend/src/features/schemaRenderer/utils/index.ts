@@ -28,3 +28,17 @@ export { isCompositeField, forEachNestedMessageValue } from './descriptorTravers
 
 // Collection mutation helpers
 export { replaceArrayItem, removeArrayItem, setObjectEntry, removeObjectEntry } from './collectionMutation'
+
+// Map utilities
+export { filterMapEntries } from './mapUtils'
+
+// Struct utilities (google.protobuf.Struct)
+export {
+  STRUCT_KIND_OPTIONS,
+  defaultStructValue,
+  isJsonObject,
+  scalarType,
+  structKind,
+  structKindFieldName,
+  type StructKind,
+} from './structValueUtils'

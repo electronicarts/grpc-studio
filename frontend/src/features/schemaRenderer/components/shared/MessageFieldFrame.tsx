@@ -3,7 +3,7 @@
 import React from 'react'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import { cn } from '@/utils/cn'
-import { useProtoMessageRendererContext } from '../stores/schemaRendererContext'
+import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
 
 interface MessageFieldFrameProps {
   name: string

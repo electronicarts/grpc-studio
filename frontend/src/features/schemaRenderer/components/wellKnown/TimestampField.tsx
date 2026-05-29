@@ -1,17 +1,17 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import React from 'react'
-import { useProtoMessageRendererContext } from '../stores/schemaRendererContext'
-import { FormField } from '../../../components/shared'
-import { MuiDateTimePicker } from '../../../components/ui/mui-datetime-picker'
+import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
+import { FormField } from '../../../../components/shared'
+import { MuiDateTimePicker } from '../../../../components/ui/mui-datetime-picker'
 
 interface TimestampFieldProps {
-  fieldName: string
+  name: string
   value: unknown
   onChange: (value: unknown) => void
 }
 
-const TimestampField: React.FC<TimestampFieldProps> = ({ fieldName, value, onChange }) => {
+const TimestampField: React.FC<TimestampFieldProps> = ({ name, value, onChange }) => {
   const { readOnly } = useProtoMessageRendererContext()
 
   // Convert value to ISO string format expected by MUI picker
@@ -22,7 +22,7 @@ const TimestampField: React.FC<TimestampFieldProps> = ({ fieldName, value, onCha
   }
 
   return (
-    <FormField label={fieldName}>
+    <FormField label={name}>
       <div className="flex items-center gap-2">
         <div className="flex-1">
           <MuiDateTimePicker

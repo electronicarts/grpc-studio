@@ -6,12 +6,12 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { X } from 'lucide-react'
 import type { DescField } from '@bufbuild/protobuf'
-import { useProtoMessageRendererContext } from '../stores/schemaRendererContext'
-import { removeObjectEntry, setObjectEntry } from '../utils/collectionMutation'
-import MessageRenderer from './MessageRenderer'
-import MessageFieldFrame from './MessageFieldFrame'
-import { MapEntryAdder } from './mapField/MapEntryAdder'
-import { useMapEntries } from './mapField/useMapEntries'
+import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
+import { removeObjectEntry, setObjectEntry } from '../../utils/collectionMutation'
+import { filterMapEntries } from '../../utils/mapUtils'
+import MessageRenderer from '../core/MessageRenderer'
+import MessageFieldFrame from '../shared/MessageFieldFrame'
+import { MapEntryAdder } from '../shared/MapEntryAdder'
 
 interface MapFieldProps {
   field: DescField & { fieldKind: 'map' }
@@ -28,7 +28,7 @@ const MapField: React.FC<MapFieldProps> = ({ field, value, onChange, path }) => 
   const isScalarValue = field.mapKind === 'scalar'
   const valueSchema = field.mapKind === 'message' ? field.message : null
 
-  const { allEntries, entries, countDisplay } = useMapEntries({ mapValue, searchQuery })
+  const { allEntries, entries, countDisplay } = filterMapEntries({ mapValue, searchQuery })
 
   return (
     <MessageFieldFrame

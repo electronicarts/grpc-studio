@@ -1,8 +1,8 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import React from 'react'
-import { wrapperPrimitiveType, scalarTypeFromName } from '../../../utils/descUtils'
-import ScalarField from './ScalarField'
+import { wrapperPrimitiveType, scalarTypeFromName } from '../../../../utils/descUtils'
+import ScalarField from '../fields/ScalarField'
 
 interface WrapperFieldProps {
   name: string

@@ -3,11 +3,11 @@
 import React from 'react'
 import { Badge } from '@/components/ui/badge'
 import type { DescField, DescOneof } from '@bufbuild/protobuf'
-import { useProtoMessageRendererContext } from '../stores/schemaRendererContext'
-import { getFieldValue } from '../utils/fieldOperations'
-import { setFieldValue } from '../utils'
-import { fieldTypeName } from '../../../utils/descUtils'
-import FieldRenderer from './FieldRenderer'
+import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
+import { getFieldValue } from '../../utils/fieldOperations'
+import { setFieldValue } from '../../utils'
+import { fieldTypeName } from '../../../../utils/descUtils'
+import FieldRenderer from '../core/FieldRenderer'
 
 interface OneOfFieldProps {
   oneof: DescOneof
@@ -37,7 +37,10 @@ const OneOfField: React.FC<OneOfFieldProps> = ({ oneof, value, onChange, basePat
     }
   }
 
-  const handleSelectionChange = (fieldName: string) => {
+  const handleSelectionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    if (readOnly) return
+
+    const fieldName = e.target.value
     setOneOfSelection(selectionKey, fieldName)
     const newValue = { ...value }
     fields.forEach(f => {
@@ -67,7 +70,7 @@ const OneOfField: React.FC<OneOfFieldProps> = ({ oneof, value, onChange, basePat
 
       <select
         value={selectedField}
-        onChange={e => !readOnly && handleSelectionChange(e.target.value)}
+        onChange={handleSelectionChange}
         disabled={readOnly}
         className="w-full px-3 py-2 border border-purple-300 dark:border-purple-700 rounded-md bg-white dark:bg-gray-800"
       >

@@ -12,7 +12,7 @@ import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { DescMessage, DescField, DescEnum, DescOneof } from '@bufbuild/protobuf'
-import SchemaRenderer from '../components/SchemaRenderer'
+import SchemaRenderer from '../components/core/SchemaRenderer'
 import { collectExpandablePaths } from '../utils/pathAnalysis'
 
 // ScalarType enum values from @bufbuild/protobuf

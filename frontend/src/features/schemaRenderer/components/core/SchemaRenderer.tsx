@@ -20,11 +20,11 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Search, X, ChevronsUpDown, ChevronRight } from 'lucide-react'
 
-import { ProtoMessageRendererProvider } from '../stores/schemaRendererContext'
+import { ProtoMessageRendererProvider } from '../../stores/schemaRendererContext'
 import MessageRenderer from './MessageRenderer'
-import { useSchemaCacheStatus } from '../hooks/useSchemaCacheStatus'
-import { useFormState } from '../hooks/useFormState'
-import type { ProtoMessageRendererProps } from '../types'
+import { useSchemaCacheStatus } from '../../hooks/useSchemaCacheStatus'
+import { useFormState } from '../../hooks/useFormState'
+import type { ProtoMessageRendererProps } from '../../types'
 
 const SchemaRenderer: React.FC<ProtoMessageRendererProps> = ({
   schema,

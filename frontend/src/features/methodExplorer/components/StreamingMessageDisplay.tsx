@@ -1,6 +1,6 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Loader2 } from 'lucide-react'
 import ViewTabs, { type ViewTab } from './ViewTabs'
 import MessageList from './MessageList'
@@ -47,6 +47,15 @@ const StreamingMessageDisplay: React.FC<StreamingMessageDisplayProps> = ({
   const [tab, setTab] = useState<ViewTab>(schema ? 'form' : 'json')
   const effectiveTab = tab === 'form' && !schema ? 'json' : tab
   const showStatusBadge = active !== undefined
+  const prevSchemaRef = useRef(schema)
+
+  // Switch to form view when schema first loads (only when schema transitions from null to value)
+  useEffect(() => {
+    if (schema && !prevSchemaRef.current && tab === 'json') {
+      setTab('form')
+    }
+    prevSchemaRef.current = schema
+  }, [schema, tab])
 
   return (
     <div className="space-y-2">

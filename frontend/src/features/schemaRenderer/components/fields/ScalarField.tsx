@@ -3,40 +3,16 @@
 import React, { useMemo } from 'react'
 import { ScalarType } from '@bufbuild/protobuf'
 import { Input } from '@/components/ui/input'
-import { useProtoMessageRendererContext } from '../stores/schemaRendererContext'
-import { getInputType, parseValue } from '../utils/scalarTypeUtils'
-import { FormField } from '../../../components/shared'
+import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
+import { getInputType, parseValue } from '../../utils/scalarTypeUtils'
+import { bytesToBase64 } from '../../../../utils/bytesUtils'
+import { FormField } from '../../../../components/shared'
 
 interface ScalarFieldProps {
   name: string
   scalar: ScalarType
   value: unknown
   onChange: (value: unknown) => void
-}
-
-/**
- * Convert a Node.js Buffer JSON shape `{ type: "Buffer", data: [...] }`
- * to a base64 string. Returns the original value if it's already a string
- * or doesn't match the Buffer shape.
- */
-function bytesToBase64(value: unknown): string {
-  if (typeof value === 'string') return value
-  if (
-    value &&
-    typeof value === 'object' &&
-    'type' in value &&
-    'data' in value &&
-    value.type === 'Buffer' &&
-    Array.isArray(value.data)
-  ) {
-    const bytes = new Uint8Array(value.data)
-    let binary = ''
-    for (let i = 0; i < bytes.length; i++) {
-      binary += String.fromCharCode(bytes[i])
-    }
-    return btoa(binary)
-  }
-  return String(value ?? '')
 }
 
 const ScalarField: React.FC<ScalarFieldProps> = ({ name, scalar, value, onChange }) => {
@@ -49,13 +25,23 @@ const ScalarField: React.FC<ScalarFieldProps> = ({ name, scalar, value, onChange
     [isBytes, value],
   )
 
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (readOnly) return
+    onChange(e.target.checked)
+  }
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (readOnly) return
+    onChange(parseValue(e.target.value, scalar))
+  }
+
   if (isBool) {
     return (
       <FormField label={name} inline>
         <input
           type="checkbox"
           checked={!!value}
-          onChange={e => !readOnly && onChange(e.target.checked)}
+          onChange={handleCheckboxChange}
           disabled={readOnly}
           className="rounded border-gray-300"
         />
@@ -68,10 +54,7 @@ const ScalarField: React.FC<ScalarFieldProps> = ({ name, scalar, value, onChange
       <Input
         type={inputType}
         value={displayValue}
-        onChange={e => {
-          if (readOnly) return
-          onChange(parseValue(e.target.value, scalar))
-        }}
+        onChange={handleInputChange}
         placeholder={readOnly ? '' : isBytes ? 'Base64-encoded bytes' : `Enter ${name}`}
         disabled={readOnly}
         className="w-full"

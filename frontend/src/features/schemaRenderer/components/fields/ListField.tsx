@@ -5,22 +5,22 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Plus, X } from 'lucide-react'
 import type { DescField } from '@bufbuild/protobuf'
-import { useProtoMessageRendererContext } from '../stores/schemaRendererContext'
-import { removeArrayItem, replaceArrayItem } from '../utils/collectionMutation'
-import { valueMatchesSearch } from '../utils/searchUtils'
+import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
+import { removeArrayItem, replaceArrayItem } from '../../utils/collectionMutation'
+import { valueMatchesSearch } from '../../utils/searchUtils'
 import ScalarField from './ScalarField'
 import EnumField from './EnumField'
-import MessageRenderer from './MessageRenderer'
-import MessageFieldFrame from './MessageFieldFrame'
+import MessageRenderer from '../core/MessageRenderer'
+import MessageFieldFrame from '../shared/MessageFieldFrame'
 
-interface RepeatedFieldProps {
+interface ListFieldProps {
   field: DescField & { fieldKind: 'list' }
   value: unknown[]
   onChange: (value: unknown[]) => void
   path: string
 }
 
-const RepeatedField: React.FC<RepeatedFieldProps> = ({ field, value, onChange, path }) => {
+const ListField: React.FC<ListFieldProps> = ({ field, value, onChange, path }) => {
   const { readOnly, searchQuery } = useProtoMessageRendererContext()
 
   const allItems = Array.isArray(value) ? value : []
@@ -114,4 +114,4 @@ const RepeatedField: React.FC<RepeatedFieldProps> = ({ field, value, onChange, p
   )
 }
 
-export default RepeatedField
+export default ListField
