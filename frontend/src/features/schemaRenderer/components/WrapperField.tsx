@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import React from 'react'
-import { wrapperPrimitiveType } from '../../../utils/descUtils'
+import { wrapperPrimitiveType, scalarTypeFromName } from '../../../utils/descUtils'
 import ScalarField from './ScalarField'
 
 interface WrapperFieldProps {
@@ -17,12 +17,13 @@ function wrapperValue(value: unknown): unknown {
 }
 
 const WrapperField: React.FC<WrapperFieldProps> = ({ name, typeName, value, onChange }) => {
-  const primitiveType = wrapperPrimitiveType(typeName) ?? 'string'
+  const primitiveTypeName = wrapperPrimitiveType(typeName) ?? 'string'
+  const scalar = scalarTypeFromName(primitiveTypeName)
 
   return (
     <ScalarField
       name={name}
-      type={primitiveType}
+      scalar={scalar}
       value={wrapperValue(value)}
       onChange={nextValue => onChange({ value: nextValue })}
     />

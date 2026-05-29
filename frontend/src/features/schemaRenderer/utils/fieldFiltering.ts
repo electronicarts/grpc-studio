@@ -1,9 +1,9 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import type { DescField, DescMessage, DescOneof } from '@bufbuild/protobuf'
-import { isEmptyValue } from '../utils/valueUtils'
-import { valueMatchesSearch } from '../utils/searchUtils'
-import { getFieldValue as getFieldValueUtil } from '../utils/fieldLookup'
+import { isEmpty } from './scalarTypeUtils'
+import { valueMatchesSearch } from './searchUtils'
+import { getFieldValue as getFieldValueUtil } from './fieldLookup'
 import { fieldNestedMessage, fieldTypeName } from '../../../utils/descUtils'
 
 function hasMatchingChildren(
@@ -61,7 +61,7 @@ export function filterFields(
     : regularFields
 
   if (hideEmptyFields) {
-    filteredRegular = filteredRegular.filter(f => !isEmptyValue(getFieldValueUtil(value, f.name)))
+    filteredRegular = filteredRegular.filter(f => !isEmpty(getFieldValueUtil(value, f.name)))
   }
 
   let filteredOneOf = isRoot && searchQuery
@@ -79,7 +79,7 @@ export function filterFields(
 
   if (hideEmptyFields) {
     filteredOneOf = filteredOneOf.filter((oneof) =>
-      oneof.fields.some(f => !isEmptyValue(getFieldValueUtil(value, f.name)))
+      oneof.fields.some(f => !isEmpty(getFieldValueUtil(value, f.name)))
     )
   }
 

@@ -1,0 +1,366 @@
+// Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
+
+import { describe, it, expect } from 'vitest'
+import { collectExpandablePaths, hasDataAtPath } from '../pathAnalysis'
+import type { DescMessage } from '@bufbuild/protobuf'
+
+describe('pathAnalysis', () => {
+  describe('collectExpandablePaths', () => {
+    it('collects paths for nested message fields', () => {
+      const schema: Partial<DescMessage> = {
+        typeName: 'TestMessage',
+        fields: [
+          {
+            name: 'address',
+            fieldKind: 'message',
+            message: {
+              typeName: 'Address',
+              fields: [],
+              oneofs: [],
+              nestedMessages: [],
+              nestedEnums: [],
+            } as DescMessage,
+          } as any,
+          {
+            name: 'name',
+            fieldKind: 'scalar',
+          } as any,
+        ],
+        oneofs: [],
+        nestedMessages: [],
+        nestedEnums: [],
+      }
+
+      const paths = collectExpandablePaths(schema as DescMessage)
+
+      expect(paths.has('address')).toBe(true)
+      expect(paths.has('name')).toBe(false) // scalar fields are not expandable
+      expect(paths.size).toBe(1)
+    })
+
+    it('collects paths for repeated fields', () => {
+      const schema: Partial<DescMessage> = {
+        typeName: 'TestMessage',
+        fields: [
+          {
+            name: 'tags',
+            fieldKind: 'list',
+            listKind: 'scalar',
+          } as any,
+          {
+            name: 'items',
+            fieldKind: 'list',
+            listKind: 'message',
+            message: {
+              typeName: 'Item',
+              fields: [],
+              oneofs: [],
+              nestedMessages: [],
+              nestedEnums: [],
+            } as DescMessage,
+          } as any,
+        ],
+        oneofs: [],
+        nestedMessages: [],
+        nestedEnums: [],
+      }
+
+      const paths = collectExpandablePaths(schema as DescMessage)
+
+      expect(paths.has('tags')).toBe(true)
+      expect(paths.has('items')).toBe(true)
+      expect(paths.size).toBe(2)
+    })
+
+    it('collects paths for map fields', () => {
+      const schema: Partial<DescMessage> = {
+        typeName: 'TestMessage',
+        fields: [
+          {
+            name: 'metadata',
+            fieldKind: 'map',
+            mapKind: 'scalar',
+          } as any,
+          {
+            name: 'configs',
+            fieldKind: 'map',
+            mapKind: 'message',
+            message: {
+              typeName: 'Config',
+              fields: [],
+              oneofs: [],
+              nestedMessages: [],
+              nestedEnums: [],
+            } as DescMessage,
+          } as any,
+        ],
+        oneofs: [],
+        nestedMessages: [],
+        nestedEnums: [],
+      }
+
+      const paths = collectExpandablePaths(schema as DescMessage)
+
+      expect(paths.has('metadata')).toBe(true)
+      expect(paths.has('configs')).toBe(true)
+      expect(paths.size).toBe(2)
+    })
+
+    it('collects deeply nested paths', () => {
+      const schema: Partial<DescMessage> = {
+        typeName: 'TestMessage',
+        fields: [
+          {
+            name: 'user',
+            fieldKind: 'message',
+            message: {
+              typeName: 'User',
+              fields: [
+                {
+                  name: 'profile',
+                  fieldKind: 'message',
+                  message: {
+                    typeName: 'Profile',
+                    fields: [
+                      {
+                        name: 'avatar',
+                        fieldKind: 'message',
+                        message: {
+                          typeName: 'Avatar',
+                          fields: [],
+                          oneofs: [],
+                          nestedMessages: [],
+                          nestedEnums: [],
+                        } as DescMessage,
+                      } as any,
+                    ],
+                    oneofs: [],
+                    nestedMessages: [],
+                    nestedEnums: [],
+                  } as DescMessage,
+                } as any,
+              ],
+              oneofs: [],
+              nestedMessages: [],
+              nestedEnums: [],
+            } as DescMessage,
+          } as any,
+        ],
+        oneofs: [],
+        nestedMessages: [],
+        nestedEnums: [],
+      }
+
+      const paths = collectExpandablePaths(schema as DescMessage)
+
+      expect(paths.has('user')).toBe(true)
+      expect(paths.has('user.profile')).toBe(true)
+      expect(paths.has('user.profile.avatar')).toBe(true)
+      expect(paths.size).toBe(3)
+    })
+
+    it('works with empty schema (no fields)', () => {
+      const schema: Partial<DescMessage> = {
+        typeName: 'EmptyMessage',
+        fields: [],
+        oneofs: [],
+        nestedMessages: [],
+        nestedEnums: [],
+      }
+
+      const paths = collectExpandablePaths(schema as DescMessage)
+
+      expect(paths.size).toBe(0)
+    })
+
+    it('collects paths regardless of data presence (empty form)', () => {
+      const schema: Partial<DescMessage> = {
+        typeName: 'RequestMessage',
+        fields: [
+          {
+            name: 'address',
+            fieldKind: 'message',
+            message: {
+              typeName: 'Address',
+              fields: [
+                {
+                  name: 'street',
+                  fieldKind: 'scalar',
+                } as any,
+              ],
+              oneofs: [],
+              nestedMessages: [],
+              nestedEnums: [],
+            } as DescMessage,
+          } as any,
+          {
+            name: 'items',
+            fieldKind: 'list',
+            listKind: 'message',
+            message: {
+              typeName: 'Item',
+              fields: [],
+              oneofs: [],
+              nestedMessages: [],
+              nestedEnums: [],
+            } as DescMessage,
+          } as any,
+          {
+            name: 'metadata',
+            fieldKind: 'map',
+            mapKind: 'scalar',
+          } as any,
+        ],
+        oneofs: [],
+        nestedMessages: [],
+        nestedEnums: [],
+      }
+
+      // This test verifies the fix: collectExpandablePaths should work
+      // even when there's no data (empty request form case)
+      const paths = collectExpandablePaths(schema as DescMessage)
+
+      expect(paths.has('address')).toBe(true)
+      expect(paths.has('items')).toBe(true)
+      expect(paths.has('metadata')).toBe(true)
+      expect(paths.size).toBe(3)
+    })
+
+    it('skips oneof fields', () => {
+      const schema: Partial<DescMessage> = {
+        typeName: 'TestMessage',
+        fields: [
+          {
+            name: 'normalField',
+            fieldKind: 'message',
+            oneof: undefined,
+            message: {
+              typeName: 'Normal',
+              fields: [],
+              oneofs: [],
+              nestedMessages: [],
+              nestedEnums: [],
+            } as DescMessage,
+          } as any,
+          {
+            name: 'oneofField',
+            fieldKind: 'message',
+            oneof: {
+              name: 'myOneof',
+              fields: [],
+            } as any,
+            message: {
+              typeName: 'OneofMsg',
+              fields: [],
+              oneofs: [],
+              nestedMessages: [],
+              nestedEnums: [],
+            } as DescMessage,
+          } as any,
+        ],
+        oneofs: [
+          {
+            name: 'myOneof',
+            fields: [],
+          } as any,
+        ],
+        nestedMessages: [],
+        nestedEnums: [],
+      }
+
+      const paths = collectExpandablePaths(schema as DescMessage)
+
+      // Only normalField should be collected, oneofField should be skipped
+      expect(paths.has('normalField')).toBe(true)
+      expect(paths.has('oneofField')).toBe(false)
+      expect(paths.size).toBe(1)
+    })
+  })
+
+  describe('hasDataAtPath', () => {
+    it('returns true for existing nested data', () => {
+      const data = {
+        user: {
+          profile: {
+            name: 'John',
+          },
+        },
+      }
+
+      expect(hasDataAtPath(data, 'user')).toBe(true)
+      expect(hasDataAtPath(data, 'user.profile')).toBe(true)
+      expect(hasDataAtPath(data, 'user.profile.name')).toBe(true)
+    })
+
+    it('returns false for non-existing paths', () => {
+      const data = {
+        user: {
+          profile: {
+            name: 'John',
+          },
+        },
+      }
+
+      expect(hasDataAtPath(data, 'user.address')).toBe(false)
+      expect(hasDataAtPath(data, 'user.profile.email')).toBe(false)
+      expect(hasDataAtPath(data, 'nonexistent')).toBe(false)
+    })
+
+    it('returns false for null and undefined values', () => {
+      const data = {
+        user: null,
+        profile: undefined,
+        active: false,
+      }
+
+      expect(hasDataAtPath(data, 'user')).toBe(false)
+      expect(hasDataAtPath(data, 'profile')).toBe(false)
+      expect(hasDataAtPath(data, 'active')).toBe(true) // false is valid data
+    })
+
+    it('handles array notation in paths', () => {
+      const data = {
+        items: [
+          { name: 'item1' },
+          { name: 'item2' },
+        ],
+      }
+
+      expect(hasDataAtPath(data, 'items[0]')).toBe(true)
+      expect(hasDataAtPath(data, 'items[0].name')).toBe(true)
+      expect(hasDataAtPath(data, 'items[1]')).toBe(true)
+      expect(hasDataAtPath(data, 'items[2]')).toBe(false)
+    })
+
+    it('handles empty objects and arrays', () => {
+      const data = {
+        emptyObj: {},
+        emptyArr: [],
+        zero: 0,
+        emptyString: '',
+      }
+
+      expect(hasDataAtPath(data, 'emptyObj')).toBe(true)
+      expect(hasDataAtPath(data, 'emptyArr')).toBe(true)
+      expect(hasDataAtPath(data, 'zero')).toBe(true)
+      expect(hasDataAtPath(data, 'emptyString')).toBe(true)
+    })
+
+    it('handles complex nested paths', () => {
+      const data = {
+        users: [
+          {
+            profile: {
+              contacts: {
+                email: 'test@example.com',
+              },
+            },
+          },
+        ],
+      }
+
+      expect(hasDataAtPath(data, 'users[0].profile.contacts.email')).toBe(true)
+      expect(hasDataAtPath(data, 'users[0].profile.contacts.phone')).toBe(false)
+    })
+  })
+})

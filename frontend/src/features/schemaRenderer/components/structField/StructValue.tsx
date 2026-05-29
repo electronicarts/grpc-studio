@@ -51,7 +51,7 @@ export function StructValue({ label, value, onChange, onRemove }: StructValuePro
     return (
       <ScalarField
         name={selectedFieldName}
-        type={scalarType(value)}
+        scalar={scalarType(value)}
         value={value}
         onChange={onChange}
       />

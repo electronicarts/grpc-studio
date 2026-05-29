@@ -5,21 +5,6 @@
  * Based on proto3 spec: https://protobuf.dev/programming-guides/proto3/
  */
 
-/** Primitive scalar types in proto3 */
-export const SCALAR_TYPES = new Set([
-  'double', 'float',
-  'int32', 'int64', 'uint32', 'uint64', 'sint32', 'sint64',
-  'fixed32', 'fixed64', 'sfixed32', 'sfixed64',
-  'bool', 'string', 'bytes'
-])
-
-/** Numeric types that need number conversion */
-export const NUMERIC_TYPES = new Set([
-  'double', 'float',
-  'int32', 'int64', 'uint32', 'uint64', 'sint32', 'sint64',
-  'fixed32', 'fixed64', 'sfixed32', 'sfixed64'
-])
-
 /** Protobuf wrapper types serialize as bare primitive JSON values. */
 export const WRAPPER_TYPE_TO_SCALAR: Readonly<Record<string, string>> = {
   'google.protobuf.DoubleValue': 'double',

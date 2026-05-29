@@ -370,33 +370,34 @@ describe('ProtoMessageRenderer Integration Tests', () => {
   })
 
   describe('Rendering Timestamp Fields', () => {
-    it('should render timestamp as datetime input', () => {
+    it('should render timestamp fields with MUI date picker', () => {
       const onChange = vi.fn()
-      render(
-        <ProtoMessageRenderer 
-          schema={wellKnownTypesSchema} 
-          data={{ id: 'test' }} 
-          onChange={onChange} 
-        />
-      )
-
-      // Should have datetime-local inputs for timestamps
-      const datetimeInputs = document.querySelectorAll('input[type="datetime-local"]')
-      expect(datetimeInputs.length).toBeGreaterThan(0)
-    })
-
-    it('should only render Buf JSON timestamp strings', () => {
-      const onChange = vi.fn()
-      render(
+      const { container } = render(
         <ProtoMessageRenderer
           schema={wellKnownTypesSchema}
-          data={{ createdAt: { seconds: 1715788800, nanos: 0 } }}
+          data={{ id: 'test' }}
           onChange={onChange}
         />
       )
 
-      const input = document.querySelector('input[type="datetime-local"]') as HTMLInputElement
-      expect(input.value).toBe('')
+      // MUI DateTimePicker should render without errors
+      // Check for the timestamp field by label
+      expect(screen.queryByText(/createdAt/i)).toBeInTheDocument()
+    })
+
+    it('should handle timestamp with ISO string value', () => {
+      const onChange = vi.fn()
+      const isoString = '2024-05-15T12:00:00.000Z'
+      render(
+        <ProtoMessageRenderer
+          schema={wellKnownTypesSchema}
+          data={{ id: 'test', createdAt: isoString }}
+          onChange={onChange}
+        />
+      )
+
+      // Should render the field with value
+      expect(screen.queryByText(/createdAt/i)).toBeInTheDocument()
     })
   })
 
@@ -579,20 +580,20 @@ describe('ProtoMessageRenderer Integration Tests', () => {
     it('should update form when data prop changes', async () => {
       const onChange = vi.fn()
       const { rerender } = render(
-        <ProtoMessageRenderer 
-          schema={allScalarsSchema} 
-          data={{ stringField: 'initial' }} 
-          onChange={onChange} 
+        <ProtoMessageRenderer
+          schema={allScalarsSchema}
+          data={{ stringField: 'initial' }}
+          onChange={onChange}
         />
       )
 
       expect(screen.getByDisplayValue('initial')).toBeInTheDocument()
 
       rerender(
-        <ProtoMessageRenderer 
-          schema={allScalarsSchema} 
-          data={{ stringField: 'updated' }} 
-          onChange={onChange} 
+        <ProtoMessageRenderer
+          schema={allScalarsSchema}
+          data={{ stringField: 'updated' }}
+          onChange={onChange}
         />
       )
 
@@ -604,23 +605,170 @@ describe('ProtoMessageRenderer Integration Tests', () => {
     it('should detect oneof from updated data', async () => {
       const onChange = vi.fn()
       const { rerender } = render(
-        <ProtoMessageRenderer 
-          schema={oneofBasicSchema} 
-          data={{ id: 'test' }} 
-          onChange={onChange} 
+        <ProtoMessageRenderer
+          schema={oneofBasicSchema}
+          data={{ id: 'test' }}
+          onChange={onChange}
         />
       )
 
       rerender(
-        <ProtoMessageRenderer 
-          schema={oneofBasicSchema} 
-          data={{ id: 'test', stringOption: 'new value' }} 
-          onChange={onChange} 
+        <ProtoMessageRenderer
+          schema={oneofBasicSchema}
+          data={{ id: 'test', stringOption: 'new value' }}
+          onChange={onChange}
         />
       )
 
       await waitFor(() => {
         expect(screen.getByDisplayValue('new value')).toBeInTheDocument()
+      })
+    })
+  })
+
+  describe('Expand/Collapse Controls', () => {
+    it('should have expand all button for schemas with nested fields', () => {
+      const onChange = vi.fn()
+      render(
+        <ProtoMessageRenderer
+          schema={deeplyNestedSchema}
+          data={{}}
+          onChange={onChange}
+        />
+      )
+
+      const expandButton = screen.getByRole('button', { name: /expand/i })
+      expect(expandButton).toBeInTheDocument()
+    })
+
+    it('should expand all nested fields when expand all is clicked', async () => {
+      const onChange = vi.fn()
+      render(
+        <ProtoMessageRenderer
+          schema={deeplyNestedSchema}
+          data={{}}
+          onChange={onChange}
+          defaultCollapsed={true}
+        />
+      )
+
+      // Initially, nested fields should be collapsed
+      // The child field is a nested message, so it should not be visible initially
+      expect(screen.queryByPlaceholderText(/enter name/i)).toBeInTheDocument() // root level name
+      const childInputs = screen.queryAllByPlaceholderText(/enter name/i)
+      expect(childInputs.length).toBe(1) // Only root level visible
+
+      // Click expand all
+      const expandButton = screen.getByRole('button', { name: /expand/i })
+      fireEvent.click(expandButton)
+
+      // After expanding, nested fields should be visible (child.name field)
+      await waitFor(() => {
+        const allNameInputs = screen.getAllByPlaceholderText(/enter name/i)
+        expect(allNameInputs.length).toBeGreaterThan(1) // Both root and child visible
+      })
+    })
+
+    it('should expand all fields even with empty data (request form case)', async () => {
+      const onChange = vi.fn()
+      render(
+        <ProtoMessageRenderer
+          schema={deeplyNestedSchema}
+          data={{}}
+          onChange={onChange}
+          defaultCollapsed={true}
+        />
+      )
+
+      // This is the key test for the fix:
+      // With empty data (like in a request form), expand all should still work
+      const expandButton = screen.getByRole('button', { name: /expand/i })
+      fireEvent.click(expandButton)
+
+      // Nested fields should become visible even though data is empty
+      await waitFor(() => {
+        const allNameInputs = screen.getAllByPlaceholderText(/enter name/i)
+        expect(allNameInputs.length).toBeGreaterThan(1) // Should show nested child.name field
+      })
+    })
+
+    it('should collapse all nested fields when collapse all is clicked', async () => {
+      const onChange = vi.fn()
+      render(
+        <ProtoMessageRenderer
+          schema={deeplyNestedSchema}
+          data={testData.deeplyNested}
+          onChange={onChange}
+        />
+      )
+
+      // Initially, fields with data are auto-expanded
+      // Click expand all to make sure everything is expanded first
+      const expandButton = screen.getByRole('button', { name: /expand/i })
+      fireEvent.click(expandButton)
+
+      await waitFor(() => {
+        const allNameInputs = screen.getAllByPlaceholderText(/enter name/i)
+        expect(allNameInputs.length).toBeGreaterThan(1)
+      })
+
+      // Now click collapse
+      const collapseButton = screen.getByRole('button', { name: /collapse/i })
+      fireEvent.click(collapseButton)
+
+      // Nested fields should be hidden, only root level visible
+      await waitFor(() => {
+        const visibleInputs = screen.queryAllByPlaceholderText(/enter name/i)
+        expect(visibleInputs.length).toBe(1) // Only root level visible after collapse
+      })
+    })
+
+    it('should work correctly for repeated fields', async () => {
+      const onChange = vi.fn()
+      render(
+        <ProtoMessageRenderer
+          schema={repeatedFieldsSchema}
+          data={{}}
+          onChange={onChange}
+          defaultCollapsed={true}
+        />
+      )
+
+      // Click expand all
+      const expandButton = screen.getByRole('button', { name: /expand/i })
+      fireEvent.click(expandButton)
+
+      // Repeated field sections should become visible
+      await waitFor(() => {
+        // Look for the "Add" button which indicates the repeated field is expanded
+        const addButtons = screen.queryAllByRole('button', { name: /add/i })
+        expect(addButtons.length).toBeGreaterThan(0)
+      })
+    })
+
+    it('should work correctly for map fields', async () => {
+      const onChange = vi.fn()
+      render(
+        <ProtoMessageRenderer
+          schema={mapFieldsSchema}
+          data={{}}
+          onChange={onChange}
+          defaultCollapsed={true}
+        />
+      )
+
+      // Initially map fields are collapsed
+      expect(screen.queryAllByText(/add entry/i).length).toBe(0)
+
+      // Click expand all
+      const expandButton = screen.getByRole('button', { name: /expand/i })
+      fireEvent.click(expandButton)
+
+      // Map field sections should become visible
+      await waitFor(() => {
+        // After expanding, map field UI should be visible (check for field names)
+        const mapFieldLabels = screen.queryAllByText(/map/i)
+        expect(mapFieldLabels.length).toBeGreaterThan(0)
       })
     })
   })

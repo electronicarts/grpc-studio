@@ -11,8 +11,8 @@ export { getFieldValue, setFieldValue, getNestedValue } from './fieldLookup'
 // OneOf detection
 export { detectOneOfSelections } from './oneOfDetection'
 
-// Value utilities
-export { isScalar, getInputType, parseValue, isEmptyValue } from './valueUtils'
+// Scalar type utilities
+export { getInputType, parseValue, isEmpty } from './scalarTypeUtils'
 
 // Search utilities
 export { valueMatchesSearch, fieldMatchesSearch } from './searchUtils'

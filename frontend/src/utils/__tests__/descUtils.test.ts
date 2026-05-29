@@ -4,6 +4,7 @@ import { describe, it, expect } from 'vitest'
 import { ScalarType } from '@bufbuild/protobuf'
 import {
   scalarTypeName,
+  scalarTypeFromName,
   fieldTypeName,
   fieldNestedMessage,
   isTimestampType,
@@ -297,6 +298,40 @@ describe('descUtils', () => {
 
       // Should work without throwing
       expect(target).toBeInstanceOf(Map)
+    })
+  })
+
+  describe('scalarTypeFromName', () => {
+    it('converts type name strings to ScalarType enum', () => {
+      expect(scalarTypeFromName('string')).toBe(ScalarType.STRING)
+      expect(scalarTypeFromName('int32')).toBe(ScalarType.INT32)
+      expect(scalarTypeFromName('bool')).toBe(ScalarType.BOOL)
+      expect(scalarTypeFromName('double')).toBe(ScalarType.DOUBLE)
+      expect(scalarTypeFromName('bytes')).toBe(ScalarType.BYTES)
+    })
+
+    it('handles all numeric types', () => {
+      expect(scalarTypeFromName('int64')).toBe(ScalarType.INT64)
+      expect(scalarTypeFromName('uint32')).toBe(ScalarType.UINT32)
+      expect(scalarTypeFromName('uint64')).toBe(ScalarType.UINT64)
+      expect(scalarTypeFromName('sint32')).toBe(ScalarType.SINT32)
+      expect(scalarTypeFromName('sint64')).toBe(ScalarType.SINT64)
+      expect(scalarTypeFromName('fixed32')).toBe(ScalarType.FIXED32)
+      expect(scalarTypeFromName('fixed64')).toBe(ScalarType.FIXED64)
+      expect(scalarTypeFromName('sfixed32')).toBe(ScalarType.SFIXED32)
+      expect(scalarTypeFromName('sfixed64')).toBe(ScalarType.SFIXED64)
+      expect(scalarTypeFromName('float')).toBe(ScalarType.FLOAT)
+    })
+
+    it('is case-insensitive', () => {
+      expect(scalarTypeFromName('STRING')).toBe(ScalarType.STRING)
+      expect(scalarTypeFromName('Int32')).toBe(ScalarType.INT32)
+      expect(scalarTypeFromName('BOOL')).toBe(ScalarType.BOOL)
+    })
+
+    it('returns STRING for unknown types', () => {
+      expect(scalarTypeFromName('unknown')).toBe(ScalarType.STRING)
+      expect(scalarTypeFromName('invalid')).toBe(ScalarType.STRING)
     })
   })
 })

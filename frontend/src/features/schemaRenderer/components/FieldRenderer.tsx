@@ -7,7 +7,6 @@ import EnumField from './EnumField'
 import RepeatedField from './RepeatedField'
 import MapField from './MapField'
 import NestedMessageField from './NestedMessageField'
-import { fieldTypeName } from '../../../utils/descUtils'
 
 interface FieldRendererProps {
   field: DescField
@@ -30,7 +29,7 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onChange, p
   }
 
   if (field.fieldKind === 'scalar') {
-    return <ScalarField name={field.name} type={fieldTypeName(field)} value={value} onChange={onChange} />
+    return <ScalarField name={field.name} scalar={field.scalar} value={value} onChange={onChange} />
   }
 
   // message (including well-known types handled inside NestedMessageField)

@@ -12,7 +12,6 @@ import ScalarField from './ScalarField'
 import EnumField from './EnumField'
 import MessageRenderer from './MessageRenderer'
 import MessageFieldFrame from './MessageFieldFrame'
-import { fieldTypeName } from '../../../utils/descUtils'
 
 interface RepeatedFieldProps {
   field: DescField & { fieldKind: 'list' }
@@ -57,7 +56,7 @@ const RepeatedField: React.FC<RepeatedFieldProps> = ({ field, value, onChange, p
             {field.listKind === 'scalar' ? (
               <ScalarField
                 name={field.name}
-                type={fieldTypeName(field)}
+                scalar={field.scalar}
                 value={item}
                 onChange={val => updateItem(index, val)}
               />

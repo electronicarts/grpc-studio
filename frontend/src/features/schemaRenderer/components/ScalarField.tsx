@@ -1,14 +1,15 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import React, { useMemo } from 'react'
+import { ScalarType } from '@bufbuild/protobuf'
 import { Input } from '@/components/ui/input'
 import { useProtoMessageRendererContext } from '../stores/schemaRendererContext'
-import { getInputType, parseValue } from '../utils/valueUtils'
+import { getInputType, parseValue } from '../utils/scalarTypeUtils'
 import { FormField } from '../../../components/shared'
 
 interface ScalarFieldProps {
   name: string
-  type: string
+  scalar: ScalarType
   value: unknown
   onChange: (value: unknown) => void
 }
@@ -38,16 +39,17 @@ function bytesToBase64(value: unknown): string {
   return String(value ?? '')
 }
 
-const ScalarField: React.FC<ScalarFieldProps> = ({ name, type, value, onChange }) => {
+const ScalarField: React.FC<ScalarFieldProps> = ({ name, scalar, value, onChange }) => {
   const { readOnly } = useProtoMessageRendererContext()
-  const inputType = getInputType(type)
-  const isBytes = type === 'bytes'
+  const inputType = getInputType(scalar)
+  const isBytes = scalar === ScalarType.BYTES
+  const isBool = scalar === ScalarType.BOOL
   const displayValue = useMemo(
     () => isBytes ? bytesToBase64(value) : String(value ?? ''),
     [isBytes, value],
   )
 
-  if (type === 'bool') {
+  if (isBool) {
     return (
       <FormField label={name} inline>
         <input
@@ -68,8 +70,7 @@ const ScalarField: React.FC<ScalarFieldProps> = ({ name, type, value, onChange }
         value={displayValue}
         onChange={e => {
           if (readOnly) return
-          const parsed = parseValue(e.target.value, type)
-          onChange(parsed)
+          onChange(parseValue(e.target.value, scalar))
         }}
         placeholder={readOnly ? '' : isBytes ? 'Base64-encoded bytes' : `Enter ${name}`}
         disabled={readOnly}

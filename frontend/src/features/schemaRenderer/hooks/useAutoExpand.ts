@@ -23,10 +23,10 @@ export function useAutoExpand(
   const [autoExpandApplied, setAutoExpandApplied] = useState(false)
 
   useEffect(() => {
-    if (!schema || !formData || !schemasLoaded) return
-    const paths = collectExpandablePaths(schema, formData)
+    if (!schema || !schemasLoaded) return
+    const paths = collectExpandablePaths(schema)
     setAllPaths(paths)
-  }, [schema, formData, schemasLoaded])
+  }, [schema, schemasLoaded])
 
   // Auto-expand sections that have data (runs once on first discovery)
   useEffect(() => {
