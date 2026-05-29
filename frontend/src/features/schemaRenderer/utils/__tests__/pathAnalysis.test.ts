@@ -323,7 +323,7 @@ describe('pathAnalysis', () => {
       expect(paths.has('groups[0].members[1]')).toBe(true)
     })
 
-    it('skips oneof fields', () => {
+    it('collects paths for oneof fields when they have data', () => {
       const schema: Partial<DescMessage> = {
         typeName: 'TestMessage',
         fields: [
@@ -340,15 +340,123 @@ describe('pathAnalysis', () => {
             } as DescMessage,
           } as DescField,
           {
-            name: 'oneofField',
+            name: 'optionA',
             fieldKind: 'message',
             oneof: {
               name: 'myOneof',
               fields: [],
-            } as DescField,
+            },
             message: {
-              typeName: 'OneofMsg',
+              typeName: 'OptionA',
               fields: [],
+              oneofs: [],
+              nestedMessages: [],
+              nestedEnums: [],
+            } as DescMessage,
+          } as DescField,
+          {
+            name: 'optionB',
+            fieldKind: 'scalar',
+            oneof: {
+              name: 'myOneof',
+              fields: [],
+            },
+          } as DescField,
+        ],
+        oneofs: [
+          {
+            name: 'myOneof',
+            fields: [
+              {
+                name: 'optionA',
+                fieldKind: 'message',
+                message: {
+                  typeName: 'OptionA',
+                  fields: [],
+                  oneofs: [],
+                  nestedMessages: [],
+                  nestedEnums: [],
+                } as DescMessage,
+              } as DescField,
+              {
+                name: 'optionB',
+                fieldKind: 'scalar',
+              } as DescField,
+            ],
+          },
+        ],
+        nestedMessages: [],
+        nestedEnums: [],
+      }
+
+      // Data with optionA selected (message type)
+      const dataWithOptionA = {
+        normalField: {},
+        optionA: { someField: 'value' },
+      }
+
+      const pathsWithOptionA = collectExpandablePaths(schema as DescMessage, dataWithOptionA)
+
+      // Should collect both normalField and the selected oneOf option
+      expect(pathsWithOptionA.has('normalField')).toBe(true)
+      expect(pathsWithOptionA.has('optionA')).toBe(true)
+      expect(pathsWithOptionA.has('optionB')).toBe(false) // not selected
+      expect(pathsWithOptionA.size).toBe(2)
+
+      // Data with optionB selected (scalar type)
+      const dataWithOptionB = {
+        normalField: {},
+        optionB: 'some value',
+      }
+
+      const pathsWithOptionB = collectExpandablePaths(schema as DescMessage, dataWithOptionB)
+
+      // optionB is scalar, so it shouldn't be expandable
+      expect(pathsWithOptionB.has('normalField')).toBe(true)
+      expect(pathsWithOptionB.has('optionA')).toBe(false) // not selected
+      expect(pathsWithOptionB.has('optionB')).toBe(false) // scalar, not expandable
+      expect(pathsWithOptionB.size).toBe(1)
+
+      // Data with no oneOf option selected
+      const dataNoSelection = {
+        normalField: {},
+      }
+
+      const pathsNoSelection = collectExpandablePaths(schema as DescMessage, dataNoSelection)
+
+      // Should only collect normalField
+      expect(pathsNoSelection.has('normalField')).toBe(true)
+      expect(pathsNoSelection.has('optionA')).toBe(false)
+      expect(pathsNoSelection.has('optionB')).toBe(false)
+      expect(pathsNoSelection.size).toBe(1)
+    })
+
+    it('collects paths for nested messages inside oneof fields', () => {
+      const schema: Partial<DescMessage> = {
+        typeName: 'TestMessage',
+        fields: [
+          {
+            name: 'payment',
+            fieldKind: 'message',
+            oneof: {
+              name: 'paymentMethod',
+              fields: [],
+            },
+            message: {
+              typeName: 'CreditCard',
+              fields: [
+                {
+                  name: 'billingAddress',
+                  fieldKind: 'message',
+                  message: {
+                    typeName: 'Address',
+                    fields: [],
+                    oneofs: [],
+                    nestedMessages: [],
+                    nestedEnums: [],
+                  } as DescMessage,
+                } as DescField,
+              ],
               oneofs: [],
               nestedMessages: [],
               nestedEnums: [],
@@ -357,20 +465,52 @@ describe('pathAnalysis', () => {
         ],
         oneofs: [
           {
-            name: 'myOneof',
-            fields: [],
-          } as DescField,
+            name: 'paymentMethod',
+            fields: [
+              {
+                name: 'payment',
+                fieldKind: 'message',
+                message: {
+                  typeName: 'CreditCard',
+                  fields: [
+                    {
+                      name: 'billingAddress',
+                      fieldKind: 'message',
+                      message: {
+                        typeName: 'Address',
+                        fields: [],
+                        oneofs: [],
+                        nestedMessages: [],
+                        nestedEnums: [],
+                      } as DescMessage,
+                    } as DescField,
+                  ],
+                  oneofs: [],
+                  nestedMessages: [],
+                  nestedEnums: [],
+                } as DescMessage,
+              } as DescField,
+            ],
+          },
         ],
         nestedMessages: [],
         nestedEnums: [],
       }
 
-      const paths = collectExpandablePaths(schema as DescMessage)
+      const data = {
+        payment: {
+          billingAddress: {
+            street: '123 Main St',
+          },
+        },
+      }
 
-      // Only normalField should be collected, oneofField should be skipped
-      expect(paths.has('normalField')).toBe(true)
-      expect(paths.has('oneofField')).toBe(false)
-      expect(paths.size).toBe(1)
+      const paths = collectExpandablePaths(schema as DescMessage, data)
+
+      // Should collect the oneOf field and its nested message
+      expect(paths.has('payment')).toBe(true)
+      expect(paths.has('payment.billingAddress')).toBe(true)
+      expect(paths.size).toBe(2)
     })
   })
 

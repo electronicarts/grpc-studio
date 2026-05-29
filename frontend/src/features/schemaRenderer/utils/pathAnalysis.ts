@@ -63,10 +63,23 @@ export function collectExpandablePaths(
     if (!messageSchema.fields) return
 
     for (const field of messageSchema.fields) {
+      // Skip oneOf fields - they'll be collected from the oneOf groups below
       if (field.oneof !== undefined) continue
       const fieldPath = basePath ? `${basePath}.${field.name}` : field.name
       const fieldData = messageData ? get(messageData, field.name) : undefined
       processField(field, fieldPath, fieldData)
+    }
+
+    // Collect paths from oneOf groups
+    for (const oneof of messageSchema.oneofs) {
+      for (const field of oneof.fields as unknown as DescField[]) {
+        const fieldPath = basePath ? `${basePath}.${field.name}` : field.name
+        const fieldData = messageData ? get(messageData, field.name) : undefined
+        // Only process if this field has data (i.e., it's the selected oneOf option)
+        if (fieldData !== undefined) {
+          processField(field, fieldPath, fieldData)
+        }
+      }
     }
   }
 
