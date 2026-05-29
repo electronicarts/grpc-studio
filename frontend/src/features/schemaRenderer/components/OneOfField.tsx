@@ -4,7 +4,7 @@ import React from 'react'
 import { Badge } from '@/components/ui/badge'
 import type { DescField, DescOneof } from '@bufbuild/protobuf'
 import { useProtoMessageRendererContext } from '../stores/schemaRendererContext'
-import { getFieldValue } from '../utils/fieldLookup'
+import { getFieldValue } from '../utils/fieldOperations'
 import { setFieldValue } from '../utils'
 import { fieldTypeName } from '../../../utils/descUtils'
 import FieldRenderer from './FieldRenderer'
@@ -46,7 +46,11 @@ const OneOfField: React.FC<OneOfFieldProps> = ({ oneof, value, onChange, basePat
     if (fieldName) {
       const field = fields.find(f => f.name === fieldName)
       if (field) {
-        newValue[fieldName] = field.fieldKind === 'scalar' || field.fieldKind === 'enum' ? undefined : {}
+        // Initialize with default value for message types, omit scalars/enums until user provides value
+        if (field.fieldKind !== 'scalar' && field.fieldKind !== 'enum') {
+          newValue[fieldName] = {}
+        }
+        // For scalar/enum, don't set the key - let the user provide the value
       }
     }
     onChange(newValue)

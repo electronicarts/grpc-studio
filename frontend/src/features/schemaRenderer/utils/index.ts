@@ -5,8 +5,8 @@
  * while the actual implementations live in focused single-responsibility modules.
  */
 
-// Field lookup
-export { getFieldValue, setFieldValue, getNestedValue } from './fieldLookup'
+// Field operations (get/set)
+export { getFieldValue, setFieldValue, getNestedValue } from './fieldOperations'
 
 // OneOf detection
 export { detectOneOfSelections } from './oneOfDetection'

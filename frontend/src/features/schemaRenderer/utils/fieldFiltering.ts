@@ -3,7 +3,7 @@
 import type { DescField, DescMessage, DescOneof } from '@bufbuild/protobuf'
 import { isEmpty } from './scalarTypeUtils'
 import { valueMatchesSearch } from './searchUtils'
-import { getFieldValue as getFieldValueUtil } from './fieldLookup'
+import { getFieldValue as getFieldValueUtil } from './fieldOperations'
 import { fieldNestedMessage, fieldTypeName } from '../../../utils/descUtils'
 
 function hasMatchingChildren(

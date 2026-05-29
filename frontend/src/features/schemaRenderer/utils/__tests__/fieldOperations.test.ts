@@ -1,9 +1,9 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import { describe, it, expect } from 'vitest'
-import { getFieldValue, setFieldValue, getNestedValue } from '../fieldLookup'
+import { getFieldValue, setFieldValue, getNestedValue } from '../fieldOperations'
 
-describe('fieldLookup', () => {
+describe('fieldOperations', () => {
   describe('getFieldValue', () => {
     it('returns field value from object', () => {
       const obj = { name: 'John', age: 30 }
