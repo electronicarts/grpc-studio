@@ -592,6 +592,40 @@ describe('Integration: gRPC pipeline (PetStore)', () => {
       assert.equal(pet.metadata.verified, true)
     })
 
+    it('CreatePet round-trips oneOf message branch (identification.collar)', async () => {
+      // The Identification message has a oneof with both scalar branches
+      // (microchip_id, tattoo_code, tag_number) and one message branch (collar:
+      // CollarInfo). The all-fields test only exercises microchip_id (scalar).
+      // This test covers the message branch end-to-end.
+      const res = await invokeUnary('CreatePet', {
+        pet: {
+          name: 'CollarPet',
+          species: 'SPECIES_CAT',
+          identification: {
+            collar: {
+              color:    'red',
+              material: 'nylon',
+              has_gps:  true,
+            },
+          },
+        },
+      })
+      assertSuccessEnvelope(res)
+
+      type CollarInfo  = { color: string; material: string; has_gps: boolean }
+      type Ident       = { collar?: CollarInfo }
+      type PetData     = { name: string; identification: Ident }
+      const inner = res.body.data as { success: boolean; data: PetData }
+      assert.equal(inner.success, true)
+      assert.equal(inner.data.name, 'CollarPet')
+
+      const collar = inner.data.identification.collar
+      assert.ok(collar, 'identification.collar must be present')
+      assert.equal(collar.color,    'red')
+      assert.equal(collar.material, 'nylon')
+      assert.equal(collar.has_gps,  true)
+    })
+
     it('SearchPets filters by wrapper type max_age_months (raw scalar)', async () => {
       // SearchPetsRequest.max_age_months is an Int32Value — must be sent as a raw number.
       const res = await invokeUnary('SearchPets', { query: '', max_age_months: 24 })
