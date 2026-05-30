@@ -2,8 +2,9 @@
 
 import React from 'react'
 import type { DescField } from '@bufbuild/protobuf'
-import { isStructType, isTimestampType, wrapperPrimitiveType } from '../../../../utils/descUtils'
+import { isStructType, isTimestampType, isDurationType, wrapperPrimitiveType } from '../../../../utils/descUtils'
 import TimestampField from '../wellKnown/TimestampField'
+import DurationField from '../wellKnown/DurationField'
 import MessageRenderer from '../core/MessageRenderer'
 import MessageFieldFrame from '../shared/MessageFieldFrame'
 import StructField from '../struct/StructField'
@@ -21,6 +22,10 @@ const MessageField: React.FC<MessageFieldProps> = ({ field, value, onChange, pat
 
   if (isTimestampType(typeName)) {
     return <TimestampField name={field.name} value={value} onChange={onChange} />
+  }
+
+  if (isDurationType(typeName)) {
+    return <DurationField name={field.name} value={value} onChange={onChange} />
   }
 
   if (isStructType(typeName)) {

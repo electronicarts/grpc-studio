@@ -102,10 +102,36 @@ const fdSet = create(FileDescriptorSetSchema, {
       ],
     },
     {
+      name: 'google/protobuf/duration.proto',
+      package: 'google.protobuf',
+      syntax: 'proto3',
+      messageType: [
+        {
+          name: 'Duration',
+          field: [
+            field({ name: 'seconds', number: 1, type: T.INT64 }),
+            field({ name: 'nanos',   number: 2, type: T.INT32 }),
+          ],
+        },
+      ],
+    },
+    {
+      name: 'google/protobuf/wrappers.proto',
+      package: 'google.protobuf',
+      syntax: 'proto3',
+      messageType: [
+        { name: 'Int32Value',  field: [field({ name: 'value', number: 1, type: T.INT32  })] },
+        { name: 'StringValue', field: [field({ name: 'value', number: 1, type: T.STRING })] },
+        { name: 'FloatValue',  field: [field({ name: 'value', number: 1, type: T.FLOAT  })] },
+        { name: 'DoubleValue', field: [field({ name: 'value', number: 1, type: T.DOUBLE })] },
+        { name: 'BoolValue',   field: [field({ name: 'value', number: 1, type: T.BOOL   })] },
+      ],
+    },
+    {
       name: 'schema_renderer_test.proto',
       package: 'test',
       syntax: 'proto3',
-      dependency: ['google/protobuf/timestamp.proto', 'google/protobuf/struct.proto'],
+      dependency: ['google/protobuf/timestamp.proto', 'google/protobuf/struct.proto', 'google/protobuf/duration.proto', 'google/protobuf/wrappers.proto'],
       enumType: [
         {
           name: 'Status',
@@ -234,6 +260,20 @@ const fdSet = create(FileDescriptorSetSchema, {
           ],
         },
         {
+          name: 'DurationMessage',
+          field: [
+            messageField('dur', 1, '.google.protobuf.Duration'),
+          ],
+        },
+        {
+          name: 'WrapperMessage',
+          field: [
+            messageField('int_val', 1, '.google.protobuf.Int32Value'),
+            messageField('str_val', 2, '.google.protobuf.StringValue'),
+            messageField('float_val', 3, '.google.protobuf.FloatValue'),
+          ],
+        },
+        {
           name: 'Comprehensive',
           oneofDecl: [{ name: 'choice' }],
           field: [
@@ -256,6 +296,8 @@ function schema(typeName: string): DescMessage {
   return desc
 }
 
+export const durationMessageSchema = schema('test.DurationMessage')
+export const wrapperMessageSchema = schema('test.WrapperMessage')
 export const allScalarsSchema = schema('test.AllScalars')
 export const enumSchema = schema('test.EnumMessage')
 export const repeatedFieldsSchema = schema('test.RepeatedFields')
@@ -270,6 +312,7 @@ export const deeplyNestedSchema = schema('test.DeeplyNested')
 export const comprehensiveSchema = schema('test.Comprehensive')
 
 export const schemaCache = new Map<string, DescMessage>([
+  wrapperMessageSchema,
   allScalarsSchema,
   enumSchema,
   repeatedFieldsSchema,
@@ -286,6 +329,11 @@ export const schemaCache = new Map<string, DescMessage>([
   schema('google.protobuf.Struct'),
   schema('google.protobuf.Value'),
   schema('google.protobuf.ListValue'),
+  durationMessageSchema,
+  schema('google.protobuf.Duration'),
+  schema('google.protobuf.Int32Value'),
+  schema('google.protobuf.StringValue'),
+  schema('google.protobuf.FloatValue'),
   schema('test.NestedValue'),
   schema('test.OneofItem'),
 ].map(desc => [desc.typeName, desc]))

@@ -53,7 +53,7 @@ export function StructValue({ label, value, onChange, onRemove }: StructValuePro
         name={selectedFieldName}
         scalar={scalarType(value)}
         value={value}
-        onChange={onChange}
+        onChange={(nextValue) => onChange(nextValue ?? defaultStructValue(kind))}
       />
     )
   }

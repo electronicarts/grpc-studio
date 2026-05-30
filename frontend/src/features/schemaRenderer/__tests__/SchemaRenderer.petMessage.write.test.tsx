@@ -16,6 +16,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { DescMessage, DescField, DescEnum } from '@bufbuild/protobuf'
 import SchemaRenderer from '../components/core/SchemaRenderer'
+import { structMessageSchema, durationMessageSchema } from './protoMessageRenderer.fixtures'
 
 // ScalarType enum values
 const ScalarType = {
@@ -874,6 +875,207 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
         // No undefined values
         expect(Object.values(latestCall).includes(undefined)).toBe(false)
       })
+    })
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Wrapper type field write path
+// Guards against: WrapperField emitting { value: X } instead of raw scalar X,
+// and emitting { value: undefined } (→ {}) when cleared.
+// ---------------------------------------------------------------------------
+
+describe('SchemaRenderer - Wrapper type field write path', () => {
+  const schema = (() => {
+    const StringValueSchema: DescMessage = {
+      typeName: 'google.protobuf.StringValue',
+      fields: [{ name: 'value', fieldKind: 'scalar', scalar: 9 /* STRING */ } as DescField],
+      oneofs: [], nestedMessages: [], nestedEnums: [],
+    } as DescMessage
+
+    return {
+      typeName: 'test.WrapperHolder',
+      fields: [
+        { name: 'description', fieldKind: 'message', message: StringValueSchema } as DescField,
+      ],
+      oneofs: [], nestedMessages: [], nestedEnums: [],
+    } as DescMessage
+  })()
+
+  it('emits raw scalar (not wrapped object) when a wrapper field is filled', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+
+    render(<SchemaRenderer schema={schema} data={{}} onChange={onChange} readOnly={false} />)
+
+    const input = screen.getByPlaceholderText(/Enter description/i)
+    await user.type(input, 'A friendly dog')
+
+    await waitFor(() => {
+      const latest = onChange.mock.calls.at(-1)![0]
+      // Must be a raw string, not { value: 'A friendly dog' }
+      expect(typeof latest.description).toBe('string')
+      expect(latest.description).toBe('A friendly dog')
+    })
+  })
+
+  it('removes the wrapper field key when cleared (no empty-object residue)', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+
+    render(<SchemaRenderer schema={schema} data={{ description: 'hello' }} onChange={onChange} readOnly={false} />)
+
+    const input = screen.getByDisplayValue('hello')
+    await user.clear(input)
+
+    await waitFor(() => {
+      const latest = onChange.mock.calls.at(-1)![0]
+      // Key must be deleted — not {} or { value: undefined }
+      expect('description' in latest).toBe(false)
+    })
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Struct field write path
+// Guards against: clearing a number value in a Struct field causing the kind
+// selector to flip from 'number_value' to 'string_value'.
+// ---------------------------------------------------------------------------
+
+describe('SchemaRenderer - Struct field write path', () => {
+  it('keeps kind as number_value when a Struct number field is cleared', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+
+    render(
+      <SchemaRenderer
+        schema={structMessageSchema}
+        data={{ metadata: { priority: 42 } }}
+        onChange={onChange}
+        readOnly={false}
+      />
+    )
+
+    // Expand to reveal the struct field
+    await user.click(screen.getByRole('button', { name: /expand/i }))
+
+    // The kind selector should show number_value
+    const kindSelect = screen.getByTestId('structField-kindSelect')
+    expect((kindSelect as HTMLSelectElement).value).toBe('number')
+
+    // Clear the number input — the input label is 'number_value'
+    const numberInput = screen.getByDisplayValue('42')
+    await user.clear(numberInput)
+
+    await waitFor(() => {
+      // Kind must still be number — before fix it flipped to 'string'
+      expect((kindSelect as HTMLSelectElement).value).toBe('number')
+
+      // The onChange value must be numeric (0), not a string or undefined
+      const latest = onChange.mock.calls.at(-1)![0]
+      const structValue = (latest.metadata as Record<string, unknown>).priority
+      expect(typeof structValue).toBe('number')
+      expect(structValue).toBe(0)
+    })
+  })
+
+  it('preserves other struct fields when one number field is cleared', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+
+    render(
+      <SchemaRenderer
+        schema={structMessageSchema}
+        data={{ metadata: { priority: 42, label: 'urgent' } }}
+        onChange={onChange}
+        readOnly={false}
+      />
+    )
+
+    await user.click(screen.getByRole('button', { name: /expand/i }))
+
+    const numberInput = screen.getByDisplayValue('42')
+    await user.clear(numberInput)
+
+    await waitFor(() => {
+      const latest = onChange.mock.calls.at(-1)![0]
+      const metadata = latest.metadata as Record<string, unknown>
+      expect(typeof metadata.priority).toBe('number') // still number kind, reset to 0
+      expect(metadata.label).toBe('urgent')           // other field unaffected
+    })
+  })
+})
+
+// ---------------------------------------------------------------------------
+// DurationField write path
+// Guards against: Duration rendering as plain seconds/nanos inputs (wrong) and
+// emitting { seconds: X } (object) instead of a proto JSON string like "86400s".
+// ---------------------------------------------------------------------------
+
+describe('SchemaRenderer - DurationField write path', () => {
+  it('emits a Duration string (not an object) when a value is typed', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+
+    render(<SchemaRenderer schema={durationMessageSchema} data={{}} onChange={onChange} readOnly={false} />)
+
+    await user.type(screen.getByPlaceholderText(/86400s/i), '864000s')
+
+    await waitFor(() => {
+      const latest = onChange.mock.calls.at(-1)![0] as Record<string, unknown>
+      expect(typeof latest.dur).toBe('string')
+      expect(latest.dur).toBe('864000s')
+    })
+  })
+
+  it('removes the key when a Duration field is cleared', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+
+    render(
+      <SchemaRenderer schema={durationMessageSchema} data={{ dur: '86400s' }} onChange={onChange} readOnly={false} />
+    )
+
+    await user.clear(screen.getByDisplayValue('86400s'))
+
+    await waitFor(() => {
+      expect('dur' in (onChange.mock.calls.at(-1)![0] as Record<string, unknown>)).toBe(false)
+    })
+  })
+
+  it('emits the new string when an existing Duration value is changed', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+
+    render(
+      <SchemaRenderer schema={durationMessageSchema} data={{ dur: '3600s' }} onChange={onChange} readOnly={false} />
+    )
+
+    const input = screen.getByDisplayValue('3600s')
+    await user.clear(input)
+    await user.type(input, '7200s')
+
+    await waitFor(() => {
+      const latest = onChange.mock.calls.at(-1)![0] as Record<string, unknown>
+      expect(latest.dur).toBe('7200s')
+    })
+  })
+
+  it('never emits an object for a Duration field across all onChange calls', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+
+    render(<SchemaRenderer schema={durationMessageSchema} data={{}} onChange={onChange} readOnly={false} />)
+
+    await user.type(screen.getByPlaceholderText(/86400s/i), '3600s')
+
+    await waitFor(() => {
+      for (const [call] of onChange.mock.calls as [Record<string, unknown>][]) {
+        if ('dur' in call) {
+          expect(typeof call.dur).not.toBe('object')
+          expect(typeof call.dur).toBe('string')
+        }
+      }
     })
   })
 })

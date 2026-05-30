@@ -15,6 +15,7 @@ export { default as OneOfField } from './fields/OneOfField'
 
 // Well-known types
 export { default as TimestampField } from './wellKnown/TimestampField'
+export { default as DurationField } from './wellKnown/DurationField'
 export { default as WrapperField } from './wellKnown/WrapperField'
 
 // Struct subsystem
