@@ -1,11 +1,20 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-import { fromJson, toJson } from '@bufbuild/protobuf'
-import type { DescMessage, JsonObject as BufJsonObject } from '@bufbuild/protobuf'
+import { fromJson, toJson, createRegistry } from '@bufbuild/protobuf'
+import type { DescMessage, JsonObject as BufJsonObject, Registry } from '@bufbuild/protobuf'
+import * as wkt from '@bufbuild/protobuf/wkt'
 import type { JsonObject } from '@grpc-studio/shared'
 import { cloneJsonObject, isJsonObject, isRecord } from '../../../utils/jsonUtils'
 import { schemaCache } from '../../schemaLoader/lib/schemaCache'
 import { cleanFormData } from '../../../utils/cleanFormData'
+
+// Registry of all well-known types so google.protobuf.Any fields round-trip
+// correctly through fromJson/toJson on the frontend canonicalization layer.
+const wktRegistry: Registry = createRegistry(
+  ...(Object.values(wkt).filter(
+    (v) => typeof v === 'object' && v !== null && 'typeName' in v && 'fields' in v
+  ) as DescMessage[])
+)
 
 export interface Payload {
   display: JsonObject
@@ -32,10 +41,11 @@ export function canonicalizeProtoJson(
   // Protobuf JSON format doesn't support undefined - fields should be omitted
   const cleanedData = cleanFormData(data) as BufJsonObject
 
-  const message = fromJson(schema, cleanedData, { ignoreUnknownFields: false })
+  const message = fromJson(schema, cleanedData, { ignoreUnknownFields: false, registry: wktRegistry })
   const json = toJson(schema, message, {
     useProtoFieldName: true,
     alwaysEmitImplicit: options.alwaysEmitImplicit ?? false,
+    registry: wktRegistry,
   })
 
   if (!isJsonObject(json)) {

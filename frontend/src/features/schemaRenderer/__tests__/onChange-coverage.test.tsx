@@ -13,7 +13,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import SchemaRenderer from '../components/core/SchemaRenderer'
 import {
@@ -26,6 +26,8 @@ import {
   wellKnownTypesSchema,
   structMessageSchema,
   durationMessageSchema,
+  fieldMaskMessageSchema,
+  anyMessageSchema,
   schemaCache as testSchemaMap,
 } from './protoMessageRenderer.fixtures'
 
@@ -259,6 +261,140 @@ describe('DurationField onChange', () => {
           expect(typeof call.dur).not.toBe('object')
         }
       }
+    })
+  })
+})
+
+// ---------------------------------------------------------------------------
+// FieldMaskField
+// ---------------------------------------------------------------------------
+
+describe('FieldMaskField onChange', () => {
+  it('emits a lowerCamelCase path string when a value is entered', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(<SchemaRenderer schema={fieldMaskMessageSchema} data={{}} onChange={onChange} readOnly={false} />)
+
+    await user.type(screen.getByPlaceholderText(/lowerCamelCase/i), 'user.displayName,email')
+
+    await waitFor(() => {
+      expect(latestCall(onChange).mask).toBe('user.displayName,email')
+      expect(typeof latestCall(onChange).mask).toBe('string')
+    })
+  })
+
+  it('emits undefined (field deleted) when the input is cleared', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(
+      <SchemaRenderer schema={fieldMaskMessageSchema} data={{ mask: 'displayName' }} onChange={onChange} readOnly={false} />
+    )
+
+    await user.clear(screen.getByDisplayValue('displayName'))
+
+    await waitFor(() => {
+      expect('mask' in latestCall(onChange)).toBe(false)
+    })
+  })
+
+  it('emits the new string when an existing FieldMask is changed', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(
+      <SchemaRenderer schema={fieldMaskMessageSchema} data={{ mask: 'name' }} onChange={onChange} readOnly={false} />
+    )
+
+    const input = screen.getByDisplayValue('name')
+    await user.clear(input)
+    await user.type(input, 'email,phone')
+
+    await waitFor(() => {
+      expect(latestCall(onChange).mask).toBe('email,phone')
+    })
+  })
+
+  it('never emits an object — value is always a string or absent', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(<SchemaRenderer schema={fieldMaskMessageSchema} data={{}} onChange={onChange} readOnly={false} />)
+
+    await user.type(screen.getByPlaceholderText(/lowerCamelCase/i), 'foo.barBaz')
+
+    await waitFor(() => {
+      for (const [call] of onChange.mock.calls as [Record<string, unknown>][]) {
+        if ('mask' in call) expect(typeof call.mask).toBe('string')
+      }
+    })
+  })
+})
+
+// ---------------------------------------------------------------------------
+// AnyField
+// ---------------------------------------------------------------------------
+
+describe('AnyField onChange', () => {
+  it('emits a parsed JS object when valid JSON is entered', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(<SchemaRenderer schema={anyMessageSchema} data={{}} onChange={onChange} readOnly={false} />)
+
+    const anyJson = JSON.stringify({
+      '@type': 'type.googleapis.com/google.protobuf.StringValue',
+      'value': 'hello',
+    })
+    fireEvent.change(screen.getByTestId('anyField-textarea'), { target: { value: anyJson } })
+
+    await waitFor(() => {
+      const v = latestCall(onChange).payload as Record<string, unknown>
+      expect(v['@type']).toBe('type.googleapis.com/google.protobuf.StringValue')
+      expect(v['value']).toBe('hello')
+      expect(typeof v).toBe('object')
+    })
+  })
+
+  it('emits undefined (field deleted) when the textarea is cleared', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    const initial = { '@type': 'type.googleapis.com/google.protobuf.StringValue', 'value': 'hi' }
+    render(
+      <SchemaRenderer schema={anyMessageSchema} data={{ payload: initial }} onChange={onChange} readOnly={false} />
+    )
+
+    fireEvent.change(screen.getByTestId('anyField-textarea'), { target: { value: '' } })
+
+    await waitFor(() => {
+      expect('payload' in latestCall(onChange)).toBe(false)
+    })
+  })
+
+  it('does not emit when the JSON is invalid (user is mid-type)', async () => {
+    const onChange = vi.fn()
+    render(<SchemaRenderer schema={anyMessageSchema} data={{}} onChange={onChange} readOnly={false} />)
+
+    // Partial/invalid JSON — onChange must NOT be called
+    fireEvent.change(screen.getByTestId('anyField-textarea'), { target: { value: '{ "@type": ' } })
+
+    await new Promise(r => setTimeout(r, 30))
+    expect(onChange.mock.calls.length).toBe(0)
+  })
+
+  it('emits the new object when an existing Any value is changed', async () => {
+    const onChange = vi.fn()
+    const initial = { '@type': 'type.googleapis.com/google.protobuf.StringValue', 'value': 'old' }
+    render(
+      <SchemaRenderer schema={anyMessageSchema} data={{ payload: initial }} onChange={onChange} readOnly={false} />
+    )
+
+    const updated = JSON.stringify({
+      '@type': 'type.googleapis.com/google.protobuf.Int32Value',
+      'value': 42,
+    })
+    fireEvent.change(screen.getByTestId('anyField-textarea'), { target: { value: updated } })
+
+    await waitFor(() => {
+      const v = latestCall(onChange).payload as Record<string, unknown>
+      expect(v['@type']).toBe('type.googleapis.com/google.protobuf.Int32Value')
+      expect(v['value']).toBe(42)
     })
   })
 })

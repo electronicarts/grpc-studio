@@ -8,6 +8,7 @@ import {
 
 
 
+
 vi.mock('../../schemaLoader/lib/schemaCache', () => ({
   schemaCache: {
     getCachedSchema: vi.fn((type: string) => testSchemaMap.get(type) ?? null),
@@ -125,5 +126,67 @@ describe('Duration well-known type field', () => {
     // { seconds: 86400 }, which fromJson rejects for a well-known Duration field.
     expect(() => toWireFormat({ dur: { seconds: 86400 } }, 'test.DurationMessage'))
       .toThrow('cannot decode message google.protobuf.Duration from JSON')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// FieldMask well-known type (google.protobuf.FieldMask)
+// Proto3 JSON encodes FieldMask as a comma-separated lowerCamelCase string.
+// bufbuild rejects snake_case paths; only camelCase is valid.
+// ---------------------------------------------------------------------------
+
+describe('FieldMask well-known type field', () => {
+  it('accepts lowerCamelCase field paths', () => {
+    const payload = toWireFormat({ mask: 'user.displayName,email' }, 'test.FieldMaskMessage')
+    expect(payload.wire.mask).toBe('user.displayName,email')
+  })
+
+  it('accepts a single lowerCamelCase path', () => {
+    const payload = toWireFormat({ mask: 'displayName' }, 'test.FieldMaskMessage')
+    expect(typeof payload.wire.mask).toBe('string')
+  })
+
+  it('omits absent FieldMask field', () => {
+    const payload = toWireFormat({}, 'test.FieldMaskMessage')
+    expect(payload.wire).toEqual({})
+  })
+
+  it('throws when FieldMask field receives snake_case paths — bufbuild requires lowerCamelCase', () => {
+    expect(() => toWireFormat({ mask: 'user.display_name' }, 'test.FieldMaskMessage'))
+      .toThrow('path names must be lowerCamelCase')
+  })
+
+  it('throws when FieldMask field receives an object — pre-fix MessageRenderer bug', () => {
+    // Before fix: would render as a repeated-string list, producing { paths: [...] }
+    expect(() => toWireFormat({ mask: { paths: ['displayName'] } }, 'test.FieldMaskMessage'))
+      .toThrow('cannot decode message google.protobuf.FieldMask from JSON')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Any well-known type (google.protobuf.Any)
+// Proto3 JSON: { "@type": "type.googleapis.com/...", ...fields }
+// Requires the backend to pass { registry } to fromJson/toJson.
+// ---------------------------------------------------------------------------
+
+describe('Any well-known type field', () => {
+  it('accepts an Any object with a "@type" key', () => {
+    const input = { '@type': 'type.googleapis.com/google.protobuf.StringValue', 'value': 'hello' }
+    // AnyField stores the parsed JS object; fromJson needs { registry } on the backend.
+    // On the frontend payload layer, the value is passed through as-is (the backend handles Any).
+    const payload = toWireFormat({ payload: input }, 'test.AnyMessage')
+    // The wire output contains the Any object with @type preserved
+    expect((payload.wire.payload as Record<string, unknown>)['@type'])
+      .toBe('type.googleapis.com/google.protobuf.StringValue')
+  })
+
+  it('omits absent Any field', () => {
+    const payload = toWireFormat({}, 'test.AnyMessage')
+    expect(payload.wire).toEqual({})
+  })
+
+  it('throws when Any field receives a plain string instead of an object', () => {
+    expect(() => toWireFormat({ payload: 'not-an-object' }, 'test.AnyMessage'))
+      .toThrow()
   })
 })

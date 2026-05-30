@@ -102,6 +102,33 @@ const fdSet = create(FileDescriptorSetSchema, {
       ],
     },
     {
+      name: 'google/protobuf/field_mask.proto',
+      package: 'google.protobuf',
+      syntax: 'proto3',
+      messageType: [
+        {
+          name: 'FieldMask',
+          field: [
+            field({ name: 'paths', number: 1, type: T.STRING, label: L.REPEATED }),
+          ],
+        },
+      ],
+    },
+    {
+      name: 'google/protobuf/any.proto',
+      package: 'google.protobuf',
+      syntax: 'proto3',
+      messageType: [
+        {
+          name: 'Any',
+          field: [
+            field({ name: 'type_url', number: 1, type: T.STRING }),
+            field({ name: 'value',    number: 2, type: T.BYTES  }),
+          ],
+        },
+      ],
+    },
+    {
       name: 'google/protobuf/duration.proto',
       package: 'google.protobuf',
       syntax: 'proto3',
@@ -131,7 +158,7 @@ const fdSet = create(FileDescriptorSetSchema, {
       name: 'schema_renderer_test.proto',
       package: 'test',
       syntax: 'proto3',
-      dependency: ['google/protobuf/timestamp.proto', 'google/protobuf/struct.proto', 'google/protobuf/duration.proto', 'google/protobuf/wrappers.proto'],
+      dependency: ['google/protobuf/timestamp.proto', 'google/protobuf/struct.proto', 'google/protobuf/field_mask.proto', 'google/protobuf/any.proto', 'google/protobuf/duration.proto', 'google/protobuf/wrappers.proto'],
       enumType: [
         {
           name: 'Status',
@@ -260,6 +287,14 @@ const fdSet = create(FileDescriptorSetSchema, {
           ],
         },
         {
+          name: 'FieldMaskMessage',
+          field: [ messageField('mask', 1, '.google.protobuf.FieldMask') ],
+        },
+        {
+          name: 'AnyMessage',
+          field: [ messageField('payload', 1, '.google.protobuf.Any') ],
+        },
+        {
           name: 'DurationMessage',
           field: [
             messageField('dur', 1, '.google.protobuf.Duration'),
@@ -296,6 +331,8 @@ function schema(typeName: string): DescMessage {
   return desc
 }
 
+export const fieldMaskMessageSchema = schema('test.FieldMaskMessage')
+export const anyMessageSchema = schema('test.AnyMessage')
 export const durationMessageSchema = schema('test.DurationMessage')
 export const wrapperMessageSchema = schema('test.WrapperMessage')
 export const allScalarsSchema = schema('test.AllScalars')
@@ -329,7 +366,11 @@ export const schemaCache = new Map<string, DescMessage>([
   schema('google.protobuf.Struct'),
   schema('google.protobuf.Value'),
   schema('google.protobuf.ListValue'),
+  fieldMaskMessageSchema,
+  anyMessageSchema,
   durationMessageSchema,
+  schema('google.protobuf.FieldMask'),
+  schema('google.protobuf.Any'),
   schema('google.protobuf.Duration'),
   schema('google.protobuf.Int32Value'),
   schema('google.protobuf.StringValue'),

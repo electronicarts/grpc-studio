@@ -3,6 +3,7 @@
 import {
   fromJson,
   toJson,
+  createRegistry,
   type DescMessage,
   type DescMethod,
   type DescMethodBiDiStreaming,
@@ -11,7 +12,17 @@ import {
   type DescMethodUnary,
   type JsonValue as BufJsonValue,
   type MessageInitShape,
+  type Registry,
 } from '@bufbuild/protobuf'
+import * as wkt from '@bufbuild/protobuf/wkt'
+
+// Registry of all well-known types so google.protobuf.Any fields can be
+// decoded and encoded by fromJson/toJson without a "not in registry" error.
+const wktRegistry: Registry = createRegistry(
+  ...(Object.values(wkt).filter(
+    (v) => typeof v === 'object' && v !== null && 'typeName' in v && 'fields' in v
+  ) as DescMessage[])
+)
 import { Code, ConnectError, createClient, type CallOptions } from '@connectrpc/connect'
 import type { JsonValue } from '@grpc-studio/shared'
 import configManager from '../../config/configManager.js'
@@ -207,11 +218,11 @@ export function formatConnectError(error: unknown): FormattedGrpcError {
 }
 
 function toProtoRequest(desc: DescMessage, data: JsonValue | undefined): MessageInitShape<DescMessage> {
-  return fromJson(desc, (data ?? {}) as BufJsonValue, { ignoreUnknownFields: true }) as MessageInitShape<DescMessage>
+  return fromJson(desc, (data ?? {}) as BufJsonValue, { ignoreUnknownFields: true, registry: wktRegistry }) as MessageInitShape<DescMessage>
 }
 
 function toJsonResponse(desc: DescMessage, message: unknown): JsonValue {
-  return toJson(desc, message as never, { alwaysEmitImplicit: true, useProtoFieldName: true }) as JsonValue
+  return toJson(desc, message as never, { alwaysEmitImplicit: true, useProtoFieldName: true, registry: wktRegistry }) as JsonValue
 }
 
 async function* toConnectRequestStream(

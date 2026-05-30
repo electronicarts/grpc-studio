@@ -4,7 +4,7 @@ import type { DescField, DescMessage } from '@bufbuild/protobuf'
 import { ScalarType, fromBinary, createFileRegistry } from '@bufbuild/protobuf'
 import { FileDescriptorSetSchema } from '@bufbuild/protobuf/wkt'
 import { WRAPPER_TYPE_TO_SCALAR } from '../types/protoConstants'
-import { isWellKnownTimestampType, isWellKnownDurationType } from './protobufJson'
+import { isWellKnownTimestampType, isWellKnownDurationType, isWellKnownFieldMaskType, isWellKnownAnyType } from './protobufJson'
 
 export function scalarTypeName(s: ScalarType): string {
   return ScalarType[s].toLowerCase()
@@ -46,6 +46,14 @@ export function isTimestampType(typeName: string): boolean {
 
 export function isDurationType(typeName: string): boolean {
   return isWellKnownDurationType(typeName)
+}
+
+export function isFieldMaskType(typeName: string): boolean {
+  return isWellKnownFieldMaskType(typeName)
+}
+
+export function isAnyType(typeName: string): boolean {
+  return isWellKnownAnyType(typeName)
 }
 
 export function isStructType(typeName: string): boolean {
