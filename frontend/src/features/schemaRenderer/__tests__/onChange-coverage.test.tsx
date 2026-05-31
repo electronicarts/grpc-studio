@@ -270,47 +270,76 @@ describe('DurationField onChange', () => {
 // ---------------------------------------------------------------------------
 
 describe('FieldMaskField onChange', () => {
-  it('emits a lowerCamelCase path string when a value is entered', async () => {
+  it('emits a comma-separated string when a path is added', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
     render(<SchemaRenderer schema={fieldMaskMessageSchema} data={{}} onChange={onChange} readOnly={false} />)
 
-    await user.type(screen.getByPlaceholderText(/lowerCamelCase/i), 'user.displayName,email')
+    await user.type(screen.getByPlaceholderText(/lowerCamelCase path/i), 'user.displayName')
+    await user.click(screen.getByTestId('fieldMask-addButton'))
 
     await waitFor(() => {
-      expect(latestCall(onChange).mask).toBe('user.displayName,email')
+      expect(latestCall(onChange).mask).toBe('user.displayName')
       expect(typeof latestCall(onChange).mask).toBe('string')
     })
   })
 
-  it('emits undefined (field deleted) when the input is cleared', async () => {
-    const user = userEvent.setup()
-    const onChange = vi.fn()
-    render(
-      <SchemaRenderer schema={fieldMaskMessageSchema} data={{ mask: 'displayName' }} onChange={onChange} readOnly={false} />
-    )
-
-    await user.clear(screen.getByDisplayValue('displayName'))
-
-    await waitFor(() => {
-      expect('mask' in latestCall(onChange)).toBe(false)
-    })
-  })
-
-  it('emits the new string when an existing FieldMask is changed', async () => {
+  it('appends to the string when a second path is added', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
     render(
       <SchemaRenderer schema={fieldMaskMessageSchema} data={{ mask: 'name' }} onChange={onChange} readOnly={false} />
     )
 
-    const input = screen.getByDisplayValue('name')
-    await user.clear(input)
-    await user.type(input, 'email,phone')
+    await user.type(screen.getByPlaceholderText(/lowerCamelCase path/i), 'email')
+    await user.click(screen.getByTestId('fieldMask-addButton'))
 
     await waitFor(() => {
-      expect(latestCall(onChange).mask).toBe('email,phone')
+      expect(latestCall(onChange).mask).toBe('name,email')
     })
+  })
+
+  it('emits undefined (field deleted) when the last path chip is removed', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(
+      <SchemaRenderer schema={fieldMaskMessageSchema} data={{ mask: 'displayName' }} onChange={onChange} readOnly={false} />
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Remove path displayName' }))
+
+    await waitFor(() => {
+      expect('mask' in latestCall(onChange)).toBe(false)
+    })
+  })
+
+  it('removes only the clicked path chip, preserving others', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(
+      <SchemaRenderer schema={fieldMaskMessageSchema} data={{ mask: 'name,email,phone' }} onChange={onChange} readOnly={false} />
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Remove path email' }))
+
+    await waitFor(() => {
+      expect(latestCall(onChange).mask).toBe('name,phone')
+    })
+  })
+
+  it('ignores duplicate paths — does not add the same path twice', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(
+      <SchemaRenderer schema={fieldMaskMessageSchema} data={{ mask: 'name' }} onChange={onChange} readOnly={false} />
+    )
+
+    const countBefore = onChange.mock.calls.length
+    await user.type(screen.getByPlaceholderText(/lowerCamelCase path/i), 'name')
+    await user.click(screen.getByTestId('fieldMask-addButton'))
+
+    await new Promise(r => setTimeout(r, 30))
+    expect(onChange.mock.calls.length).toBe(countBefore)
   })
 
   it('never emits an object — value is always a string or absent', async () => {
@@ -318,7 +347,8 @@ describe('FieldMaskField onChange', () => {
     const onChange = vi.fn()
     render(<SchemaRenderer schema={fieldMaskMessageSchema} data={{}} onChange={onChange} readOnly={false} />)
 
-    await user.type(screen.getByPlaceholderText(/lowerCamelCase/i), 'foo.barBaz')
+    await user.type(screen.getByPlaceholderText(/lowerCamelCase path/i), 'foo.barBaz')
+    await user.click(screen.getByTestId('fieldMask-addButton'))
 
     await waitFor(() => {
       for (const [call] of onChange.mock.calls as [Record<string, unknown>][]) {

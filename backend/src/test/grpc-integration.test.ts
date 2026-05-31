@@ -649,6 +649,67 @@ describe('Integration: gRPC pipeline (PetStore)', () => {
       assert.ok(inner.data.pets.some((p) => p.name === 'Luna'))
     })
 
+    it('UpdatePet with FieldMask only updates the masked fields', async () => {
+      // First create a pet we can safely mutate without affecting other tests
+      const createRes = await invokeUnary('CreatePet', {
+        pet: { name: 'MaskTestPet', species: 'SPECIES_CAT', breed: 'Siamese', age_months: 12 },
+      })
+      assertSuccessEnvelope(createRes)
+      const petId = ((createRes.body.data as { success: boolean; data: { id: string } }).data).id
+
+      // Update only name and age_months via FieldMask (lowerCamelCase paths)
+      const updateRes = await invokeUnary('UpdatePet', {
+        pet: { id: petId, name: 'MaskTestPet-Renamed', breed: 'Persian', age_months: 24 },
+        update_mask: 'name,ageMonths',   // FieldMask as lowerCamelCase string
+      })
+      assertSuccessEnvelope(updateRes)
+
+      type PetData = { id: string; name: string; breed: string; age_months: number }
+      const inner = updateRes.body.data as { success: boolean; data: PetData }
+      assert.equal(inner.success, true)
+      // Masked fields are updated
+      assert.equal(inner.data.name,       'MaskTestPet-Renamed')
+      assert.equal(inner.data.age_months, 24)
+      // Non-masked field is unchanged (breed was not in the mask)
+      assert.equal(inner.data.breed, 'Siamese')
+    })
+
+    it('CreatePet and GetPet round-trip google.protobuf.Any field (extra_info)', async () => {
+      // Any containing a StringValue — a well-known type in the backend registry
+      const createRes = await invokeUnary('CreatePet', {
+        pet: {
+          name: 'AnyPet',
+          species: 'SPECIES_DOG',
+          extra_info: {
+            '@type': 'type.googleapis.com/google.protobuf.StringValue',
+            'value': 'some-extra-data',
+          },
+        },
+      })
+      assertSuccessEnvelope(createRes)
+
+      type PetData = { id: string; name: string; extra_info: Record<string, unknown> }
+      const createInner = createRes.body.data as { success: boolean; data: PetData }
+      assert.equal(createInner.success, true)
+      const petId = createInner.data.id
+
+      // extra_info must come back as a JSON object with @type preserved
+      const ei = createInner.data.extra_info
+      assert.ok(ei, 'extra_info must be present in CreatePet response')
+      assert.equal(ei['@type'], 'type.googleapis.com/google.protobuf.StringValue')
+      assert.equal(ei['value'], 'some-extra-data')
+
+      // Fetch the pet and verify extra_info survives a round-trip through the store
+      const getRes = await invokeUnary('GetPet', { id: petId })
+      assertSuccessEnvelope(getRes)
+
+      const getInner = getRes.body.data as { success: boolean; data: PetData }
+      const storedEi = getInner.data.extra_info
+      assert.ok(storedEi, 'extra_info must be present in GetPet response')
+      assert.equal(storedEi['@type'], 'type.googleapis.com/google.protobuf.StringValue')
+      assert.equal(storedEi['value'], 'some-extra-data')
+    })
+
     describe('error paths', () => {
       it('returns METHOD_ERROR for gRPC NOT_FOUND', async () => {
         const res = await invokeUnary('GetPet', { id: 'does-not-exist' })

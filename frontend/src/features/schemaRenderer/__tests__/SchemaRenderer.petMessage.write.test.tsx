@@ -16,7 +16,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { DescMessage, DescField, DescEnum } from '@bufbuild/protobuf'
 import SchemaRenderer from '../components/core/SchemaRenderer'
-import { structMessageSchema, durationMessageSchema } from './protoMessageRenderer.fixtures'
+import { structMessageSchema, durationMessageSchema, fieldMaskMessageSchema } from './protoMessageRenderer.fixtures'
 
 // ScalarType enum values
 const ScalarType = {
@@ -1004,6 +1004,86 @@ describe('SchemaRenderer - Struct field write path', () => {
       expect(metadata.label).toBe('urgent')           // other field unaffected
     })
   })
+})
+
+// ---------------------------------------------------------------------------
+// FieldMaskField write path
+//
+// Two scenarios are tested:
+//   A. No sibling message in parent → free-text KeyInputAdder fallback
+//   B. Sibling message present   → dropdown selector showing derived paths
+// ---------------------------------------------------------------------------
+
+describe('SchemaRenderer - FieldMaskField write path', () => {
+  // ── Scenario A: fieldMaskMessageSchema has only the mask field, no sibling ──
+
+  it('adds a path via free-text input when no sibling message provides known paths', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(<SchemaRenderer schema={fieldMaskMessageSchema} data={{}} onChange={onChange} readOnly={false} />)
+
+    await user.type(screen.getByPlaceholderText(/lowerCamelCase path/i), 'displayName')
+    await user.click(screen.getByTestId('fieldMask-addButton'))
+
+    await waitFor(() => {
+      const latest = onChange.mock.calls.at(-1)![0] as Record<string, unknown>
+      expect(latest.mask).toBe('displayName')
+      expect(typeof latest.mask).toBe('string')
+    })
+  })
+
+  it('appends a second path to the comma-separated string', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(<SchemaRenderer schema={fieldMaskMessageSchema} data={{ mask: 'name' }} onChange={onChange} readOnly={false} />)
+
+    await user.type(screen.getByPlaceholderText(/lowerCamelCase path/i), 'email')
+    await user.click(screen.getByTestId('fieldMask-addButton'))
+
+    await waitFor(() => {
+      expect((onChange.mock.calls.at(-1)![0] as Record<string, unknown>).mask).toBe('name,email')
+    })
+  })
+
+  it('removes a path chip, deleting the key entirely when the list empties', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(<SchemaRenderer schema={fieldMaskMessageSchema} data={{ mask: 'displayName' }} onChange={onChange} readOnly={false} />)
+
+    await user.click(screen.getByRole('button', { name: 'Remove path displayName' }))
+
+    await waitFor(() => {
+      expect('mask' in (onChange.mock.calls.at(-1)![0] as Record<string, unknown>)).toBe(false)
+    })
+  })
+
+  it('removes only the clicked chip, preserving siblings', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(<SchemaRenderer schema={fieldMaskMessageSchema} data={{ mask: 'name,email,phone' }} onChange={onChange} readOnly={false} />)
+
+    await user.click(screen.getByRole('button', { name: 'Remove path email' }))
+
+    await waitFor(() => {
+      expect((onChange.mock.calls.at(-1)![0] as Record<string, unknown>).mask).toBe('name,phone')
+    })
+  })
+
+  it('never emits an object — value is always a string or absent', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(<SchemaRenderer schema={fieldMaskMessageSchema} data={{}} onChange={onChange} readOnly={false} />)
+
+    await user.type(screen.getByPlaceholderText(/lowerCamelCase path/i), 'ageMonths')
+    await user.click(screen.getByTestId('fieldMask-addButton'))
+
+    await waitFor(() => {
+      for (const [call] of onChange.mock.calls as [Record<string, unknown>][]) {
+        if ('mask' in call) expect(typeof call.mask).toBe('string')
+      }
+    })
+  })
+
 })
 
 // ---------------------------------------------------------------------------

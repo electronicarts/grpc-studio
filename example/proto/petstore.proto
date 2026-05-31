@@ -7,6 +7,8 @@ import "google/protobuf/duration.proto";
 import "google/protobuf/wrappers.proto";
 import "google/protobuf/struct.proto";
 import "google/protobuf/empty.proto";
+import "google/protobuf/any.proto";
+import "google/protobuf/field_mask.proto";
 
 // ---------------------------------------------------------------------------
 // Enums
@@ -141,6 +143,9 @@ message Pet {
 
   // Struct — arbitrary JSON-like metadata
   google.protobuf.Struct metadata = 21;
+
+  // Any — extensible typed payload (e.g. for event-specific data)
+  google.protobuf.Any extra_info = 22;
 }
 
 // ---------------------------------------------------------------------------
@@ -157,6 +162,8 @@ message GetPetRequest {
 
 message UpdatePetRequest {
   Pet pet = 1;
+  // Fields to update; omitting this performs a full replacement.
+  google.protobuf.FieldMask update_mask = 2;
 }
 
 message DeletePetRequest {
