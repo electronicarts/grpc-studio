@@ -66,9 +66,14 @@ function testRegistry(): FileRegistry {
   return registry
 }
 
-function repository(registry: FileRegistry): Pick<ReflectionSchemaRepository, 'getFileRegistry'> {
+function repository(registry: FileRegistry): Pick<ReflectionSchemaRepository, 'getFileRegistry' | 'getAllFileDescriptorSet'> {
+  // Convert FileRegistry to FileDescriptorSet for getAllFileDescriptorSet
+  const files = Array.from(registry.files)
+  const fileDescriptorSet = create(FileDescriptorSetSchema, { file: files.map(f => f.proto) })
+
   return {
     getFileRegistry: async () => registry,
+    getAllFileDescriptorSet: async () => fileDescriptorSet,
   }
 }
 
@@ -296,8 +301,10 @@ describe('GrpcMethodInvokerService', () => {
     it('should throw when service not found', async () => {
       const mockRepo = {
         getFileRegistry: async () => ({
-          getService: () => null
-        })
+          getService: () => null,
+          files: []
+        }),
+        getAllFileDescriptorSet: async () => create(FileDescriptorSetSchema, { file: [] })
       }
       const mockTransport = {} as Transport
       const invoker = new GrpcMethodInvokerService(mockRepo, provider(mockTransport))
@@ -337,8 +344,10 @@ describe('GrpcMethodInvokerService', () => {
     it('should include service name in error messages', async () => {
       const mockRepo = {
         getFileRegistry: async () => ({
-          getService: () => null
-        })
+          getService: () => null,
+          files: []
+        }),
+        getAllFileDescriptorSet: async () => create(FileDescriptorSetSchema, { file: [] })
       }
       const mockTransport = {} as Transport
       const invoker = new GrpcMethodInvokerService(mockRepo, provider(mockTransport))
@@ -383,8 +392,10 @@ describe('GrpcMethodInvokerService', () => {
 
       const mockRepo = {
         getFileRegistry: async () => ({
-          getService: () => null
-        })
+          getService: () => null,
+          files: []
+        }),
+        getAllFileDescriptorSet: async () => create(FileDescriptorSetSchema, { file: [] })
       }
       const mockTransport = {} as Transport
       const invoker = new GrpcMethodInvokerService(mockRepo, provider(mockTransport))

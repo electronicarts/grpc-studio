@@ -8,6 +8,7 @@ import type { DescField } from '@bufbuild/protobuf'
 import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
 import { removeArrayItem, replaceArrayItem } from '../../utils/collectionMutation'
 import { valueMatchesSearch } from '../../utils/searchUtils'
+import { getFieldTypeName } from '../../utils/scalarTypeUtils'
 import ScalarField from './ScalarField'
 import EnumField from './EnumField'
 import MessageRenderer from '../core/MessageRenderer'
@@ -38,9 +39,13 @@ const ListField: React.FC<ListFieldProps> = ({ field, value, onChange, path }) =
     onChange(replaceArrayItem(allItems, index, nextValue))
   }
 
+  // Determine element type for type display (e.g., "repeated string", "repeated petstore.v1.Pet")
+  const elementType = getFieldTypeName(field.listKind, field)
+
   return (
     <MessageFieldFrame
       name={field.name}
+      typeName={`repeated ${elementType}`}
       path={path}
       bodyClassName="ml-6 space-y-3"
       meta={(

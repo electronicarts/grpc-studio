@@ -331,7 +331,7 @@ describe('ProtoMessageRenderer Integration Tests', () => {
         />
       )
 
-      expect(screen.getByText(/Map \(2\)/i)).toBeInTheDocument()
+      expect(screen.getByText(/2 entries/i)).toBeInTheDocument()
     })
 
     it('should not normalize invalid array map values', () => {
@@ -345,7 +345,7 @@ describe('ProtoMessageRenderer Integration Tests', () => {
       )
 
       expect(onChange).not.toHaveBeenCalled()
-      expect(screen.getByText(/Map \(0\)/i)).toBeInTheDocument()
+      expect(screen.getByText(/0 entries/i)).toBeInTheDocument()
     })
 
     it('should expand to show map entries', async () => {
@@ -517,7 +517,7 @@ describe('ProtoMessageRenderer Integration Tests', () => {
 
       await waitFor(() => {
         // Should show 3 entries
-        expect(screen.getByText(/Map \(3\)/i)).toBeInTheDocument()
+        expect(screen.getByText(/3 entries/i)).toBeInTheDocument()
       })
     })
   })

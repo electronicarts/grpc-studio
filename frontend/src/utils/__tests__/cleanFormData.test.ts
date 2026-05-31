@@ -211,4 +211,36 @@ describe('cleanFormData', () => {
     expect(cleanFormData(undefined)).toBe(undefined)
     expect(cleanFormData(null)).toBe(undefined)
   })
+
+  describe('google.protobuf.Any special handling', () => {
+    it('treats Any with only @type as undefined', () => {
+      // When user selects a type but hasn't entered data yet
+      const input = { '@type': 'type.googleapis.com/google.protobuf.StringValue' }
+      expect(cleanFormData(input)).toBeUndefined()
+    })
+
+    it('preserves Any when it has @type and data fields', () => {
+      const input = { '@type': 'type.googleapis.com/google.protobuf.StringValue', 'value': 'hello' }
+      expect(cleanFormData(input)).toEqual(input)
+    })
+
+    it('omits parent fields containing Any-with-only-@type', () => {
+      const input = {
+        name: 'test',
+        extra_info: { '@type': 'type.googleapis.com/google.protobuf.BytesValue' }
+      }
+      expect(cleanFormData(input)).toEqual({ name: 'test' })
+    })
+
+    it('preserves nested Any fields with actual data', () => {
+      const input = {
+        name: 'test',
+        extra_info: {
+          '@type': 'type.googleapis.com/google.protobuf.StringValue',
+          'value': 'metadata'
+        }
+      }
+      expect(cleanFormData(input)).toEqual(input)
+    })
+  })
 })

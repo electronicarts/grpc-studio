@@ -54,6 +54,7 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({
             value={getFieldValue(value, field.name)}
             onChange={val => onChange(setFieldValue(value, field.name, val))}
             path={basePath ? `${basePath}.${field.name}` : field.name}
+
           />
         </div>
       ))}

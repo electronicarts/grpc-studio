@@ -2,12 +2,9 @@
 
 import React from 'react'
 import type { DescField } from '@bufbuild/protobuf'
-import { isStructType, isTimestampType, wrapperPrimitiveType } from '../../../../utils/descUtils'
-import TimestampField from '../wellKnown/TimestampField'
+import { renderWellKnownType } from '../shared/WellKnownTypeRenderer'
 import MessageRenderer from '../core/MessageRenderer'
 import MessageFieldFrame from '../shared/MessageFieldFrame'
-import StructField from '../struct/StructField'
-import WrapperField from '../wellKnown/WrapperField'
 
 interface MessageFieldProps {
   field: DescField & { fieldKind: 'message' }
@@ -19,26 +16,20 @@ interface MessageFieldProps {
 const MessageField: React.FC<MessageFieldProps> = ({ field, value, onChange, path }) => {
   const typeName = field.message.typeName
 
-  if (isTimestampType(typeName)) {
-    return <TimestampField name={field.name} value={value} onChange={onChange} />
+  // Try rendering as a well-known type with a specialized component
+  const wktComponent = renderWellKnownType({
+    typeName,
+    fieldName: field.name,
+    value,
+    onChange,
+    path
+  })
+
+  if (wktComponent) {
+    return wktComponent
   }
 
-  if (isStructType(typeName)) {
-    return (
-      <StructField
-        name={field.name}
-        typeName={typeName}
-        value={value}
-        onChange={onChange as (value: Record<string, unknown>) => void}
-        path={path}
-      />
-    )
-  }
-
-  if (wrapperPrimitiveType(typeName)) {
-    return <WrapperField name={field.name} typeName={typeName} value={value} onChange={onChange} />
-  }
-
+  // Not a WKT - render as regular nested message
   return (
     <MessageFieldFrame name={field.name} typeName={typeName} path={path}>
       <MessageRenderer

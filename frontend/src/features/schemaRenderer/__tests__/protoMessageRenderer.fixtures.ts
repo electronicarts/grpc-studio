@@ -102,10 +102,63 @@ const fdSet = create(FileDescriptorSetSchema, {
       ],
     },
     {
+      name: 'google/protobuf/field_mask.proto',
+      package: 'google.protobuf',
+      syntax: 'proto3',
+      messageType: [
+        {
+          name: 'FieldMask',
+          field: [
+            field({ name: 'paths', number: 1, type: T.STRING, label: L.REPEATED }),
+          ],
+        },
+      ],
+    },
+    {
+      name: 'google/protobuf/any.proto',
+      package: 'google.protobuf',
+      syntax: 'proto3',
+      messageType: [
+        {
+          name: 'Any',
+          field: [
+            field({ name: 'type_url', number: 1, type: T.STRING }),
+            field({ name: 'value',    number: 2, type: T.BYTES  }),
+          ],
+        },
+      ],
+    },
+    {
+      name: 'google/protobuf/duration.proto',
+      package: 'google.protobuf',
+      syntax: 'proto3',
+      messageType: [
+        {
+          name: 'Duration',
+          field: [
+            field({ name: 'seconds', number: 1, type: T.INT64 }),
+            field({ name: 'nanos',   number: 2, type: T.INT32 }),
+          ],
+        },
+      ],
+    },
+    {
+      name: 'google/protobuf/wrappers.proto',
+      package: 'google.protobuf',
+      syntax: 'proto3',
+      messageType: [
+        { name: 'Int32Value',  field: [field({ name: 'value', number: 1, type: T.INT32  })] },
+        { name: 'StringValue', field: [field({ name: 'value', number: 1, type: T.STRING })] },
+        { name: 'FloatValue',  field: [field({ name: 'value', number: 1, type: T.FLOAT  })] },
+        { name: 'DoubleValue', field: [field({ name: 'value', number: 1, type: T.DOUBLE })] },
+        { name: 'BoolValue',   field: [field({ name: 'value', number: 1, type: T.BOOL   })] },
+      ],
+    },
+    {
       name: 'schema_renderer_test.proto',
       package: 'test',
       syntax: 'proto3',
-      dependency: ['google/protobuf/timestamp.proto', 'google/protobuf/struct.proto'],
+      dependency: ['google/protobuf/timestamp.proto', 'google/protobuf/struct.proto', 'google/protobuf/field_mask.proto', 'google/protobuf/any.proto', 'google/protobuf/duration.proto', 'google/protobuf/wrappers.proto'],
       enumType: [
         {
           name: 'Status',
@@ -234,6 +287,28 @@ const fdSet = create(FileDescriptorSetSchema, {
           ],
         },
         {
+          name: 'FieldMaskMessage',
+          field: [ messageField('mask', 1, '.google.protobuf.FieldMask') ],
+        },
+        {
+          name: 'AnyMessage',
+          field: [ messageField('payload', 1, '.google.protobuf.Any') ],
+        },
+        {
+          name: 'DurationMessage',
+          field: [
+            messageField('dur', 1, '.google.protobuf.Duration'),
+          ],
+        },
+        {
+          name: 'WrapperMessage',
+          field: [
+            messageField('int_val', 1, '.google.protobuf.Int32Value'),
+            messageField('str_val', 2, '.google.protobuf.StringValue'),
+            messageField('float_val', 3, '.google.protobuf.FloatValue'),
+          ],
+        },
+        {
           name: 'Comprehensive',
           oneofDecl: [{ name: 'choice' }],
           field: [
@@ -256,6 +331,10 @@ function schema(typeName: string): DescMessage {
   return desc
 }
 
+export const fieldMaskMessageSchema = schema('test.FieldMaskMessage')
+export const anyMessageSchema = schema('test.AnyMessage')
+export const durationMessageSchema = schema('test.DurationMessage')
+export const wrapperMessageSchema = schema('test.WrapperMessage')
 export const allScalarsSchema = schema('test.AllScalars')
 export const enumSchema = schema('test.EnumMessage')
 export const repeatedFieldsSchema = schema('test.RepeatedFields')
@@ -270,6 +349,7 @@ export const deeplyNestedSchema = schema('test.DeeplyNested')
 export const comprehensiveSchema = schema('test.Comprehensive')
 
 export const schemaCache = new Map<string, DescMessage>([
+  wrapperMessageSchema,
   allScalarsSchema,
   enumSchema,
   repeatedFieldsSchema,
@@ -286,6 +366,15 @@ export const schemaCache = new Map<string, DescMessage>([
   schema('google.protobuf.Struct'),
   schema('google.protobuf.Value'),
   schema('google.protobuf.ListValue'),
+  fieldMaskMessageSchema,
+  anyMessageSchema,
+  durationMessageSchema,
+  schema('google.protobuf.FieldMask'),
+  schema('google.protobuf.Any'),
+  schema('google.protobuf.Duration'),
+  schema('google.protobuf.Int32Value'),
+  schema('google.protobuf.StringValue'),
+  schema('google.protobuf.FloatValue'),
   schema('test.NestedValue'),
   schema('test.OneofItem'),
 ].map(desc => [desc.typeName, desc]))

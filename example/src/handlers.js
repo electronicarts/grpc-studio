@@ -43,13 +43,33 @@ function GetPet(call, callback) {
 
 function UpdatePet(call, callback) {
   const pet = call.request.pet;
+  const updateMask = call.request.update_mask;
+
   if (!pet || !pet.id) {
     return callback({
       code: grpc.status.INVALID_ARGUMENT,
       message: 'pet.id is required',
     });
   }
-  const updated = store.update(pet);
+
+  const existing = store.get(pet.id);
+  if (!existing) return notFound(call, callback, pet.id);
+
+  // If a field mask is provided, merge only the listed fields (snake_case paths).
+  // Otherwise perform a full replacement.
+  let target;
+  if (updateMask && updateMask.paths && updateMask.paths.length > 0) {
+    target = { ...existing };
+    for (const path of updateMask.paths) {
+      if (Object.prototype.hasOwnProperty.call(pet, path)) {
+        target[path] = pet[path];
+      }
+    }
+  } else {
+    target = pet;
+  }
+
+  const updated = store.update(target);
   if (!updated) return notFound(call, callback, pet.id);
   callback(null, updated);
 }

@@ -21,8 +21,10 @@ const EnumField: React.FC<EnumFieldProps> = ({ name, enumDesc, value, onChange }
     onChange(newValue)
   }
 
+  const typeMeta = <span className="text-xs text-gray-500">({enumDesc.typeName})</span>
+
   return (
-    <FormField label={name}>
+    <FormField label={name} labelMeta={typeMeta}>
       <select
         value={value || ''}
         onChange={handleChange}

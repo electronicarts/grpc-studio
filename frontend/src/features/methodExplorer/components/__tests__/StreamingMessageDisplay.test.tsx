@@ -2,7 +2,7 @@
 
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-import StreamingMessageDisplay from './StreamingMessageDisplay'
+import StreamingMessageDisplay from '../StreamingMessageDisplay'
 
 describe('StreamingMessageDisplay', () => {
   it('shows a waiting state for active empty streams', () => {

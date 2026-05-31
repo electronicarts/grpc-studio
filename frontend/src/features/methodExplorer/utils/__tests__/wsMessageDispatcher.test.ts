@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import { describe, expect, it, vi } from 'vitest'
-import { dispatchWebSocketMessage } from './wsMessageDispatcher'
+import { dispatchWebSocketMessage } from '../wsMessageDispatcher'
 
 function messageEvent(payload: unknown): MessageEvent {
   return new MessageEvent('message', { data: JSON.stringify(payload) })
