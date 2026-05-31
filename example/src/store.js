@@ -244,7 +244,12 @@ function list() {
 
 function create(pet) {
   const id = pet.id || generateId();
-  const record = { ...pet, id, created_at: now(), updated_at: now() };
+  const record = {
+    ...pet,
+    id,
+    created_at: pet.created_at || now(),
+    updated_at: pet.updated_at || now()
+  };
   pets.set(id, record);
   return record;
 }
@@ -252,7 +257,7 @@ function create(pet) {
 function update(pet) {
   const existing = pets.get(pet.id);
   if (!existing) return null;
-  const record = { ...existing, ...pet, updated_at: now() };
+  const record = { ...existing, ...pet, updated_at: pet.updated_at || now() };
   pets.set(pet.id, record);
   return record;
 }
