@@ -1,8 +1,11 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-import React, { useState, useEffect } from 'react'
+import React, { useMemo, useSyncExternalStore } from 'react'
+import type { DescMessage } from '@bufbuild/protobuf'
 import { FormField } from '../../../../components/shared'
 import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
+import { schemaCache } from '../../../schemaLoader/lib/schemaCache'
+import SchemaRenderer from '../core/SchemaRenderer'
 
 interface AnyFieldProps {
   name: string
@@ -10,69 +13,97 @@ interface AnyFieldProps {
   onChange: (value: unknown) => void
 }
 
-const PLACEHOLDER = '{\n  "@type": "type.googleapis.com/...",\n  "field": "value"\n}'
+function parseAnyValue(value: unknown): { typeName: string; formData: Record<string, unknown> } {
+  if (value == null || typeof value !== 'object' || Array.isArray(value)) {
+    return { typeName: '', formData: {} }
+  }
+  const obj = value as Record<string, unknown>
+  const typeUrl = typeof obj['@type'] === 'string' ? obj['@type'] : ''
+  const typeName = typeUrl ? typeUrl.substring(typeUrl.lastIndexOf('/') + 1) : ''
+  const formData = Object.fromEntries(Object.entries(obj).filter(([k]) => k !== '@type'))
+  return { typeName, formData }
+}
 
 // Proto3 JSON encodes google.protobuf.Any as a JSON object with a mandatory
-// "@type" key containing the full type URL, plus the message fields inlined.
-// The backend passes a WKT type registry to fromJson so well-known types
-// embedded in Any (Timestamp, StringValue, etc.) decode correctly.
+// "@type" key (full type URL) plus the message fields inlined.
+//
+// Instead of a raw textarea, we:
+//  1. Show a dropdown of every type the reflection cache knows about.
+//  2. Once a type is selected, render a fully-typed nested form via SchemaRenderer.
+//  3. Combine the @type URL and the form data before emitting onChange.
+//
+// The backend passes a WKT registry to fromJson/toJson so well-known types
+// embedded in Any decode correctly end-to-end.
 const AnyField: React.FC<AnyFieldProps> = ({ name, value, onChange }) => {
   const { readOnly } = useProtoMessageRendererContext()
 
-  const [text, setText] = useState(() =>
-    value != null ? JSON.stringify(value, null, 2) : ''
+  // Subscribe to cache updates so the type list refreshes after reflection loads.
+  const cacheVersion = useSyncExternalStore(
+    cb => schemaCache.subscribe(cb),
+    () => schemaCache.getCacheSize(),
   )
-  const [parseError, setParseError] = useState<string | null>(null)
 
-  // Sync display text when parent resets the value
-  useEffect(() => {
-    if (value == null) {
-      setText('')
-      setParseError(null)
-    } else {
-      const serialized = JSON.stringify(value, null, 2)
-      setText(prev => {
-        try { return JSON.stringify(JSON.parse(prev), null, 2) === serialized ? prev : serialized }
-        catch { return serialized }
-      })
-    }
-  }, [value])
+  const knownTypeNames = useMemo(
+    () => Array.from(schemaCache.getSchemaMap().keys()).sort(),
+    // cacheVersion triggers recomputation when new schemas are registered
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [cacheVersion],
+  )
 
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const { typeName: currentTypeName, formData } = parseAnyValue(value)
+  const currentSchema: DescMessage | null = currentTypeName
+    ? schemaCache.getCachedSchema(currentTypeName)
+    : null
+
+  const handleTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     if (readOnly) return
-    const raw = e.target.value
-    setText(raw)
-    if (!raw.trim()) {
-      setParseError(null)
+    const typeName = e.target.value
+    if (!typeName) {
       onChange(undefined)
-      return
+    } else {
+      onChange({ '@type': `type.googleapis.com/${typeName}` })
     }
-    try {
-      onChange(JSON.parse(raw))
-      setParseError(null)
-    } catch {
-      setParseError('Invalid JSON')
-    }
+  }
+
+  const handleFormChange = (data: Record<string, unknown>) => {
+    onChange({ '@type': `type.googleapis.com/${currentTypeName}`, ...data })
   }
 
   return (
     <FormField label={name}>
-      <div className="space-y-1">
-        <textarea
-          value={text}
-          onChange={handleChange}
+      <div className="space-y-2 border border-input rounded-md p-3 bg-background">
+        {/* Type selector */}
+        <select
+          value={currentTypeName}
+          onChange={handleTypeChange}
           disabled={readOnly}
-          placeholder={PLACEHOLDER}
-          rows={4}
-          className="w-full font-mono text-sm border border-input rounded-md px-3 py-2 bg-background resize-y disabled:opacity-50"
-          data-testid="anyField-textarea"
-        />
-        {parseError && (
-          <p className="text-xs text-destructive">{parseError}</p>
+          className="w-full px-3 py-1.5 text-sm border border-input rounded-md bg-background disabled:opacity-50"
+          data-testid="anyField-typeSelect"
+        >
+          <option value="">Select a type…</option>
+          {knownTypeNames.map(t => (
+            <option key={t} value={t}>{t}</option>
+          ))}
+        </select>
+
+        {/* Nested form for the selected type */}
+        {currentTypeName && currentSchema && (
+          <div className="border-l-2 border-muted pl-3 pt-1">
+            <SchemaRenderer
+              schema={currentSchema}
+              data={formData}
+              onChange={handleFormChange}
+              readOnly={readOnly}
+              showControls={false}
+            />
+          </div>
         )}
-        <p className="text-xs text-muted-foreground">
-          Requires a <code>&quot;@type&quot;</code> field with the full type URL
-        </p>
+
+        {currentTypeName && !currentSchema && (
+          <p className="text-xs text-muted-foreground italic">
+            Schema for &quot;{currentTypeName}&quot; is not in the reflection cache
+          </p>
+        )}
       </div>
     </FormField>
   )

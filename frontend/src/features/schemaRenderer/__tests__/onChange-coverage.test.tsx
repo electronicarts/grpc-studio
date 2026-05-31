@@ -40,6 +40,7 @@ vi.mock('../../schemaLoader/lib/schemaCache', () => ({
     getSchema: vi.fn((type: string) => Promise.resolve(testSchemaMap.get(type) ?? null)),
     getCacheSize: vi.fn(() => testSchemaMap.size),
     getCachedSchema: vi.fn((type: string) => testSchemaMap.get(type) ?? null),
+    getSchemaMap: vi.fn(() => new Map(testSchemaMap)),
     subscribe: vi.fn(() => () => {}),
     get allLoaded() { return true },
   },
@@ -363,68 +364,96 @@ describe('FieldMaskField onChange', () => {
 // ---------------------------------------------------------------------------
 
 describe('AnyField onChange', () => {
-  it('emits a parsed JS object when valid JSON is entered', async () => {
+  it('emits { @type } when a type is selected from the dropdown', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
     render(<SchemaRenderer schema={anyMessageSchema} data={{}} onChange={onChange} readOnly={false} />)
 
-    const anyJson = JSON.stringify({
-      '@type': 'type.googleapis.com/google.protobuf.StringValue',
-      'value': 'hello',
-    })
-    fireEvent.change(screen.getByTestId('anyField-textarea'), { target: { value: anyJson } })
+    await user.selectOptions(screen.getByTestId('anyField-typeSelect'), 'test.AllScalars')
 
     await waitFor(() => {
-      const v = latestCall(onChange).payload as Record<string, unknown>
-      expect(v['@type']).toBe('type.googleapis.com/google.protobuf.StringValue')
-      expect(v['value']).toBe('hello')
-      expect(typeof v).toBe('object')
+      const payload = latestCall(onChange).payload as Record<string, unknown>
+      expect(payload['@type']).toBe('type.googleapis.com/test.AllScalars')
     })
   })
 
-  it('emits undefined (field deleted) when the textarea is cleared', async () => {
+  it('emits undefined when the blank option is selected (type cleared)', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
-    const initial = { '@type': 'type.googleapis.com/google.protobuf.StringValue', 'value': 'hi' }
+    const initial = { '@type': 'type.googleapis.com/test.AllScalars', stringField: 'hi' }
     render(
       <SchemaRenderer schema={anyMessageSchema} data={{ payload: initial }} onChange={onChange} readOnly={false} />
     )
 
-    fireEvent.change(screen.getByTestId('anyField-textarea'), { target: { value: '' } })
+    await user.selectOptions(screen.getByTestId('anyField-typeSelect'), '')
 
     await waitFor(() => {
       expect('payload' in latestCall(onChange)).toBe(false)
     })
   })
 
-  it('does not emit when the JSON is invalid (user is mid-type)', async () => {
+  it('emits { @type, ...fields } when a field inside the nested form is filled', async () => {
+    const user = userEvent.setup()
     const onChange = vi.fn()
     render(<SchemaRenderer schema={anyMessageSchema} data={{}} onChange={onChange} readOnly={false} />)
 
-    // Partial/invalid JSON — onChange must NOT be called
-    fireEvent.change(screen.getByTestId('anyField-textarea'), { target: { value: '{ "@type": ' } })
+    // Select a type with scalar fields
+    await user.selectOptions(screen.getByTestId('anyField-typeSelect'), 'test.AllScalars')
 
-    await new Promise(r => setTimeout(r, 30))
-    expect(onChange.mock.calls.length).toBe(0)
+    // Fill in the stringField inside the nested SchemaRenderer
+    await user.type(screen.getByPlaceholderText(/Enter stringField/i), 'hello')
+
+    await waitFor(() => {
+      const payload = latestCall(onChange).payload as Record<string, unknown>
+      expect(payload['@type']).toBe('type.googleapis.com/test.AllScalars')
+      expect(payload['stringField']).toBe('hello')
+    })
   })
 
-  it('emits the new object when an existing Any value is changed', async () => {
+  it('preserves @type when a field is cleared inside the nested form', async () => {
+    const user = userEvent.setup()
     const onChange = vi.fn()
-    const initial = { '@type': 'type.googleapis.com/google.protobuf.StringValue', 'value': 'old' }
+    const initial = { '@type': 'type.googleapis.com/test.AllScalars', stringField: 'hello' }
     render(
       <SchemaRenderer schema={anyMessageSchema} data={{ payload: initial }} onChange={onChange} readOnly={false} />
     )
 
-    const updated = JSON.stringify({
-      '@type': 'type.googleapis.com/google.protobuf.Int32Value',
-      'value': 42,
-    })
-    fireEvent.change(screen.getByTestId('anyField-textarea'), { target: { value: updated } })
+    await user.clear(screen.getByDisplayValue('hello'))
 
     await waitFor(() => {
-      const v = latestCall(onChange).payload as Record<string, unknown>
-      expect(v['@type']).toBe('type.googleapis.com/google.protobuf.Int32Value')
-      expect(v['value']).toBe(42)
+      const payload = latestCall(onChange).payload as Record<string, unknown>
+      // @type stays even when all fields are cleared
+      expect(payload['@type']).toBe('type.googleapis.com/test.AllScalars')
+      expect('stringField' in payload).toBe(false)
+    })
+  })
+
+  it('shows all known schema types in the dropdown', () => {
+    render(<SchemaRenderer schema={anyMessageSchema} data={{}} onChange={vi.fn()} readOnly={false} />)
+
+    const select = screen.getByTestId('anyField-typeSelect') as HTMLSelectElement
+    const optionValues = Array.from(select.options).map(o => o.value)
+    // The mock provides testSchemaMap which includes test.AllScalars, test.EnumMessage, etc.
+    expect(optionValues).toContain('test.AllScalars')
+    expect(optionValues).toContain('test.EnumMessage')
+    expect(optionValues).toContain('google.protobuf.Timestamp')
+  })
+
+  it('switching type clears previous field data', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    const initial = { '@type': 'type.googleapis.com/test.AllScalars', stringField: 'hello' }
+    render(
+      <SchemaRenderer schema={anyMessageSchema} data={{ payload: initial }} onChange={onChange} readOnly={false} />
+    )
+
+    // Switch to a different type — field data from old type must be gone
+    await user.selectOptions(screen.getByTestId('anyField-typeSelect'), 'test.EnumMessage')
+
+    await waitFor(() => {
+      const payload = latestCall(onChange).payload as Record<string, unknown>
+      expect(payload['@type']).toBe('type.googleapis.com/test.EnumMessage')
+      expect('stringField' in payload).toBe(false)
     })
   })
 })
