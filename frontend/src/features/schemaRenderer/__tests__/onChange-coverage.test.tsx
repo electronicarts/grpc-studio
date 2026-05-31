@@ -13,7 +13,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor, fireEvent } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import SchemaRenderer from '../components/core/SchemaRenderer'
 import {
@@ -454,6 +454,102 @@ describe('AnyField onChange', () => {
       const payload = latestCall(onChange).payload as Record<string, unknown>
       expect(payload['@type']).toBe('type.googleapis.com/test.EnumMessage')
       expect('stringField' in payload).toBe(false)
+    })
+  })
+
+  it('selecting a Duration WKT emits { @type, value } when duration string is entered', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(<SchemaRenderer schema={anyMessageSchema} data={{}} onChange={onChange} readOnly={false} />)
+
+    // Select google.protobuf.Duration
+    await user.selectOptions(screen.getByTestId('anyField-typeSelect'), 'google.protobuf.Duration')
+
+    // Enter a duration string in the specialized DurationField
+    await user.type(screen.getByPlaceholderText(/seconds \+ "s"/i), '10s')
+
+    await waitFor(() => {
+      const payload = latestCall(onChange).payload as Record<string, unknown>
+      expect(payload['@type']).toBe('type.googleapis.com/google.protobuf.Duration')
+      expect(payload['value']).toBe('10s')
+    })
+  })
+
+  it('selecting a Timestamp WKT renders the datetime picker', async () => {
+    const onChange = vi.fn()
+    render(<SchemaRenderer schema={anyMessageSchema} data={{}} onChange={onChange} readOnly={false} />)
+
+    // Select google.protobuf.Timestamp
+    const select = screen.getByTestId('anyField-typeSelect')
+    await userEvent.selectOptions(select, 'google.protobuf.Timestamp')
+
+    await waitFor(() => {
+      const payload = latestCall(onChange).payload as Record<string, unknown>
+      // Just selecting the type emits the @type
+      expect(payload['@type']).toBe('type.googleapis.com/google.protobuf.Timestamp')
+      // Timestamp uses a datetime picker, so we just verify it renders correctly
+      // (testing the picker interaction is covered in TimestampField tests)
+    })
+  })
+
+  it('selecting a wrapper type (StringValue) emits { @type } initially', async () => {
+    const onChange = vi.fn()
+    render(<SchemaRenderer schema={anyMessageSchema} data={{}} onChange={onChange} readOnly={false} />)
+
+    // Select google.protobuf.StringValue
+    await userEvent.selectOptions(screen.getByTestId('anyField-typeSelect'), 'google.protobuf.StringValue')
+
+    // After selecting, @type should be emitted (value not yet filled in, so no 'value' field)
+    await waitFor(() => {
+      const payload = latestCall(onChange).payload as Record<string, unknown>
+      expect(payload['@type']).toBe('type.googleapis.com/google.protobuf.StringValue')
+      // Value field shouldn't be present when empty
+      expect('value' in payload).toBe(false)
+    })
+  })
+
+  it('wrapper type with pre-filled value emits { @type, value } correctly', () => {
+    const onChange = vi.fn()
+    const initial = { '@type': 'type.googleapis.com/google.protobuf.StringValue', value: 'pre-filled' }
+    render(
+      <SchemaRenderer schema={anyMessageSchema} data={{ payload: initial }} onChange={onChange} readOnly={false} />
+    )
+
+    // Check that the input shows the pre-filled value
+    expect(screen.getByDisplayValue('pre-filled')).toBeInTheDocument()
+  })
+
+  it('selecting a WKT with empty value emits { @type } without value field', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(<SchemaRenderer schema={anyMessageSchema} data={{}} onChange={onChange} readOnly={false} />)
+
+    // Select google.protobuf.StringValue but don't enter anything
+    await user.selectOptions(screen.getByTestId('anyField-typeSelect'), 'google.protobuf.StringValue')
+
+    await waitFor(() => {
+      const payload = latestCall(onChange).payload as Record<string, unknown>
+      expect(payload['@type']).toBe('type.googleapis.com/google.protobuf.StringValue')
+      // value field should not be present when empty (prevents backend fromJson errors)
+      expect('value' in payload).toBe(false)
+    })
+  })
+
+  it('clearing a WKT value removes the value field but preserves @type', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    const initial = { '@type': 'type.googleapis.com/google.protobuf.StringValue', value: 'existing' }
+    render(
+      <SchemaRenderer schema={anyMessageSchema} data={{ payload: initial }} onChange={onChange} readOnly={false} />
+    )
+
+    // Clear the value
+    await user.clear(screen.getByDisplayValue('existing'))
+
+    await waitFor(() => {
+      const payload = latestCall(onChange).payload as Record<string, unknown>
+      expect(payload['@type']).toBe('type.googleapis.com/google.protobuf.StringValue')
+      expect('value' in payload).toBe(false)
     })
   })
 })

@@ -34,12 +34,14 @@ export class GrpcMethodInvokerService {
   async invokeUnary(serviceName: string, methodName: string, request: JsonValue | undefined): Promise<UnaryResult> {
     return instrumentUnaryCall(serviceName, methodName, async () => {
       try {
+        // Use global descriptor set so Any fields can contain types from any reflected service
+        const fileDescriptorSet = await this.schemaRepository.getAllFileDescriptorSet()
         const method = await this.resolveMethod(serviceName, methodName)
         assertUnaryMethod(method)
         const headers = await headerManager.getOutboundHeaders(userContextMiddleware.getCurrentUserContext())
         return {
           success: true,
-          data: await this.connectInvoker.invokeUnary(method, request, headers),
+          data: await this.connectInvoker.invokeUnary(method, request, headers, fileDescriptorSet),
           completedAtMs: Date.now(),
         }
       } catch (error) {
@@ -58,10 +60,11 @@ export class GrpcMethodInvokerService {
   ): Promise<StreamHandle> {
     return instrumentStreamCall(serviceName, methodName, 'server_streaming', callbacks, async (wrappedCallbacks) => {
       try {
+        const fileDescriptorSet = await this.schemaRepository.getAllFileDescriptorSet()
         const method = await this.resolveMethod(serviceName, methodName)
         assertServerStreamingMethod(method)
         const headers = await headerManager.getOutboundHeaders(userContextMiddleware.getCurrentUserContext())
-        return await this.connectInvoker.startServerStream(method, request, wrappedCallbacks, headers)
+        return await this.connectInvoker.startServerStream(method, request, wrappedCallbacks, headers, fileDescriptorSet)
       } catch (error) {
         wrappedCallbacks.onError(formatConnectError(error))
         return noopStreamHandle()
@@ -77,10 +80,11 @@ export class GrpcMethodInvokerService {
   ): Promise<StreamHandle> {
     return instrumentStreamCall(serviceName, methodName, 'client_streaming', callbacks, async (wrappedCallbacks) => {
       try {
+        const fileDescriptorSet = await this.schemaRepository.getAllFileDescriptorSet()
         const method = await this.resolveMethod(serviceName, methodName)
         assertClientStreamingMethod(method)
         const headers = await headerManager.getOutboundHeaders(userContextMiddleware.getCurrentUserContext())
-        return await this.connectInvoker.startClientStream(method, requests, wrappedCallbacks, headers)
+        return await this.connectInvoker.startClientStream(method, requests, wrappedCallbacks, headers, fileDescriptorSet)
       } catch (error) {
         wrappedCallbacks.onError(formatConnectError(error))
         return noopStreamHandle()
@@ -96,10 +100,11 @@ export class GrpcMethodInvokerService {
   ): Promise<StreamHandle> {
     return instrumentStreamCall(serviceName, methodName, 'bidi_streaming', callbacks, async (wrappedCallbacks) => {
       try {
+        const fileDescriptorSet = await this.schemaRepository.getAllFileDescriptorSet()
         const method = await this.resolveMethod(serviceName, methodName)
         assertBidiStreamingMethod(method)
         const headers = await headerManager.getOutboundHeaders(userContextMiddleware.getCurrentUserContext())
-        return await this.connectInvoker.startBidiStream(method, requests, wrappedCallbacks, headers)
+        return await this.connectInvoker.startBidiStream(method, requests, wrappedCallbacks, headers, fileDescriptorSet)
       } catch (error) {
         wrappedCallbacks.onError(formatConnectError(error))
         return noopStreamHandle()

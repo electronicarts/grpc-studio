@@ -1,17 +1,18 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import { describe, expect, it, vi } from 'vitest'
-import { toWireFormat } from './payload'
+import { toWireFormat } from '../payload'
 import {
   schemaCache as testSchemaMap,
-} from '../../schemaRenderer/__tests__/protoMessageRenderer.fixtures'
+} from '../../../schemaRenderer/__tests__/protoMessageRenderer.fixtures'
 
 
 
 
-vi.mock('../../schemaLoader/lib/schemaCache', () => ({
+vi.mock('../../../schemaLoader/lib/schemaCache', () => ({
   schemaCache: {
     getCachedSchema: vi.fn((type: string) => testSchemaMap.get(type) ?? null),
+    getSchemaMap: vi.fn(() => testSchemaMap),
   },
 }))
 
@@ -188,5 +189,44 @@ describe('Any well-known type field', () => {
   it('throws when Any field receives a plain string instead of an object', () => {
     expect(() => toWireFormat({ payload: 'not-an-object' }, 'test.AnyMessage'))
       .toThrow()
+  })
+})
+
+// Test for the user-reported issue: empty WKT fields in Any
+describe('Any with empty WKT fields', () => {
+  it('omits Any field when it has only @type (no data) - BytesValue', () => {
+    // When user selects a WKT type but hasn't filled in any data yet,
+    // cleanFormData treats { '@type': '...' } as undefined to avoid fromJson errors
+    const payload = toWireFormat(
+      { payload: { '@type': 'type.googleapis.com/google.protobuf.BytesValue' } },
+      'test.AnyMessage'
+    )
+    // The Any field should be omitted entirely (proto3 default)
+    expect(payload.wire).toEqual({})
+  })
+
+  it('throws when Any with BytesValue has empty object as value', () => {
+    expect(() => toWireFormat(
+      { payload: { '@type': 'type.googleapis.com/google.protobuf.BytesValue', 'value': {} } },
+      'test.AnyMessage'
+    )).toThrow('cannot decode field google.protobuf.BytesValue.value')
+  })
+
+  it('omits Any field when it has only @type (no data) - StringValue', () => {
+    const payload = toWireFormat(
+      { payload: { '@type': 'type.googleapis.com/google.protobuf.StringValue' } },
+      'test.AnyMessage'
+    )
+    expect(payload.wire).toEqual({})
+  })
+
+  it('includes Any field when it has @type and actual data', () => {
+    const payload = toWireFormat(
+      { payload: { '@type': 'type.googleapis.com/google.protobuf.StringValue', 'value': 'hello' } },
+      'test.AnyMessage'
+    )
+    expect((payload.wire.payload as Record<string, unknown>)['@type'])
+      .toBe('type.googleapis.com/google.protobuf.StringValue')
+    expect((payload.wire.payload as Record<string, unknown>)['value']).toBe('hello')
   })
 })

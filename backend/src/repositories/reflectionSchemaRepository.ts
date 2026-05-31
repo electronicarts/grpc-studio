@@ -5,8 +5,8 @@
  * through gRPC reflection.
  */
 
-import { createFileRegistry, type FileRegistry } from '@bufbuild/protobuf'
-import type { FileDescriptorSet } from '@bufbuild/protobuf/wkt'
+import { createFileRegistry, type FileRegistry, create } from '@bufbuild/protobuf'
+import { FileDescriptorSetSchema, type FileDescriptorSet } from '@bufbuild/protobuf/wkt'
 import * as reflectionClient from '../grpc/reflection/reflectionClient.js'
 import * as descriptorSetFromReflection from '../grpc/reflection/descriptorSetFromReflection.js'
 import * as reflectionMetadataCache from '../cache/reflectionMetadataCache.js'
@@ -121,6 +121,32 @@ export class ReflectionSchemaRepository {
       })
       throw error
     }
+  }
+
+  async getAllFileDescriptorSet(): Promise<FileDescriptorSet> {
+    // Build a FileDescriptorSet containing ALL files from ALL services.
+    // This is used for building a comprehensive registry for Any field decoding,
+    // since Any can contain messages from any reflected service.
+    const services = await this.listServices()
+    const allDescriptorSets: FileDescriptorSet[] = []
+
+    for (const serviceName of services) {
+      try {
+        const descriptorSet = await this.getFileDescriptorSet(serviceName)
+        allDescriptorSets.push(descriptorSet)
+      } catch (error) {
+        repositoryLogger.warn('Failed to get descriptor set for service, skipping', {
+          serviceName,
+          error: error instanceof Error ? error.message : String(error),
+        })
+      }
+    }
+
+    // Merge all files from all descriptor sets
+    const allFiles = allDescriptorSets.flatMap(ds => ds.file)
+
+    // Create a proper FileDescriptorSet instance using @bufbuild/protobuf's create helper
+    return create(FileDescriptorSetSchema, { file: allFiles })
   }
 
   clearCache(): void {

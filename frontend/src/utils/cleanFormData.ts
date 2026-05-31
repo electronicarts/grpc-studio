@@ -34,6 +34,13 @@ export function cleanFormData(data: unknown): unknown {
       }
     }
 
+    // Special case: google.protobuf.Any with only @type and no data fields
+    // should be treated as undefined (field not set) to avoid fromJson errors
+    // when bufbuild tries to create a WKT message with missing required fields
+    if (cleaned['@type'] && Object.keys(cleaned).length === 1) {
+      return undefined
+    }
+
     return cleaned
   }
 

@@ -5,7 +5,7 @@ import type { DescMessage } from '@bufbuild/protobuf'
 import { FormField } from '../../../../components/shared'
 import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
 import { schemaCache } from '../../../schemaLoader/lib/schemaCache'
-import SchemaRenderer from '../core/SchemaRenderer'
+import AnyContentRenderer from './AnyContentRenderer'
 
 interface AnyFieldProps {
   name: string
@@ -89,12 +89,10 @@ const AnyField: React.FC<AnyFieldProps> = ({ name, value, onChange }) => {
         {/* Nested form for the selected type */}
         {currentTypeName && currentSchema && (
           <div className="border-l-2 border-muted pl-3 pt-1">
-            <SchemaRenderer
+            <AnyContentRenderer
               schema={currentSchema}
-              data={formData}
+              formData={formData}
               onChange={handleFormChange}
-              readOnly={readOnly}
-              showControls={false}
             />
           </div>
         )}

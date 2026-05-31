@@ -710,6 +710,40 @@ describe('Integration: gRPC pipeline (PetStore)', () => {
       assert.equal(storedEi['value'], 'some-extra-data')
     })
 
+    it('CreatePet round-trips google.protobuf.Any with custom reflected type (Owner)', async () => {
+      // Any containing a petstore.v1.Owner — a custom type from reflection (not WKT).
+      // This test verifies the dynamic registry correctly includes reflected types,
+      // allowing fromJson/toJson to encode/decode custom message types in Any fields.
+      const createRes = await invokeUnary('CreatePet', {
+        pet: {
+          name: 'CustomAnyPet',
+          species: 'SPECIES_CAT',
+          extra_info: {
+            '@type': 'type.googleapis.com/petstore.v1.Owner',
+            'id': 'owner-custom',
+            'name': 'Jane Smith',
+            'email': 'jane@example.com',
+            'phone': '+1-555-1234',
+          },
+        },
+      })
+      assertSuccessEnvelope(createRes)
+
+      type OwnerInAny = { '@type': string; id: string; name: string; email: string; phone: string }
+      type PetData = { id: string; name: string; extra_info: OwnerInAny }
+      const createInner = createRes.body.data as { success: boolean; data: PetData }
+      assert.equal(createInner.success, true)
+
+      // extra_info must come back with @type preserved and all Owner fields intact
+      const ei = createInner.data.extra_info
+      assert.ok(ei, 'extra_info must be present')
+      assert.equal(ei['@type'], 'type.googleapis.com/petstore.v1.Owner')
+      assert.equal(ei['id'], 'owner-custom')
+      assert.equal(ei['name'], 'Jane Smith')
+      assert.equal(ei['email'], 'jane@example.com')
+      assert.equal(ei['phone'], '+1-555-1234')
+    })
+
     describe('error paths', () => {
       it('returns METHOD_ERROR for gRPC NOT_FOUND', async () => {
         const res = await invokeUnary('GetPet', { id: 'does-not-exist' })

@@ -3,7 +3,6 @@
 import {
   fromJson,
   toJson,
-  createRegistry,
   type DescMessage,
   type DescMethod,
   type DescMethodBiDiStreaming,
@@ -12,18 +11,11 @@ import {
   type DescMethodUnary,
   type JsonValue as BufJsonValue,
   type MessageInitShape,
+  type FileDescriptorSet,
   type Registry,
 } from '@bufbuild/protobuf'
-import * as wkt from '@bufbuild/protobuf/wkt'
-
-// Registry of all well-known types so google.protobuf.Any fields can be
-// decoded and encoded by fromJson/toJson without a "not in registry" error.
-const wktRegistry: Registry = createRegistry(
-  ...(Object.values(wkt).filter(
-    (v) => typeof v === 'object' && v !== null && 'typeName' in v && 'fields' in v
-  ) as DescMessage[])
-)
 import { Code, ConnectError, createClient, type CallOptions } from '@connectrpc/connect'
+import { buildDynamicRegistry } from './dynamicRegistry.js'
 import type { JsonValue } from '@grpc-studio/shared'
 import configManager from '../../config/configManager.js'
 import type { FormattedGrpcError, StreamCallbacks, StreamHandle } from '../../types/index.js'
@@ -57,28 +49,37 @@ export type OutboundHeaders = Record<string, string>
 export class ConnectInvoker {
   constructor(private readonly transportProvider: ConnectTransportProvider = connectTransportProvider) {}
 
-  async invokeUnary(method: DescMethodUnary, request: JsonValue | undefined, headers: OutboundHeaders): Promise<JsonValue> {
+  async invokeUnary(
+    method: DescMethodUnary,
+    request: JsonValue | undefined,
+    headers: OutboundHeaders,
+    fileDescriptorSet: FileDescriptorSet
+  ): Promise<JsonValue> {
+    const registry = buildDynamicRegistry(fileDescriptorSet)
     const response = await this.getClientMethod<UnaryClientMethod>(method)(
-      toProtoRequest(method.input, request),
+      toProtoRequest(method.input, request, registry),
       this.buildCallOptions(configManager.getClientConfig().rpc.unaryDeadlineMs, headers)
     )
 
-    return toJsonResponse(method.output, response)
+    return toJsonResponse(method.output, response, registry)
   }
 
   async startServerStream(
     method: DescMethodServerStreaming,
     request: JsonValue | undefined,
     callbacks: StreamCallbacks,
-    headers: OutboundHeaders
+    headers: OutboundHeaders,
+    fileRegistry: FileRegistry
   ): Promise<StreamHandle> {
+    const registry = buildDynamicRegistry(fileRegistry)
     return this.startResponseStream(
       callbacks,
       async (signal) => this.getClientMethod<ServerStreamingClientMethod>(method)(
-        toProtoRequest(method.input, request),
+        toProtoRequest(method.input, request, registry),
         this.buildCallOptions(configManager.getClientConfig().rpc.streamDeadlineMs, headers, signal)
       ),
-      method.output
+      method.output,
+      registry
     )
   }
 
@@ -86,11 +87,13 @@ export class ConnectInvoker {
     method: DescMethodClientStreaming,
     requests: RequestStream,
     callbacks: StreamCallbacks,
-    headers: OutboundHeaders
+    headers: OutboundHeaders,
+    fileRegistry: FileRegistry
   ): Promise<StreamHandle> {
     const abortController = new AbortController()
+    const registry = buildDynamicRegistry(fileRegistry)
 
-    this.pumpClientStream(method, requests, callbacks, headers, abortController.signal)
+    this.pumpClientStream(method, requests, callbacks, headers, abortController.signal, registry)
       .catch((error) => {
         // Catch unhandled errors from pump to prevent unhandled promise rejections
         if (!abortController.signal.aborted) {
@@ -109,26 +112,30 @@ export class ConnectInvoker {
     method: DescMethodBiDiStreaming,
     requests: RequestStream,
     callbacks: StreamCallbacks,
-    headers: OutboundHeaders
+    headers: OutboundHeaders,
+    fileRegistry: FileRegistry
   ): Promise<StreamHandle> {
+    const registry = buildDynamicRegistry(fileRegistry)
     return this.startResponseStream(
       callbacks,
       async (signal) => this.getClientMethod<BidiStreamingClientMethod>(method)(
-        toConnectRequestStream(method, requests),
+        toConnectRequestStream(method, requests, registry),
         this.buildCallOptions(configManager.getClientConfig().rpc.streamDeadlineMs, headers, signal)
       ),
-      method.output
+      method.output,
+      registry
     )
   }
 
   private startResponseStream(
     callbacks: StreamCallbacks,
     createStream: (signal: AbortSignal) => Promise<AsyncIterable<unknown>>,
-    responseDesc: DescMessage
+    responseDesc: DescMessage,
+    registry: Registry
   ): StreamHandle {
     const abortController = new AbortController()
 
-    this.pumpResponseStream(createStream, responseDesc, callbacks, abortController.signal)
+    this.pumpResponseStream(createStream, responseDesc, callbacks, abortController.signal, registry)
       .catch((error) => {
         // Catch unhandled errors from pump to prevent unhandled promise rejections
         if (!abortController.signal.aborted) {
@@ -147,13 +154,14 @@ export class ConnectInvoker {
     createStream: (signal: AbortSignal) => Promise<AsyncIterable<unknown>>,
     responseDesc: DescMessage,
     callbacks: StreamCallbacks,
-    signal: AbortSignal
+    signal: AbortSignal,
+    registry: Registry
   ): Promise<void> {
     try {
       const stream = await createStream(signal)
 
       for await (const message of stream) {
-        callbacks.onData(toJsonResponse(responseDesc, message))
+        callbacks.onData(toJsonResponse(responseDesc, message, registry))
       }
 
       callbacks.onEnd()
@@ -169,15 +177,16 @@ export class ConnectInvoker {
     requests: RequestStream,
     callbacks: StreamCallbacks,
     headers: OutboundHeaders,
-    signal: AbortSignal
+    signal: AbortSignal,
+    registry: Registry
   ): Promise<void> {
     try {
       const response = await this.getClientMethod<ClientStreamingClientMethod>(method)(
-        toConnectRequestStream(method, requests),
+        toConnectRequestStream(method, requests, registry),
         this.buildCallOptions(configManager.getClientConfig().rpc.streamDeadlineMs, headers, signal)
       )
 
-      callbacks.onData(toJsonResponse(method.output, response))
+      callbacks.onData(toJsonResponse(method.output, response, registry))
       callbacks.onEnd()
     } catch (error) {
       if (!signal.aborted) {
@@ -217,19 +226,20 @@ export function formatConnectError(error: unknown): FormattedGrpcError {
   }
 }
 
-function toProtoRequest(desc: DescMessage, data: JsonValue | undefined): MessageInitShape<DescMessage> {
-  return fromJson(desc, (data ?? {}) as BufJsonValue, { ignoreUnknownFields: true, registry: wktRegistry }) as MessageInitShape<DescMessage>
+function toProtoRequest(desc: DescMessage, data: JsonValue | undefined, registry: Registry): MessageInitShape<DescMessage> {
+  return fromJson(desc, (data ?? {}) as BufJsonValue, { ignoreUnknownFields: true, registry }) as MessageInitShape<DescMessage>
 }
 
-function toJsonResponse(desc: DescMessage, message: unknown): JsonValue {
-  return toJson(desc, message as never, { alwaysEmitImplicit: true, useProtoFieldName: true, registry: wktRegistry }) as JsonValue
+function toJsonResponse(desc: DescMessage, message: unknown, registry: Registry): JsonValue {
+  return toJson(desc, message as never, { alwaysEmitImplicit: true, useProtoFieldName: true, registry }) as JsonValue
 }
 
 async function* toConnectRequestStream(
   method: DescMethod,
-  requests: RequestStream
+  requests: RequestStream,
+  registry: Registry
 ): AsyncIterable<MessageInitShape<DescMessage>> {
   for await (const request of requests) {
-    yield toProtoRequest(method.input, request)
+    yield toProtoRequest(method.input, request, registry)
   }
 }
