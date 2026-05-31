@@ -22,7 +22,7 @@ const VALID_NAME_RE = /^[a-zA-Z_][\w.]*$/
 
 export class GrpcMethodInvokerService {
   constructor(
-    private readonly schemaRepository: Pick<ReflectionSchemaRepository, 'getFileRegistry'> = reflectionSchemaRepository,
+    private readonly schemaRepository: Pick<ReflectionSchemaRepository, 'getFileRegistry' | 'getAllFileDescriptorSet'> = reflectionSchemaRepository,
     private readonly transportProvider: ConnectTransportProvider = connectTransportProvider,
     private readonly connectInvoker: ConnectInvoker = new ConnectInvoker(transportProvider)
   ) {}

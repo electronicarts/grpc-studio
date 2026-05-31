@@ -56,3 +56,51 @@ export function isEmpty(value: unknown): boolean {
   if (typeof value === 'object' && Object.keys(value).length === 0) return true
   return false
 }
+
+/**
+ * Get a human-readable display name for a scalar type.
+ */
+export function getScalarTypeName(scalar: ScalarType): string {
+  switch (scalar) {
+    case ScalarType.DOUBLE: return 'double'
+    case ScalarType.FLOAT: return 'float'
+    case ScalarType.INT64: return 'int64'
+    case ScalarType.UINT64: return 'uint64'
+    case ScalarType.INT32: return 'int32'
+    case ScalarType.FIXED64: return 'fixed64'
+    case ScalarType.FIXED32: return 'fixed32'
+    case ScalarType.BOOL: return 'bool'
+    case ScalarType.STRING: return 'string'
+    case ScalarType.BYTES: return 'bytes'
+    case ScalarType.UINT32: return 'uint32'
+    case ScalarType.SFIXED32: return 'sfixed32'
+    case ScalarType.SFIXED64: return 'sfixed64'
+    case ScalarType.SINT32: return 'sint32'
+    case ScalarType.SINT64: return 'sint64'
+    default: return 'unknown'
+  }
+}
+
+/**
+ * Get the type name for a field's element/value type.
+ * Handles scalar, enum, and message types.
+ */
+export function getFieldTypeName(
+  kind: 'scalar' | 'enum' | 'message',
+  field: {
+    scalar?: ScalarType
+    enum?: { typeName: string }
+    message?: { typeName: string }
+  }
+): string {
+  if (kind === 'scalar' && field.scalar !== undefined) {
+    return getScalarTypeName(field.scalar)
+  }
+  if (kind === 'enum' && field.enum) {
+    return field.enum.typeName
+  }
+  if (kind === 'message' && field.message) {
+    return field.message.typeName
+  }
+  return 'unknown'
+}

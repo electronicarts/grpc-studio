@@ -26,6 +26,7 @@ const WrapperField: React.FC<WrapperFieldProps> = ({ name, typeName, value, onCh
       scalar={scalar}
       value={wrapperValue(value)}
       onChange={onChange}
+      typeNameOverride={typeName}
     />
   )
 }

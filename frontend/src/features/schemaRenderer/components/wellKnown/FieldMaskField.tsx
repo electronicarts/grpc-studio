@@ -41,8 +41,10 @@ const FieldMaskField: React.FC<FieldMaskFieldProps> = ({ name, value, onChange }
     onChange(next.length > 0 ? next.join(',') : undefined)
   }
 
+  const typeMeta = <span className="text-xs text-gray-500">(google.protobuf.FieldMask)</span>
+
   return (
-    <FormField label={name}>
+    <FormField label={name} labelMeta={typeMeta}>
       <div className="space-y-2">
         {/* Path chips */}
         {paths.length > 0 ? (

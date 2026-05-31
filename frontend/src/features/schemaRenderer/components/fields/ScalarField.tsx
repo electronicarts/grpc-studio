@@ -4,7 +4,7 @@ import React, { useMemo } from 'react'
 import { ScalarType } from '@bufbuild/protobuf'
 import { Input } from '@/components/ui/input'
 import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
-import { getInputType, parseValue } from '../../utils/scalarTypeUtils'
+import { getInputType, parseValue, getScalarTypeName } from '../../utils/scalarTypeUtils'
 import { bytesToBase64 } from '../../../../utils/bytesUtils'
 import { FormField } from '../../../../components/shared'
 
@@ -13,13 +13,15 @@ interface ScalarFieldProps {
   scalar: ScalarType
   value: unknown
   onChange: (value: unknown) => void
+  typeNameOverride?: string
 }
 
-const ScalarField: React.FC<ScalarFieldProps> = ({ name, scalar, value, onChange }) => {
+const ScalarField: React.FC<ScalarFieldProps> = ({ name, scalar, value, onChange, typeNameOverride }) => {
   const { readOnly } = useProtoMessageRendererContext()
   const inputType = getInputType(scalar)
   const isBytes = scalar === ScalarType.BYTES
   const isBool = scalar === ScalarType.BOOL
+  const typeName = typeNameOverride || getScalarTypeName(scalar)
   const displayValue = useMemo(
     () => isBytes ? bytesToBase64(value) : String(value ?? ''),
     [isBytes, value],
@@ -35,9 +37,11 @@ const ScalarField: React.FC<ScalarFieldProps> = ({ name, scalar, value, onChange
     onChange(parseValue(e.target.value, scalar))
   }
 
+  const typeMeta = <span className="text-xs text-gray-500">({typeName})</span>
+
   if (isBool) {
     return (
-      <FormField label={name} inline>
+      <FormField label={name} labelMeta={typeMeta} inline>
         <input
           type="checkbox"
           checked={!!value}
@@ -50,7 +54,7 @@ const ScalarField: React.FC<ScalarFieldProps> = ({ name, scalar, value, onChange
   }
 
   return (
-    <FormField label={name}>
+    <FormField label={name} labelMeta={typeMeta}>
       <Input
         type={inputType}
         value={displayValue}
@@ -60,7 +64,7 @@ const ScalarField: React.FC<ScalarFieldProps> = ({ name, scalar, value, onChange
         className="w-full"
       />
       {isBytes && (
-        <span className="text-xs text-muted-foreground mt-0.5">bytes — base64 encoded</span>
+        <span className="text-xs text-muted-foreground">base64 encoded</span>
       )}
     </FormField>
   )

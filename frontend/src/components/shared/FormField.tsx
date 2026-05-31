@@ -5,6 +5,7 @@ import { cn } from '@/utils/cn'
 
 interface FormFieldProps {
   label: string
+  labelMeta?: React.ReactNode
   required?: boolean
   error?: string
   hint?: string
@@ -16,6 +17,7 @@ interface FormFieldProps {
 
 const FormField: React.FC<FormFieldProps> = ({
   label,
+  labelMeta,
   required = false,
   error,
   hint,
@@ -31,6 +33,7 @@ const FormField: React.FC<FormFieldProps> = ({
         <span className={cn('text-sm text-gray-700 dark:text-gray-300', labelClassName)}>
           {label}
           {required && <span className="text-red-500 ml-1">*</span>}
+          {labelMeta && <span className="ml-1">{labelMeta}</span>}
         </span>
       </label>
     )
@@ -39,19 +42,22 @@ const FormField: React.FC<FormFieldProps> = ({
   return (
     <div className={cn('space-y-1', className)}>
       <label className={cn(
-        'text-sm font-medium text-gray-700 dark:text-gray-300',
+        'flex items-center gap-1 text-sm font-medium text-gray-700 dark:text-gray-300',
         labelClassName
       )}>
-        {label}
-        {required && <span className="text-red-500 ml-1">*</span>}
+        <span>
+          {label}
+          {required && <span className="text-red-500 ml-1">*</span>}
+        </span>
+        {labelMeta}
       </label>
-      
+
       {children}
-      
+
       {hint && !error && (
         <p className="text-xs text-gray-500 dark:text-gray-400">{hint}</p>
       )}
-      
+
       {error && (
         <p className="text-xs text-red-500 dark:text-red-400">{error}</p>
       )}

@@ -24,8 +24,10 @@ const DurationField: React.FC<DurationFieldProps> = ({ name, value, onChange }) 
     onChange(e.target.value || undefined)
   }
 
+  const typeMeta = <span className="text-xs text-gray-500">(google.protobuf.Duration)</span>
+
   return (
-    <FormField label={name}>
+    <FormField label={name} labelMeta={typeMeta}>
       <div className="flex items-center gap-2">
         <Input
           type="text"

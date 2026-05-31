@@ -9,6 +9,7 @@ import type { DescField } from '@bufbuild/protobuf'
 import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
 import { removeObjectEntry, setObjectEntry } from '../../utils/collectionMutation'
 import { filterMapEntries } from '../../utils/mapUtils'
+import { getScalarTypeName, getFieldTypeName } from '../../utils/scalarTypeUtils'
 import MessageRenderer from '../core/MessageRenderer'
 import MessageFieldFrame from '../shared/MessageFieldFrame'
 import { MapEntryAdder } from '../shared/MapEntryAdder'
@@ -30,15 +31,20 @@ const MapField: React.FC<MapFieldProps> = ({ field, value, onChange, path }) => 
 
   const { allEntries, entries, countDisplay } = filterMapEntries({ mapValue, searchQuery })
 
+  // Determine key and value types for type display (e.g., "map<string, int32>")
+  const keyType = getScalarTypeName(field.mapKey)
+  const valueType = getFieldTypeName(field.mapKind, field)
+
   return (
     <MessageFieldFrame
       name={field.name}
+      typeName={`map<${keyType}, ${valueType}>`}
       path={path}
       className="border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-900/20"
       bodyClassName="ml-6 space-y-3"
       meta={(
         <Badge variant="secondary" className="ml-auto bg-blue-100 dark:bg-blue-800">
-          Map ({countDisplay})
+          {countDisplay} {countDisplay === '1' ? 'entry' : 'entries'}
         </Badge>
       )}
     >

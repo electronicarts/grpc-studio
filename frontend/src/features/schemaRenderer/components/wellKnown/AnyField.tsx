@@ -69,8 +69,10 @@ const AnyField: React.FC<AnyFieldProps> = ({ name, value, onChange }) => {
     onChange({ '@type': `type.googleapis.com/${currentTypeName}`, ...data })
   }
 
+  const typeMeta = <span className="text-xs text-gray-500">(google.protobuf.Any)</span>
+
   return (
-    <FormField label={name}>
+    <FormField label={name} labelMeta={typeMeta}>
       <div className="space-y-2 border border-input rounded-md p-3 bg-background">
         {/* Type selector */}
         <select

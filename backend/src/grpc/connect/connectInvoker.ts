@@ -11,9 +11,9 @@ import {
   type DescMethodUnary,
   type JsonValue as BufJsonValue,
   type MessageInitShape,
-  type FileDescriptorSet,
   type Registry,
 } from '@bufbuild/protobuf'
+import type { FileDescriptorSet } from '@bufbuild/protobuf/wkt'
 import { Code, ConnectError, createClient, type CallOptions } from '@connectrpc/connect'
 import { buildDynamicRegistry } from './dynamicRegistry.js'
 import type { JsonValue } from '@grpc-studio/shared'
@@ -69,9 +69,9 @@ export class ConnectInvoker {
     request: JsonValue | undefined,
     callbacks: StreamCallbacks,
     headers: OutboundHeaders,
-    fileRegistry: FileRegistry
+    fileDescriptorSet: FileDescriptorSet
   ): Promise<StreamHandle> {
-    const registry = buildDynamicRegistry(fileRegistry)
+    const registry = buildDynamicRegistry(fileDescriptorSet)
     return this.startResponseStream(
       callbacks,
       async (signal) => this.getClientMethod<ServerStreamingClientMethod>(method)(
@@ -88,10 +88,10 @@ export class ConnectInvoker {
     requests: RequestStream,
     callbacks: StreamCallbacks,
     headers: OutboundHeaders,
-    fileRegistry: FileRegistry
+    fileDescriptorSet: FileDescriptorSet
   ): Promise<StreamHandle> {
     const abortController = new AbortController()
-    const registry = buildDynamicRegistry(fileRegistry)
+    const registry = buildDynamicRegistry(fileDescriptorSet)
 
     this.pumpClientStream(method, requests, callbacks, headers, abortController.signal, registry)
       .catch((error) => {
@@ -113,9 +113,9 @@ export class ConnectInvoker {
     requests: RequestStream,
     callbacks: StreamCallbacks,
     headers: OutboundHeaders,
-    fileRegistry: FileRegistry
+    fileDescriptorSet: FileDescriptorSet
   ): Promise<StreamHandle> {
-    const registry = buildDynamicRegistry(fileRegistry)
+    const registry = buildDynamicRegistry(fileDescriptorSet)
     return this.startResponseStream(
       callbacks,
       async (signal) => this.getClientMethod<BidiStreamingClientMethod>(method)(

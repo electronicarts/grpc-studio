@@ -6,8 +6,9 @@
  * via reflection, not just WKTs.
  */
 
-import { createRegistry, createFileRegistry, type DescMessage, type FileDescriptorSet, type Registry } from '@bufbuild/protobuf'
+import { createRegistry, createFileRegistry, type DescMessage, type Registry } from '@bufbuild/protobuf'
 import * as wkt from '@bufbuild/protobuf/wkt'
+import type { FileDescriptorSet } from '@bufbuild/protobuf/wkt'
 import logger from '../../utils/logger.js'
 
 const registryLogger = logger.child({ module: 'dynamic-registry' })
