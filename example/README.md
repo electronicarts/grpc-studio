@@ -35,6 +35,15 @@ npm start
 
 The server starts on `localhost:50051` (override with `PORT=6565 npm start`).
 
+### Docker
+
+```bash
+docker build -t petstore-example ./example
+docker run --rm -p 50051:50051 petstore-example
+```
+
+The image is also used by the Helm chart's [local testing guide](../helm/TESTING.md) as the sample backend.
+
 If you edit `proto/petstore.proto`, regenerate the descriptor:
 
 ```bash

@@ -38,7 +38,16 @@ Skip this step. The chart defaults reference `ghcr.io/electronicarts/grpc-studio
 
 ## 3. Deploy a sample gRPC server
 
-The chart only deploys gRPC Studio — it needs a target gRPC server to connect to. Any reflection-enabled gRPC server works. The example below uses [`fullstorydev/grpcui`'s example server](https://github.com/fullstorydev/grpcurl) packaged in `gcr.io/grpc-ecosystem/grpcurl-server`, but anything with reflection enabled is fine.
+The chart only deploys gRPC Studio — it needs a target gRPC server to connect to. The repo ships with a reflection-enabled PetStore example under [`example/`](../example) that exercises every proto3 feature gRPC Studio supports (deep nesting, oneOf, maps, streaming, well-known types, etc.).
+
+Build and load it into Minikube:
+
+```bash
+eval $(minikube docker-env)
+docker build -t petstore-example:dev ./example
+```
+
+Deploy it:
 
 ```bash
 kubectl create namespace grpc-test
@@ -59,7 +68,8 @@ spec:
     spec:
       containers:
         - name: server
-          image: kennethreitz/httpbin
+          image: petstore-example:dev
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 50051
 ---
@@ -76,7 +86,7 @@ spec:
 EOF
 ```
 
-> Replace this with your own gRPC server. The chart connects to it via the `connection.target` values.
+> Any reflection-enabled gRPC server works — swap the image and port if you'd rather connect to your own.
 
 ## 4. Install the chart
 
@@ -108,7 +118,7 @@ kubectl -n grpc-studio rollout status deploy/grpc-studio-frontend
 Port-forward the frontend service:
 
 ```bash
-kubectl -n grpc-studio port-forward svc/grpc-studio-grpc-studio-frontend 8080:80
+kubectl -n grpc-studio port-forward svc/grpc-studio-frontend 8080:80
 ```
 
 Then open <http://localhost:8080>.
