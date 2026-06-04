@@ -11,21 +11,27 @@ api:
     config: {{ .Values.ui.api.endpoints.config | quote }}
     discover: {{ .Values.ui.api.endpoints.discover | quote }}
     invoke: {{ .Values.ui.api.endpoints.invoke | quote }}
-    descriptorSet: "/api/grpc/descriptor-set"
+    descriptorSet: {{ .Values.ui.api.endpoints.descriptorSet | quote }}
     status: {{ .Values.ui.api.endpoints.status | quote }}
     health: {{ .Values.ui.api.endpoints.health | quote }}
   timeout: {{ .Values.ui.api.timeout }}
+  {{- with .Values.ui.api.websocketTimeout }}
+  websocketTimeout: {{ . }}
+  {{- end }}
 
 auth:
   enabled: {{ .Values.ui.auth.enabled }}
   {{- if .Values.ui.auth.enabled }}
   provider: {{ .Values.ui.auth.provider | quote }}
-  {{- if eq .Values.ui.auth.provider "oidc" }}
-  oidc:
-    issuerUrl: {{ .Values.ui.auth.oidc.issuerUrl | quote }}
-    clientId: {{ .Values.ui.auth.oidc.clientId | quote }}
-    redirectUri: {{ .Values.ui.auth.oidc.redirectUri | quote }}
+  {{- if eq .Values.ui.auth.provider "entra-id" }}
+  entraId:
+    tenantId: {{ .Values.ui.auth.entraId.tenantId | quote }}
+    clientId: {{ .Values.ui.auth.entraId.clientId | quote }}
+    {{- with .Values.ui.auth.entraId.redirectUri }}
+    redirectUri: {{ . | quote }}
+    {{- end }}
     scopes:
-      {{- toYaml .Values.ui.auth.oidc.scopes | nindent 6 }}
+      {{- toYaml .Values.ui.auth.entraId.scopes | nindent 6 }}
+    cloud: {{ .Values.ui.auth.entraId.cloud | quote }}
   {{- end }}
   {{- end }}

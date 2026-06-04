@@ -29,10 +29,22 @@ backend:
   port: 3001
   server:
     host: "0.0.0.0"
-    environment: production
     cors:
       enabled: true
-      origins: []  # empty = use backend default (localhost:3000, localhost:4173)
+      # Browser origins allowed to call the backend, including the streaming
+      # WebSocket. Must include the URL the UI is served from, or streaming
+      # RPCs fail with "WebSocket connection error". Empty = backend default
+      # (localhost:3000, localhost:4173). Do NOT use ["*"]: the backend sends
+      # credentials, and a wildcard origin with credentials is rejected at
+      # startup (CrashLoopBackOff). List explicit origins instead.
+      origins: []
+  logging:
+    level: info    # debug | info | warn | error  (sets LOG_LEVEL)
+    format: pretty # pretty | json                 (sets LOG_FORMAT)
+  cache:
+    reflection:
+      ttlMs: 3600000
+      maxEntries: 1000
   env: []
   livenessProbe:
     httpGet:
@@ -148,25 +160,9 @@ secrets:
     ca: ""  # leave empty if no CA cert is needed
 
 app:
-  logging:
-    level: info  # debug | info | warn | error
-    format: json  # json | text
-    console:
-      enabled: true
-      colorize: false
-    file:
-      enabled: false
-  cache:
-    schema:
-      ttl: 3600
-      maxEntries: 1000
-    protoset:
-      ttl: 3600
-      maxEntries: 1000
   health:
     enabled: true
     endpoint: /health
-    interval: 30
 
 ui:
   api:
@@ -175,45 +171,25 @@ ui:
       config: "/api/grpc/config"
       discover: "/api/grpc/discover"
       invoke: "/api/grpc/invoke"
-      schema: "/api/grpc/schema"
+      descriptorSet: "/api/grpc/descriptor-set"
       status: "/api/grpc/status"
-      health: "/api/health"
-      generateCommand: "/api/grpc/generate-command"
+      health: "/health"
     timeout: 30000
+    # Timeout (ms) when establishing the streaming WebSocket. Omit to use the UI default (5000).
+    websocketTimeout: 5000
+  # UI authentication. Only the Microsoft Entra ID provider is supported.
   auth:
     enabled: false
-    provider: none  # none | oidc
-    oidc:
-      issuerUrl: ""
+    provider: entra-id
+    entraId:
+      tenantId: ""
       clientId: ""
-      redirectUri: ""
+      redirectUri: ""  # empty = window.location.origin
       scopes:
         - openid
         - profile
         - email
-  proxy:
-    enabled: true
-    pathPrefix: "/api"
-  theme:
-    default: dark
-    primary: "#1976d2"
-  forms:
-    autoSave: true
-    validateOnChange: true
-  display:
-    maxResponseSize: "10MB"
-    syntaxHighlighting: true
-    lineNumbers: true
-  security:
-    cors:
-      enabled: true
-      allowedOrigins:
-        - "*"
-  features:
-    reflection: true
-    protosets: true
-    history: true
-    export: true
+      cloud: public  # public | government | china | germany
 
 nodeSelector: {}
 

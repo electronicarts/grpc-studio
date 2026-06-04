@@ -68,6 +68,11 @@ auth:
     {}
     {{- end }}
 
+cache:
+  reflection:
+    ttlMs: {{ .Values.backend.cache.reflection.ttlMs | int64 }}
+    maxEntries: {{ .Values.backend.cache.reflection.maxEntries | int64 }}
+
 health:
   enabled: {{ .Values.app.health.enabled }}
   endpoint: {{ .Values.app.health.endpoint | quote }}

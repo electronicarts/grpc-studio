@@ -15,10 +15,11 @@ spec:
       app.kubernetes.io/component: frontend
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
       annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap-frontend.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- end }}
       labels:
         {{- include "grpc-studio.labels" . | nindent 8 }}
         app.kubernetes.io/component: frontend

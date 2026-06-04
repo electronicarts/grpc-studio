@@ -59,7 +59,7 @@ helm install grpc-studio ./helm \
 ### 4. Access the UI
 
 ```bash
-kubectl port-forward svc/grpc-studio-grpc-studio-frontend 8080:80 -n grpc-studio
+kubectl port-forward svc/grpc-studio-frontend 8080:80 -n grpc-studio
 ```
 
 Open http://localhost:8080.
@@ -95,6 +95,10 @@ ct lint --config .github/ct.yaml
 ```
 
 `ct install` (full cluster-based install test) runs automatically in CI.
+
+## Documentation
+
+When you add, remove, or change a value in `values.yaml`, update the **Parameters** table in `README.md` to match. The table is hand-maintained — keep it in sync, and only document values the chart actually wires into the rendered manifests.
 
 ## Commit conventions
 
