@@ -39,8 +39,8 @@ backend:
       # startup (CrashLoopBackOff). List explicit origins instead.
       origins: []
   logging:
-    level: info    # debug | info | warn | error  (sets LOG_LEVEL)
-    format: pretty # pretty | json                 (sets LOG_FORMAT)
+    level: info  # debug | info | warn | error (sets LOG_LEVEL)
+    format: pretty  # pretty | json (sets LOG_FORMAT)
   cache:
     reflection:
       ttlMs: 3600000
