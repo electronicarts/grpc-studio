@@ -187,6 +187,20 @@ docker-compose up -d
 
 See [docker/README.md](docker/README.md) for complete deployment documentation including Kubernetes manifests.
 
+## Helm Chart
+
+A Helm chart is published to GitHub Container Registry for Kubernetes deployments:
+
+```bash
+helm upgrade --install my-grpc-studio oci://ghcr.io/electronicarts/helm-charts/grpc-studio \
+  --set connection.target.host=my-grpc-server.default.svc.cluster.local \
+  --set connection.target.port=50051 \
+  --set connection.mode=insecure \
+  --namespace grpc-studio --create-namespace
+```
+
+See [helm/README.md](helm/README.md) for configuration options and [helm/examples/](helm/examples/) for ingress-nginx and Istio setups.
+
 ## CI/CD
 
 This project uses GitHub Actions for continuous integration and Docker image publishing:

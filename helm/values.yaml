@@ -1,0 +1,202 @@
+# Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
+
+nameOverride: ""
+fullnameOverride: ""
+
+imagePullSecrets: []
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext: {}
+  # fsGroup: 1000
+
+securityContext: {}
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+backend:
+  replicaCount: 1
+  image:
+    repository: ghcr.io/electronicarts/grpc-studio/backend
+    tag: ""  # defaults to appVersion
+    pullPolicy: IfNotPresent
+  port: 3001
+  server:
+    host: "0.0.0.0"
+    cors:
+      enabled: true
+      # Browser origins allowed to call the backend, including the streaming
+      # WebSocket. Must include the URL the UI is served from, or streaming
+      # RPCs fail with "WebSocket connection error". Empty = backend default
+      # (localhost:3000, localhost:4173). Do NOT use ["*"]: the backend sends
+      # credentials, and a wildcard origin with credentials is rejected at
+      # startup (CrashLoopBackOff). List explicit origins instead.
+      origins: []
+  logging:
+    level: info  # debug | info | warn | error (sets LOG_LEVEL)
+    format: pretty  # pretty | json (sets LOG_FORMAT)
+  cache:
+    reflection:
+      ttlMs: 3600000
+      maxEntries: 1000
+  env: []
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: http
+    initialDelaySeconds: 60
+    periodSeconds: 30
+    timeoutSeconds: 10
+    failureThreshold: 5
+  readinessProbe:
+    httpGet:
+      path: /health
+      port: http
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 10
+    failureThreshold: 3
+  resources: {}
+    # requests:
+    #   memory: "256Mi"
+    #   cpu: "200m"
+    # limits:
+    #   memory: "512Mi"
+    #   cpu: "500m"
+  service:
+    type: ClusterIP
+    nameOverride: ""  # override the Service name used as the nginx upstream
+    annotations: {}
+
+frontend:
+  replicaCount: 1
+  image:
+    repository: ghcr.io/electronicarts/grpc-studio/frontend
+    tag: ""  # defaults to appVersion
+    pullPolicy: IfNotPresent
+  port: 80
+  env: []
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: http
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  readinessProbe:
+    httpGet:
+      path: /health
+      port: http
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 3
+  resources: {}
+    # requests:
+    #   memory: "128Mi"
+    #   cpu: "100m"
+    # limits:
+    #   memory: "512Mi"
+    #   cpu: "500m"
+  service:
+    type: ClusterIP
+    annotations: {}
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: grpc-studio.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+# connection.mode: plaintext | tls | mtls
+connection:
+  mode: tls
+  target:
+    host: your-grpc-server.example.com
+    port: 443
+  timeout:
+    connect: 10000
+    request: 30000
+  tls:
+    verifyServerCert: true
+    serverName: ""
+
+# auth.defaultPlugin: none | bearer-token | oauth2-client-credentials
+auth:
+  defaultPlugin: none
+  bearerToken:
+    enabled: false
+    secretRef: ""  # name of a Secret with key "token"
+  oauth2:
+    enabled: false
+    tokenUrl: ""
+    clientId: ""
+    clientSecretRef: ""  # name of a Secret with key "clientSecret"
+    scope: ""
+    tokenCacheTimeMs: 300000
+    requestTimeoutMs: 10000
+    maxRetries: 3
+    retryDelayMs: 1000
+
+# Required when connection.mode is "mtls".
+# Provide an existing Secret containing client certificates (e.g. from cert-manager, Vault, or kubectl create secret).
+secrets:
+  existingSecret: ""  # name of a Secret containing the client certificate
+  keys:
+    cert: tls.crt
+    key: tls.key
+    ca: ""  # leave empty if no CA cert is needed
+
+app:
+  health:
+    enabled: true
+    endpoint: /health
+
+ui:
+  api:
+    baseUrl: ""
+    endpoints:
+      config: "/api/grpc/config"
+      discover: "/api/grpc/discover"
+      invoke: "/api/grpc/invoke"
+      descriptorSet: "/api/grpc/descriptor-set"
+      status: "/api/grpc/status"
+      health: "/health"
+    timeout: 30000
+    # Timeout (ms) when establishing the streaming WebSocket. Omit to use the UI default (5000).
+    websocketTimeout: 5000
+  # UI authentication. Only the Microsoft Entra ID provider is supported.
+  auth:
+    enabled: false
+    provider: entra-id
+    entraId:
+      tenantId: ""
+      clientId: ""
+      redirectUri: ""  # empty = window.location.origin
+      scopes:
+        - openid
+        - profile
+        - email
+      cloud: public  # public | government | china | germany
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+extraVolumes: []
+
+extraVolumeMounts: []

@@ -1,0 +1,27 @@
+# Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
+
+apiVersion: v2
+name: grpc-studio
+description: |
+  A Helm chart for deploying gRPC Studio — a self-hosted web UI for exploring,
+  testing, and debugging gRPC services. Supports server reflection, mTLS, OAuth2,
+  Istio ingress, and cert-manager integration.
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - grpc
+  - reflection
+  - api
+  - developer-tools
+  - debugging
+  - grpcui
+home: https://github.com/electronicarts/grpc-studio
+sources:
+  - https://github.com/electronicarts/grpc-studio
+maintainers:
+  - name: gRPC Studio Maintainers
+    url: https://github.com/electronicarts/grpc-studio
+annotations:
+  artifacthub.io/license: BSD-3-Clause
+  artifacthub.io/category: developer-tools

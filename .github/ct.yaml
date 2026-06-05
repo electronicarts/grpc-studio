@@ -1,0 +1,15 @@
+# Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
+
+# chart-testing configuration
+# https://github.com/helm/chart-testing
+
+# ct scans repo root and finds helm/ as the chart directory
+chart-dirs:
+  - .
+
+target-branch: main
+
+helm-extra-args: "--timeout 120s"
+
+# Validate maintainers field against GitHub
+validate-maintainers: false

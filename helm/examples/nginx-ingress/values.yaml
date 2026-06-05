@@ -1,0 +1,29 @@
+# Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
+
+connection:
+  mode: tls
+  target:
+    host: my-grpc-server.example.com
+    port: 443
+  tls:
+    verifyServerCert: true
+
+auth:
+  defaultPlugin: none
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+  hosts:
+    - host: grpc-studio.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: grpc-studio-tls
+      hosts:
+        - grpc-studio.example.com

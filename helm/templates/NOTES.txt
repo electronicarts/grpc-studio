@@ -1,0 +1,37 @@
+Thank you for installing gRPC Studio!
+
+Release:   {{ .Release.Name }}
+Namespace: {{ .Release.Namespace }}
+
+Backend:
+  {{ include "grpc-studio.backendServiceName" . }}:{{ .Values.backend.port }}
+
+Frontend:
+  {{ include "grpc-studio.frontendServiceName" . }}:{{ .Values.frontend.port }}
+
+{{- if .Values.ingress.enabled }}
+
+Access gRPC Studio at:
+{{- range .Values.ingress.hosts }}
+  http{{ if $.Values.ingress.tls }}s{{ end }}://{{ .host }}
+{{- end }}
+
+{{- else }}
+
+No Ingress is configured. Port-forward to access the UI:
+  kubectl port-forward svc/{{ include "grpc-studio.frontendServiceName" . }} 8080:{{ .Values.frontend.port }} -n {{ .Release.Namespace }}
+
+Then open http://localhost:8080 in your browser.
+
+For production access, see the helm/examples/ directory:
+  helm/examples/nginx-ingress/    - ingress-nginx + cert-manager
+  helm/examples/istio/            - Istio Gateway + VirtualService
+
+{{- end }}
+
+Connection: {{ .Values.connection.mode }} → {{ .Values.connection.target.host }}:{{ .Values.connection.target.port }}
+
+Deploy another instance for a different service:
+  helm install <release> oci://ghcr.io/electronicarts/helm-charts/grpc-studio \
+    --set connection.target.host=<host> \
+    --namespace <namespace> --create-namespace

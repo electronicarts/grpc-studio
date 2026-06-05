@@ -1,0 +1,15 @@
+# Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
+
+connection:
+  mode: tls
+  target:
+    host: my-grpc-server.example.com
+    port: 443
+  tls:
+    verifyServerCert: true
+
+auth:
+  defaultPlugin: none
+
+ingress:
+  enabled: false

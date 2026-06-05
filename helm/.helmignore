@@ -1,0 +1,19 @@
+# Patterns to ignore when building packages.
+# Follows the same conventions as .gitignore.
+
+.DS_Store
+.git/
+.gitignore
+.helmignore
+
+# IDE / editor artifacts
+.idea/
+.vscode/
+*.swp
+*.bak
+
+# Examples are documentation, not chart resources
+examples/
+
+# CI/CD artifacts
+*.tgz
