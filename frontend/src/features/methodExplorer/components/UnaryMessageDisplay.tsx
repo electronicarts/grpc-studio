@@ -15,7 +15,7 @@ import { useMethodExplorerContext } from '../stores'
  * No list chrome — just header (tabs, time, size, actions) and body content.
  */
 const UnaryMessageDisplay: React.FC = () => {
-  const { selectedService, selectedMethod, response } = useMethodExplorerContext()
+  const { selectedTarget, selectedService, selectedMethod, response } = useMethodExplorerContext()
   const hasSchema = !!(response.data && response.schema)
   const [activeTab, setActiveTab] = useState<ViewTab>(hasSchema ? 'form' : 'json')
   const effectiveTab = activeTab === 'form' && !hasSchema ? 'json' : activeTab
@@ -33,7 +33,7 @@ const UnaryMessageDisplay: React.FC = () => {
   return (
     <div className="space-y-2">
       {/* Header */}
-      <div className="flex items-center justify-between pb-1 border-b border-gray-200 dark:border-gray-700">
+      <div className="flex items-center justify-between border-b border-border pb-1">
         <div className="flex items-center gap-2">
           <label className="text-xs font-medium text-muted-foreground">Response</label>
           <ResponseMetadata time={response.time} size={response.size} />
@@ -51,10 +51,11 @@ const UnaryMessageDisplay: React.FC = () => {
 
       {/* Body */}
       {effectiveTab === 'schema' ? (
-        <ProtoViewer selectedService={selectedService} selectedMethod={selectedMethod} inline outputOnly />
+        <ProtoViewer selectedTarget={selectedTarget} selectedService={selectedService} selectedMethod={selectedMethod} inline outputOnly />
       ) : effectiveTab === 'form' && hasSchema ? (
-        <div className="border rounded-md p-4 bg-muted/50">
+        <div className="rounded-md border bg-muted/50 p-4">
           <ProtoMessageRenderer
+            target={selectedTarget}
             schema={response.schema}
             data={response.data as Record<string, unknown>}
             onChange={() => {}}
@@ -64,13 +65,13 @@ const UnaryMessageDisplay: React.FC = () => {
           />
         </div>
       ) : (
-        <div className="border rounded-md bg-muted/50">
+        <div className="rounded-md border bg-muted/50">
           <div className="flex justify-end px-3 pt-2">
             <Button variant="ghost" size="sm" onClick={() => setExpanded(v => !v)} className="h-7 px-2 text-xs">
-              {expanded ? <><ChevronUp className="w-3 h-3 mr-1" />Collapse</> : <><ChevronDown className="w-3 h-3 mr-1" />Expand</>}
+              {expanded ? <><ChevronUp className="mr-1 size-3" />Collapse</> : <><ChevronDown className="mr-1 size-3" />Expand</>}
             </Button>
           </div>
-          <pre className={`px-4 pb-4 text-sm overflow-auto ${expanded ? '' : 'max-h-60'}`}>
+          <pre className={`overflow-auto px-4 pb-4 text-sm ${expanded ? '' : 'max-h-60'}`}>
             {response.raw}
           </pre>
         </div>

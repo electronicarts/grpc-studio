@@ -5,7 +5,7 @@ import ProtoViewer from './ProtoViewer'
 import { useMethodExplorerContext } from '../stores'
 
 const ReceivedStreamingPanel: React.FC = () => {
-  const { selectedService, selectedMethod, response, stream } = useMethodExplorerContext()
+  const { selectedTarget, selectedService, selectedMethod, response, stream } = useMethodExplorerContext()
 
   return (
     <StreamingMessageDisplay
@@ -19,7 +19,7 @@ const ReceivedStreamingPanel: React.FC = () => {
       methodName={selectedMethod?.name}
       time={response.time}
       size={response.size}
-      schemaNode={<ProtoViewer selectedService={selectedService} selectedMethod={selectedMethod} inline outputOnly />}
+      schemaNode={<ProtoViewer selectedTarget={selectedTarget} selectedService={selectedService} selectedMethod={selectedMethod} inline outputOnly />}
     />
   )
 }

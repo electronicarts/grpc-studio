@@ -34,8 +34,27 @@ export function safeSetJSON<T>(key: string, value: T): StorageResult {
   }
 }
 
-// Backward compatibility: return boolean
-export function safeSetJSONLegacy<T>(key: string, value: T): boolean {
-  const result = safeSetJSON(key, value)
-  return result.success
+// ---------------------------------------------------------------------------
+// Raw string access — for values that are already plain strings (timestamps,
+// flags) and shouldn't be JSON-encoded. Same safe/try-catch guarantees.
+// ---------------------------------------------------------------------------
+
+export function safeGetString(key: string): string | null {
+  try {
+    return localStorage.getItem(key)
+  } catch {
+    return null
+  }
+}
+
+export function safeSetString(key: string, value: string): void {
+  try {
+    localStorage.setItem(key, value)
+  } catch { /* best-effort */ }
+}
+
+export function safeRemove(key: string): void {
+  try {
+    localStorage.removeItem(key)
+  } catch { /* best-effort */ }
 }

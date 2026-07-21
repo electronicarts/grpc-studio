@@ -4,6 +4,8 @@
 
 This chart deploys the backend and frontend as separate Deployments with ClusterIP Services. Ingress, DNS, and TLS are left to your infrastructure. See [`examples/`](examples/) for nginx-ingress and Istio setups.
 
+> **Upgrading from 1.x?** The connection config changed from a single target to a list of targets. See [`MIGRATION.md`](MIGRATION.md).
+
 ## Prerequisites
 
 - Kubernetes >= 1.24
@@ -13,9 +15,10 @@ This chart deploys the backend and frontend as separate Deployments with Cluster
 
 ```bash
 helm upgrade --install my-grpc-studio oci://ghcr.io/electronicarts/helm-charts/grpc-studio \
-  --set connection.target.host=my-grpc-server.default.svc.cluster.local \
-  --set connection.target.port=50051 \
-  --set connection.mode=plaintext \
+  --set connection.targets[0].name="My gRPC Server" \
+  --set connection.targets[0].host=my-grpc-server.default.svc.cluster.local \
+  --set connection.targets[0].port=50051 \
+  --set connection.targets[0].mode=plaintext \
   --namespace grpc-studio --create-namespace
 ```
 
@@ -39,13 +42,26 @@ All available options are documented in the [Values](#values) table below.
 
 ### Connection
 
+Configure one or more gRPC targets. Each target appears as a selectable server in the UI, and users switch between them from the server selector. At least one target is required.
+
 ```yaml
 connection:
-  mode: plaintext   # plaintext | tls | mtls
-  target:
-    host: my-grpc-server.default.svc.cluster.local
-    port: 50051
+  targets:
+    - name: PetStore                # display name shown in the UI
+      host: petstore.default.svc.cluster.local
+      port: 50051
+      mode: plaintext               # plaintext | tls | mtls
+    - name: Payments
+      host: payments.example.com
+      port: 443
+      mode: tls
+    - name: Users (mTLS)
+      host: users.example.com
+      port: 443
+      mode: mtls                    # uses the shared client cert from `secrets` below
 ```
+
+Each target also accepts an optional `timeout.request` (unary RPC deadline in ms, default `30000`).
 
 ### Ingress
 
@@ -78,7 +94,7 @@ backend:
 
 ### mTLS client certificates
 
-When `connection.mode: mtls`, provide a Secret containing the client certificate. The chart mounts it at `/certs/` — it never creates the Secret itself.
+When any target uses `mode: mtls`, provide a Secret containing the client certificate. The chart mounts it at `/certs/`, shared by every mtls target — it never creates the Secret itself.
 
 With cert-manager (auto-rotated):
 
@@ -101,7 +117,11 @@ spec:
 
 ```yaml
 connection:
-  mode: mtls
+  targets:
+    - name: My gRPC Server
+      host: my-grpc-server.example.com
+      port: 443
+      mode: mtls
 secrets:
   existingSecret: grpc-studio-client-cert
   # keys match cert-manager's output (tls.crt / tls.key / ca.crt) by default.
@@ -119,7 +139,11 @@ kubectl create secret generic my-grpc-client-cert \
 
 ```yaml
 connection:
-  mode: mtls
+  targets:
+    - name: My gRPC Server
+      host: my-grpc-server.example.com
+      port: 443
+      mode: mtls
 secrets:
   existingSecret: my-grpc-client-cert
 ```
@@ -149,19 +173,24 @@ auth:
     scope: grpc.read grpc.write
 ```
 
-### Multiple instances
+### Multiple targets in one release
 
-Deploy one release per gRPC service using different release names:
+A single release can front several gRPC services — list them under `connection.targets` and users switch between them from the server selector in the UI:
 
-```bash
-helm upgrade --install payments oci://ghcr.io/electronicarts/helm-charts/grpc-studio \
-  --set connection.target.host=payments.default.svc.cluster.local \
-  --namespace grpc-studio --create-namespace
-
-helm upgrade --install users oci://ghcr.io/electronicarts/helm-charts/grpc-studio \
-  --set connection.target.host=users.default.svc.cluster.local \
-  --namespace grpc-studio
+```yaml
+connection:
+  targets:
+    - name: Payments
+      host: payments.default.svc.cluster.local
+      port: 50051
+      mode: plaintext
+    - name: Users
+      host: users.default.svc.cluster.local
+      port: 50051
+      mode: plaintext
 ```
+
+You can still deploy one release per service (different release names) if you prefer isolated instances — for example, to scale or secure them independently.
 
 ## Parameters
 
@@ -239,15 +268,16 @@ Every parameter below is wired into the rendered manifests. For the canonical de
 
 ### Connection
 
+At least one target is required. Each entry in `connection.targets` becomes a selectable server in the UI.
+
 | Key | Description | Default |
 |---|---|---|
-| `connection.mode` | Connection mode to the target gRPC server: `plaintext`, `tls`, or `mtls` | `tls` |
-| `connection.target.host` | Target gRPC server host (**required**) | `your-grpc-server.example.com` |
-| `connection.target.port` | Target gRPC server port | `443` |
-| `connection.timeout.connect` | Connect timeout (ms) | `10000` |
-| `connection.timeout.request` | Request timeout — maps to the backend unary RPC deadline (ms) | `30000` |
-| `connection.tls.verifyServerCert` | Verify the server certificate | `true` |
-| `connection.tls.serverName` | Override the server name for TLS verification | `""` |
+| `connection.targets` | List of gRPC targets the backend connects to (**at least one required**) | see [values.yaml](values.yaml) |
+| `connection.targets[].name` | Display name shown in the UI (**required**) | `My gRPC Server` |
+| `connection.targets[].host` | Target gRPC server host (**required**) | `your-grpc-server.example.com` |
+| `connection.targets[].port` | Target gRPC server port | `443` |
+| `connection.targets[].mode` | Connection mode: `plaintext`, `tls`, or `mtls` | `tls` |
+| `connection.targets[].timeout.request` | Request timeout — maps to the backend unary RPC deadline (ms) | `30000` |
 
 ### Authentication (backend)
 
@@ -270,7 +300,7 @@ Every parameter below is wired into the rendered manifests. For the canonical de
 
 | Key | Description | Default |
 |---|---|---|
-| `secrets.existingSecret` | Name of an existing Secret holding the client certificate (required for `mtls`) | `""` |
+| `secrets.existingSecret` | Name of an existing Secret holding the client certificate (required when any target uses `mtls`; shared by all mtls targets) | `""` |
 | `secrets.keys.cert` | Secret key for the client cert | `tls.crt` |
 | `secrets.keys.key` | Secret key for the client key | `tls.key` |
 | `secrets.keys.ca` | Secret key for the CA cert (empty if not needed) | `""` |

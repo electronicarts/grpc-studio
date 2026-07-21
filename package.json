@@ -1,33 +1,49 @@
 {
   "name": "grpc-studio",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "A modern web interface for testing and exploring gRPC services using server reflection",
   "type": "module",
   "workspaces": [
     "shared",
     "frontend",
     "backend",
-    "example"
+    "examples/*"
   ],
   "scripts": {
     "quickstart": "node ./scripts/quick-start.mjs",
+    "stop": "node ./scripts/stop.mjs",
+    "predev": "npm run stop",
     "dev": "npm run build:shared && concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
-    "dev:all": "npm run build:shared && concurrently \"npm run dev:frontend\" \"npm run dev:backend\" \"npm run dev:example\"",
+    "predev:all": "npm run stop",
+    "dev:all": "npm run build:shared && concurrently \"npm run dev:frontend\" \"npm run dev:backend\" \"npm run dev:petstore\" \"npm run dev:bookstore\"",
+    "predev:multi": "npm run stop",
+    "dev:multi": "npm run build:shared && concurrently \"npm run dev:frontend\" \"npm run dev:backend:multi\"",
     "dev:connect": "npm run build:shared && sh -c 'TARGET_HOST=${npm_config_target%:*} TARGET_PORT=${npm_config_target#*:} concurrently \"npm run dev:frontend\" \"npm run dev:backend\"'",
     "dev:frontend": "cd frontend && npm run dev",
     "dev:backend": "cd backend && GRPC_STUDIO_CONFIG=../config/backend.yaml npm run dev",
-    "dev:example": "cd example && npm start",
+    "dev:backend:multi": "cd backend && GRPC_STUDIO_CONFIG=../config/backend-multi-target.yaml npm run dev",
+    "dev:petstore": "cd examples/petstore && npm start",
+    "dev:bookstore": "cd examples/bookstore && npm start",
     "build": "npm run build:frontend",
     "build:shared": "cd shared && npm run build",
     "build:frontend": "npm run build:shared && cd frontend && npm run build",
     "start": "cd backend && GRPC_STUDIO_CONFIG=../config/backend.yaml npm start",
+    "start:multi": "cd backend && GRPC_STUDIO_CONFIG=../config/backend-multi-target.yaml npm start",
     "install:all": "npm install",
     "lint": "cd frontend && npm run lint",
-    "test": "cd frontend && npm test"
+    "test": "cd frontend && npm test",
+    "demo:capture": "playwright test e2e/demo-capture.spec.ts --project=chromium --workers=1",
+    "demo:gif": "node ./scripts/demo-gif.mjs",
+    "demo:mp4": "node ./scripts/demo-mp4.mjs"
   },
   "devDependencies": {
+    "@playwright/test": "^1.49.0",
     "concurrently": "^8.2.2",
-    "playwright": "^1.59.1"
+    "js-yaml": "^4.1.0",
+    "knip": "^6.26.0"
+  },
+  "overrides": {
+    "eslint": "8.57.1"
   },
   "engines": {
     "node": ">=20.0.0",
@@ -51,7 +67,6 @@
   "author": "Prasad Sawant",
   "license": "BSD-3-Clause",
   "dependencies": {
-    "helmet": "^8.1.0",
-    "zod": "^4.4.3"
+    "protobufjs": "^8.7.1"
   }
 }

@@ -87,7 +87,7 @@ function createMockResponse(options: {
     json(body: unknown) {
       jsonCalls.push(body)
       res.headersSent = true
-      res.writableEnded = true
+      ;(res as { writableEnded: boolean }).writableEnded = true
       return res
     },
     statusCalls,

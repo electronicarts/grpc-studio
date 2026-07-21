@@ -128,14 +128,3 @@ export async function instrumentStreamCall(
     throw error
   }
 }
-
-/**
- * Records a message sent in a streaming RPC.
- */
-export function recordStreamMessageSent(serviceName: string, methodName: string): void {
-  try {
-    grpcStreamMessages.inc({ service: serviceName, method: methodName, direction: 'sent' })
-  } catch {
-    // Graceful degradation
-  }
-}

@@ -3,7 +3,7 @@
 import React from 'react'
 import ReceivedStreamingPanel from './ReceivedStreamingPanel'
 import { useMethodExplorerContext } from '../stores'
-import { useMethodKind } from '../hooks'
+import { useMethodKind } from '../hooks/useMethodKind'
 
 const BidirectionalPanel: React.FC = () => {
   const { stream } = useMethodExplorerContext()

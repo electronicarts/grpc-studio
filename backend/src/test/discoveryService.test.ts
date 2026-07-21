@@ -5,6 +5,8 @@ import assert from 'node:assert/strict'
 import { DiscoveryService } from '../services/discoveryService.js'
 import type { ReflectionSchemaRepository } from '../repositories/reflectionSchemaRepository.js'
 
+const TEST_TARGET = 'test-target'
+
 describe('DiscoveryService', () => {
   describe('listServices', () => {
     it('should list all available services', async () => {
@@ -13,7 +15,7 @@ describe('DiscoveryService', () => {
       } as unknown as ReflectionSchemaRepository
 
       const service = new DiscoveryService(mockSchemaRepository)
-      const services = await service.listServices()
+      const services = await service.listServices(TEST_TARGET)
 
       assert.deepStrictEqual(services, ['service1', 'service2', 'service3'])
       assert.strictEqual((mockSchemaRepository.listServices as any).mock.calls.length, 1)
@@ -25,7 +27,7 @@ describe('DiscoveryService', () => {
       } as unknown as ReflectionSchemaRepository
 
       const service = new DiscoveryService(mockSchemaRepository)
-      const services = await service.listServices()
+      const services = await service.listServices(TEST_TARGET)
 
       assert.deepStrictEqual(services, [])
     })
@@ -40,7 +42,7 @@ describe('DiscoveryService', () => {
       const service = new DiscoveryService(mockSchemaRepository)
 
       await assert.rejects(
-        async () => await service.listServices(),
+        async () => await service.listServices(TEST_TARGET),
         {
           name: 'Error',
           message: 'Repository unavailable'
@@ -79,7 +81,7 @@ describe('DiscoveryService', () => {
       } as unknown as ReflectionSchemaRepository
 
       const service = new DiscoveryService(mockSchemaRepository)
-      const description = await service.describeService('com.example.UserService')
+      const description = await service.describeService(TEST_TARGET, 'com.example.UserService')
 
       assert.strictEqual(description.name, 'UserService')
       assert.strictEqual(description.fullName, 'com.example.UserService')
@@ -128,7 +130,7 @@ describe('DiscoveryService', () => {
       } as unknown as ReflectionSchemaRepository
 
       const service = new DiscoveryService(mockSchemaRepository)
-      const description = await service.describeService('StreamService')
+      const description = await service.describeService(TEST_TARGET, 'StreamService')
 
       assert.strictEqual(description.methods.length, 3)
       assert.strictEqual(description.methods[0].kind, 'server_streaming')
@@ -148,7 +150,7 @@ describe('DiscoveryService', () => {
       const service = new DiscoveryService(mockSchemaRepository)
 
       await assert.rejects(
-        async () => await service.describeService('NonExistentService'),
+        async () => await service.describeService(TEST_TARGET, 'NonExistentService'),
         {
           name: 'Error',
           message: 'Service NonExistentService not found in descriptor'
@@ -175,12 +177,12 @@ describe('DiscoveryService', () => {
       const service = new DiscoveryService(mockSchemaRepository)
 
       // Test fully qualified name
-      const desc1 = await service.describeService('com.example.v1.MyService')
+      const desc1 = await service.describeService(TEST_TARGET, 'com.example.v1.MyService')
       assert.strictEqual(desc1.name, 'MyService')
       assert.strictEqual(desc1.fullName, 'com.example.v1.MyService')
 
       // Test simple name
-      const desc2 = await service.describeService('SimpleService')
+      const desc2 = await service.describeService(TEST_TARGET, 'SimpleService')
       assert.strictEqual(desc2.name, 'SimpleService')
       assert.strictEqual(desc2.fullName, 'SimpleService')
     })
@@ -199,7 +201,7 @@ describe('DiscoveryService', () => {
       } as unknown as ReflectionSchemaRepository
 
       const service = new DiscoveryService(mockSchemaRepository)
-      const description = await service.describeService('EmptyService')
+      const description = await service.describeService(TEST_TARGET, 'EmptyService')
 
       assert.strictEqual(description.methods.length, 0)
     })
@@ -214,7 +216,7 @@ describe('DiscoveryService', () => {
       const service = new DiscoveryService(mockSchemaRepository)
 
       await assert.rejects(
-        async () => await service.describeService('TestService'),
+        async () => await service.describeService(TEST_TARGET, 'TestService'),
         {
           name: 'Error',
           message: 'Failed to fetch registry'
@@ -239,7 +241,7 @@ describe('DiscoveryService', () => {
       } as unknown as ReflectionSchemaRepository
 
       const service = new DiscoveryService(mockSchemaRepository)
-      const description = await service.describeService('TestService')
+      const description = await service.describeService(TEST_TARGET, 'TestService')
 
       const method = description.methods[0]
       assert.strictEqual(method.name, 'ComplexMethod')
@@ -265,11 +267,12 @@ describe('DiscoveryService', () => {
       } as unknown as ReflectionSchemaRepository
 
       const service = new DiscoveryService(mockSchemaRepository)
-      await service.describeService('my.test.Service')
+      await service.describeService(TEST_TARGET, 'my.test.Service')
 
       const calls = (mockSchemaRepository.getFileRegistry as any).mock.calls
       assert.strictEqual(calls.length, 1)
-      assert.strictEqual(calls[0].arguments[0], 'my.test.Service')
+      assert.strictEqual(calls[0].arguments[0], TEST_TARGET)
+      assert.strictEqual(calls[0].arguments[1], 'my.test.Service')
     })
   })
 })

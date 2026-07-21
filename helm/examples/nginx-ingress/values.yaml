@@ -1,12 +1,16 @@
 # Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 connection:
-  mode: tls
-  target:
-    host: my-grpc-server.example.com
-    port: 443
-  tls:
-    verifyServerCert: true
+  targets:
+    - name: My gRPC Server
+      host: my-grpc-server.example.com
+      port: 443
+      mode: tls
+    # Expose additional services in the same UI:
+    # - name: Internal API
+    #   host: internal-api.default.svc.cluster.local
+    #   port: 50051
+    #   mode: plaintext
 
 auth:
   defaultPlugin: none

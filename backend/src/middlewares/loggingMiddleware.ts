@@ -7,6 +7,7 @@
 
 import type { Request, Response, NextFunction } from 'express';
 import logger from '../utils/logger.js';
+import { getUserContextFromHeaders } from './userContextMiddleware.js';
 import { randomUUID } from 'node:crypto';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -37,10 +38,16 @@ export const requestLogger = (req: Request, res: Response, next: NextFunction): 
   req.id = validateRequestId(req.get('X-Request-Id'));
   res.setHeader('X-Request-Id', req.id);
 
+  // Derive the user id straight from the trusted proxy/SSO headers so it appears on
+  // both the started and completed log lines. This runs before userContextMiddleware,
+  // so req.userContext isn't populated yet — but the underlying headers already are.
+  const { userId } = getUserContextFromHeaders(req.headers);
+
   const reqLogger = logger.child({
     requestId: req.id,
     method: req.method,
-    path: req.path
+    path: req.path,
+    userId: userId ?? undefined
   });
 
   reqLogger.info('Request started', {

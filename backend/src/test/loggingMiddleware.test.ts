@@ -5,12 +5,25 @@ import assert from 'node:assert/strict'
 import type { Request, Response, NextFunction } from 'express'
 import { requestLogger } from '../middlewares/loggingMiddleware.js'
 
+// Capture lines written to console.log (the logger's info sink) during `fn`.
+function captureConsoleLog(fn: () => void): string[] {
+  const original = console.log
+  const lines: string[] = []
+  console.log = (...args: unknown[]) => { lines.push(args.join(' ')) }
+  try {
+    fn()
+  } finally {
+    console.log = original
+  }
+  return lines
+}
+
 // Mock request/response
 function createMockRequest(headers: Record<string, string> = {}): Partial<Request> {
   return {
     method: 'GET',
     path: '/api/test',
-    get: (key: string) => headers[key.toLowerCase()],
+    get: ((key: string) => headers[key.toLowerCase()]) as Request['get'],
     headers: headers as any
   }
 }
@@ -36,7 +49,7 @@ function createMockResponse(): {
     statusCode: 200
   }
 
-  return { res, headers, events }
+  return { res: res as unknown as Partial<Response>, headers, events }
 }
 
 describe('Logging Middleware', () => {
@@ -167,6 +180,40 @@ describe('Logging Middleware', () => {
       assert.doesNotThrow(() => {
         finishHandler()
       })
+    })
+  })
+
+  describe('user id logging', () => {
+    it('should include the userId on both the started and completed log lines', () => {
+      const lines = captureConsoleLog(() => {
+        const req = createMockRequest({ 'x-user-id': 'user-123' }) as Request
+        const mock = createMockResponse()
+
+        requestLogger(req, mock.res as Response, (() => {}) as NextFunction)
+        mock.events.get('finish')!()
+      })
+
+      const started = lines.find((l) => l.includes('Request started'))
+      const completed = lines.find((l) => l.includes('Request completed'))
+      assert.ok(started, 'expected a "Request started" log line')
+      assert.ok(completed, 'expected a "Request completed" log line')
+      assert.match(started, /"userId":"user-123"/)
+      assert.match(completed, /"userId":"user-123"/)
+    })
+
+    it('should omit userId when no user headers are present', () => {
+      const lines = captureConsoleLog(() => {
+        const req = createMockRequest({}) as Request
+        const mock = createMockResponse()
+
+        requestLogger(req, mock.res as Response, (() => {}) as NextFunction)
+        mock.events.get('finish')!()
+      })
+
+      const started = lines.find((l) => l.includes('Request started'))
+      assert.ok(started, 'expected a "Request started" log line')
+      // undefined meta values are dropped by JSON.stringify, so no userId key appears.
+      assert.doesNotMatch(started, /userId/)
     })
   })
 

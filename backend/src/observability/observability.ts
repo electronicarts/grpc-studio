@@ -6,7 +6,7 @@ import logger from '../utils/logger.js'
 
 const observabilityLogger = logger.child({ module: 'observability' })
 
-export class ObservabilityManager {
+class ObservabilityManager {
   private initialized = false
 
   initialize(config: ObservabilityConfig): void {
@@ -46,12 +46,8 @@ export class ObservabilityManager {
 export const observabilityManager = new ObservabilityManager()
 
 // Re-export public APIs
-export { metricsRegistry } from '../metrics/registry.js'
-export { metricsMiddleware, httpMetricsMiddleware } from '../middlewares/metricsMiddleware.js'
-export { metricsEndpoint } from '../controllers/MetricsController.js'
-export { instrumentUnaryCall, instrumentStreamCall, recordStreamMessageSent } from '../grpc/instrumentation/grpcInstrumentation.js'
-export type {
-  MetricsConfig,
-  ObservabilityConfig,
-  PerformanceConfig,
-} from '../config/schemas/observabilitySchema.js'
+
+
+
+
+

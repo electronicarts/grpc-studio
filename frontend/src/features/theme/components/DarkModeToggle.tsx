@@ -9,9 +9,9 @@ export function DarkModeToggle() {
 
   return (
     <div className="flex items-center space-x-2">
-      <Sun className="h-4 w-4" />
+      <Sun className="size-4" />
       <Switch checked={darkMode} onCheckedChange={toggleDarkMode} />
-      <Moon className="h-4 w-4" />
+      <Moon className="size-4" />
     </div>
   )
 }

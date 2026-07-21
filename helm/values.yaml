@@ -120,18 +120,25 @@ ingress:
           pathType: Prefix
   tls: []
 
-# connection.mode: plaintext | tls | mtls
+# gRPC targets the backend connects to. At least one target is required.
+# Each target is exposed as a selectable server in the UI.
 connection:
-  mode: tls
-  target:
-    host: your-grpc-server.example.com
-    port: 443
-  timeout:
-    connect: 10000
-    request: 30000
-  tls:
-    verifyServerCert: true
-    serverName: ""
+  targets:
+    - name: "My gRPC Server"          # display name shown in the UI
+      host: your-grpc-server.example.com
+      port: 443
+      mode: tls                       # plaintext | tls | mtls
+      timeout:
+        request: 30000                # unary RPC deadline (ms)
+    # Add more targets as needed:
+    # - name: "Payments"
+    #   host: payments.default.svc.cluster.local
+    #   port: 50051
+    #   mode: plaintext
+    # - name: "Users (mTLS)"
+    #   host: users.example.com
+    #   port: 443
+    #   mode: mtls                     # uses the shared client cert from `secrets` below
 
 # auth.defaultPlugin: none | bearer-token | oauth2-client-credentials
 auth:
@@ -150,8 +157,9 @@ auth:
     maxRetries: 3
     retryDelayMs: 1000
 
-# Required when connection.mode is "mtls".
+# Required when any target uses mode "mtls".
 # Provide an existing Secret containing client certificates (e.g. from cert-manager, Vault, or kubectl create secret).
+# The cert is mounted at /certs/ and shared by every mtls target.
 secrets:
   existingSecret: ""  # name of a Secret containing the client certificate
   keys:

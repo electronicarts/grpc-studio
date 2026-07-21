@@ -71,7 +71,7 @@ export function metricsMiddleware(req: Request, res: Response, next: NextFunctio
   next();
 }
 
-export const httpMetricsMiddleware = metricsMiddleware;
+const httpMetricsMiddleware = metricsMiddleware;
 
 function isMetricsEnabled(): boolean {
   const observabilityConfig = configManager.getObservabilityConfig();

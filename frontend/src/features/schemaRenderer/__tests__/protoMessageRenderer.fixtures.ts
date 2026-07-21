@@ -334,7 +334,7 @@ function schema(typeName: string): DescMessage {
 export const fieldMaskMessageSchema = schema('test.FieldMaskMessage')
 export const anyMessageSchema = schema('test.AnyMessage')
 export const durationMessageSchema = schema('test.DurationMessage')
-export const wrapperMessageSchema = schema('test.WrapperMessage')
+const wrapperMessageSchema = schema('test.WrapperMessage')
 export const allScalarsSchema = schema('test.AllScalars')
 export const enumSchema = schema('test.EnumMessage')
 export const repeatedFieldsSchema = schema('test.RepeatedFields')

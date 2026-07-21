@@ -2,9 +2,10 @@
 
 import { LogIn, LogOut, User, ChevronDown } from 'lucide-react'
 import { cn } from '@/utils/cn'
-import { useUserMenu } from './useUserMenu'
+import { Spinner } from '@/components/ui/spinner'
+import { useUserMenu } from '@/features/auth'
 
-export function UserMenu() {
+function UserMenu() {
   const {
     closeMenu,
     isAuthenticated,
@@ -25,8 +26,8 @@ export function UserMenu() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center space-x-2 px-3 py-1.5 text-sm text-gray-500" data-testid="userMenu-loading">
-        <div className="w-4 h-4 border-2 border-gray-300 border-t-primary rounded-full animate-spin" />
+      <div className="flex items-center space-x-2 px-3 py-1.5 text-sm text-muted-foreground" data-testid="userMenu-loading">
+        <Spinner size={4} tone="primary" />
         <span>Loading...</span>
       </div>
     )
@@ -37,19 +38,19 @@ export function UserMenu() {
       <button
         onClick={loginUser}
         disabled={isLoggingIn}
-        className="flex items-center space-x-2 px-3 py-1.5 text-sm font-medium 
-                   bg-primary text-primary-foreground rounded-md hover:bg-primary/90
-                   disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        className="flex items-center space-x-2 rounded-md bg-primary px-3 py-1.5 
+                   text-sm font-medium text-primary-foreground transition-colors
+                   hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
         data-testid="userMenu-loginButton"
       >
         {isLoggingIn ? (
           <>
-            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            <Spinner size={4} tone="onAccent" />
             <span>Signing in...</span>
           </>
         ) : (
           <>
-            <LogIn className="w-4 h-4" />
+            <LogIn className="size-4" />
             <span>Sign In</span>
           </>
         )}
@@ -61,16 +62,15 @@ export function UserMenu() {
     <div className="relative">
       <button
         onClick={toggleMenu}
-        className="flex items-center space-x-2 px-3 py-1.5 text-sm font-medium
-                   bg-gray-100 dark:bg-gray-800 rounded-md hover:bg-gray-200 
-                   dark:hover:bg-gray-700 transition-colors"
+        className="flex items-center space-x-2 rounded-md bg-muted px-3 py-1.5
+                   text-sm font-medium transition-colors hover:bg-accent"
         data-testid="userMenu-triggerButton"
       >
-        <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
-          <User className="w-4 h-4 text-primary" />
+        <div className="flex size-6 items-center justify-center rounded-full bg-primary/20">
+          <User className="size-4 text-primary" />
         </div>
         <span className="max-w-[150px] truncate">{user?.name || user?.email || 'User'}</span>
-        <ChevronDown className={cn('w-4 h-4 transition-transform', isOpen && 'rotate-180')} />
+        <ChevronDown className={cn('size-4 transition-transform', isOpen && 'rotate-180')} />
       </button>
 
       {isOpen && (
@@ -81,14 +81,14 @@ export function UserMenu() {
             data-testid="userMenu-backdrop"
           />
           
-          <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg 
-                          shadow-lg border border-gray-200 dark:border-gray-700 z-50"
+          <div className="absolute right-0 z-50 mt-2 w-64 rounded-lg border
+                          border-input bg-popover shadow-lg"
           >
-            <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+            <div className="border-b border-border px-4 py-3">
+              <p className="text-sm font-medium text-foreground">
                 {user?.name || 'User'}
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+              <p className="truncate text-xs text-muted-foreground">
                 {user?.email}
               </p>
             </div>
@@ -97,19 +97,18 @@ export function UserMenu() {
               <button
                 onClick={logoutUser}
                 disabled={isLoggingOut}
-                className="w-full flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 
-                           dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700
-                           disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex w-full items-center space-x-2 px-4 py-2 text-sm text-foreground/90
+                           hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
                 data-testid="userMenu-logoutButton"
               >
                 {isLoggingOut ? (
                   <>
-                    <div className="w-4 h-4 border-2 border-gray-300 border-t-primary rounded-full animate-spin" />
+                    <Spinner size={4} tone="primary" />
                     <span>Signing out...</span>
                   </>
                 ) : (
                   <>
-                    <LogOut className="w-4 h-4" />
+                    <LogOut className="size-4" />
                     <span>Sign Out</span>
                   </>
                 )}

@@ -65,17 +65,3 @@ export function renderWellKnownType(props: WellKnownTypeRendererProps): React.Re
   // Not a WKT
   return null
 }
-
-/**
- * Checks if a type is a well-known type that should use a specialized renderer.
- */
-export function isWellKnownTypeWithRenderer(typeName: string): boolean {
-  return (
-    isTimestampType(typeName) ||
-    isDurationType(typeName) ||
-    isFieldMaskType(typeName) ||
-    isAnyType(typeName) ||
-    isStructType(typeName) ||
-    wrapperPrimitiveType(typeName) !== null
-  )
-}

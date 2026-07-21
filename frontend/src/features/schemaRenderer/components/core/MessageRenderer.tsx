@@ -60,13 +60,13 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({
       ))}
       
       {isRoot && searchQuery && filteredRegular.length === 0 && filteredOneOf.length === 0 && (
-        <div className="text-sm text-gray-500 italic py-4 text-center">
+        <div className="py-4 text-center text-sm italic text-muted-foreground">
           No fields matching "{searchQuery}"
         </div>
       )}
       
       {isRoot && hideEmptyFields && !searchQuery && filteredRegular.length === 0 && filteredOneOf.length === 0 && (
-        <div className="text-sm text-gray-500 italic py-4 text-center">
+        <div className="py-4 text-center text-sm italic text-muted-foreground">
           No populated fields in response
         </div>
       )}

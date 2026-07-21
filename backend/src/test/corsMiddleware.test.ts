@@ -27,10 +27,10 @@ function createMockResponse(): {
   }
 
   const res: Partial<Response> = {
-    header: (key: string, value: string) => {
+    header: ((key: string, value: string) => {
       headers.set(key, value)
       return res as Response
-    },
+    }) as Response['header'],
     status: (code: number) => {
       state.statusCode = code
       return res as Response

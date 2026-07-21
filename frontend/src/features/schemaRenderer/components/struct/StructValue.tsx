@@ -3,6 +3,7 @@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Select } from '@/components/ui/select'
 import { FormField } from '@/components/shared'
 import { X } from 'lucide-react'
 import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
@@ -59,30 +60,30 @@ export function StructValue({ label, value, onChange, onRemove }: StructValuePro
   }
 
   return (
-    <div className="space-y-3 border-2 border-purple-200 dark:border-purple-800 rounded-lg p-4 bg-purple-50/50 dark:bg-purple-900/20">
+    <div className="space-y-3 rounded-lg border-2 border-brand/30 bg-brand/10 p-4">
       <div className="flex items-center gap-2">
-        <Badge className="bg-purple-500 text-white">oneof</Badge>
-        <span className="font-medium text-gray-900 dark:text-gray-100">{label}</span>
-        <span className="text-xs text-gray-500">(google.protobuf.Value)</span>
+        <Badge className="bg-brand text-white">oneof</Badge>
+        <span className="font-medium text-foreground">{label}</span>
+        <span className="text-xs text-muted-foreground">(google.protobuf.Value)</span>
         {onRemove && (
           <Button
             type="button"
             variant="ghost"
             size="sm"
             onClick={onRemove}
-            className="ml-auto h-7 w-7 p-0"
+            className="ml-auto size-7 p-0"
             data-testid="structField-removeButton"
           >
-            <X className="w-3 h-3" />
+            <X className="size-3" />
           </Button>
         )}
       </div>
 
-      <select
+      <Select
         value={kind}
         onChange={(event) => !readOnly && onChange(defaultStructValue(event.target.value as StructKind))}
         disabled={readOnly}
-        className="w-full px-3 py-2 border border-purple-300 dark:border-purple-700 rounded-md bg-white dark:bg-gray-800"
+        className="border-brand/30"
         data-testid="structField-kindSelect"
       >
         {STRUCT_KIND_OPTIONS.map((option) => (
@@ -90,9 +91,9 @@ export function StructValue({ label, value, onChange, onRemove }: StructValuePro
             {option.label}
           </option>
         ))}
-      </select>
+      </Select>
 
-      <div className="mt-3 pt-3 border-t border-purple-200 dark:border-purple-700">
+      <div className="mt-3 border-t border-brand/30 pt-3">
         {renderSelectedValue()}
       </div>
     </div>

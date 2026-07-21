@@ -13,9 +13,9 @@ const ClientStreamControls: React.FC<ClientStreamControlsProps> = ({ execution }
   <div className="flex gap-2">
     <Button
       onClick={execution.sendMessage}
-      className="h-8 px-6 bg-blue-600 hover:bg-blue-700 text-white"
+      className="h-8 bg-info px-6 text-white hover:bg-info/90"
     >
-      <Send className="w-3 h-3 mr-2" />
+      <Send className="mr-2 size-3" />
       Send Message
     </Button>
     <Button
@@ -23,7 +23,7 @@ const ClientStreamControls: React.FC<ClientStreamControlsProps> = ({ execution }
       variant="outline"
       className="h-8 px-6"
     >
-      <StopCircle className="w-3 h-3 mr-2" />
+      <StopCircle className="mr-2 size-3" />
       End Stream
     </Button>
     <Button
@@ -31,7 +31,7 @@ const ClientStreamControls: React.FC<ClientStreamControlsProps> = ({ execution }
       variant="destructive"
       className="h-8 px-6"
     >
-      <XCircle className="w-3 h-3 mr-2" />
+      <XCircle className="mr-2 size-3" />
       Cancel
     </Button>
   </div>

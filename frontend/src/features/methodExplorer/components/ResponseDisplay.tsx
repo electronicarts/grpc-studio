@@ -4,7 +4,7 @@ import React from 'react'
 import UnaryMessageDisplay from './UnaryMessageDisplay'
 import ReceivedStreamingPanel from './ReceivedStreamingPanel'
 import { useMethodExplorerContext } from '../stores'
-import { useMethodKind } from '../hooks'
+import { useMethodKind } from '../hooks/useMethodKind'
 
 /**
  * Routes to the appropriate response display based on the selected method type:

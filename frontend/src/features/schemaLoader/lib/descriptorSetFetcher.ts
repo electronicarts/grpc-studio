@@ -11,16 +11,27 @@ import { parseDescriptorIntoMap } from '../../../utils/descUtils'
 import type { DescriptorSetRequest, DescriptorSetResponse } from '@grpc-studio/shared'
 
 export async function fetchDescriptorSet(
+  targetServer: string,
   messageType: string,
-  target: Map<string, DescMessage>,
+  cacheMap: Map<string, DescMessage>,
 ): Promise<DescMessage | null> {
-  const request: DescriptorSetRequest = { messageType }
+  const request: DescriptorSetRequest = { target: targetServer, messageType }
   const res = await apiClient.post<DescriptorSetResponse>('descriptorSet', request, {
     retries: 2,
     onRetry: (attempt, error) => {
-      schemaLogger.debug(`Descriptor set retry ${attempt}/2 for ${messageType}: ${error.message}`)
+      schemaLogger.debug(`Descriptor set retry ${attempt}/2 for ${targetServer}:${messageType}: ${error.message}`)
     },
   })
-  parseDescriptorIntoMap(res.descriptorSetBase64, target)
-  return target.get(messageType) ?? null
+
+  // Parse descriptors with scoped keys
+  const scopedKey = (mt: string) => `${targetServer}:${mt}`
+  const tempMap = new Map<string, DescMessage>()
+  parseDescriptorIntoMap(res.descriptorSetBase64, tempMap)
+
+  // Copy into main cache with scoped keys
+  for (const [mt, desc] of tempMap.entries()) {
+    cacheMap.set(scopedKey(mt), desc)
+  }
+
+  return cacheMap.get(scopedKey(messageType)) ?? null
 }

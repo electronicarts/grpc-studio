@@ -24,7 +24,7 @@ const DurationField: React.FC<DurationFieldProps> = ({ name, value, onChange }) 
     onChange(e.target.value || undefined)
   }
 
-  const typeMeta = <span className="text-xs text-gray-500">(google.protobuf.Duration)</span>
+  const typeMeta = <span className="text-xs text-muted-foreground">(google.protobuf.Duration)</span>
 
   return (
     <FormField label={name} labelMeta={typeMeta}>
@@ -37,7 +37,7 @@ const DurationField: React.FC<DurationFieldProps> = ({ name, value, onChange }) 
           disabled={readOnly}
           className="w-full font-mono text-sm"
         />
-        <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">duration</span>
+        <span className="whitespace-nowrap text-xs font-medium text-muted-foreground">duration</span>
       </div>
     </FormField>
   )

@@ -1,0 +1,133 @@
+// Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
+
+import React from 'react'
+import type { GrpcService, GrpcMethod } from '@/types/grpc'
+import { buildShareableUrl } from '@/utils/shareableLink'
+
+// Context
+import { MethodExplorerProvider, useMethodExplorerContext } from '../stores'
+import { useMethodKind } from '../hooks/useMethodKind'
+
+// Components
+import MethodHeader from './MethodHeader'
+import RequestInput from './RequestInput'
+import BidirectionalPanel from './BidirectionalPanel'
+import StreamingInfo from './StreamingInfo'
+import ExecutionControls from './ExecutionControls'
+import ErrorDisplay from './ErrorDisplay'
+import ResponseDisplay from './ResponseDisplay'
+import StreamingMessageDisplay from './StreamingMessageDisplay'
+import ProtoViewer from './ProtoViewer'
+
+
+interface MethodExplorerProps {
+  tabId: string
+  selectedTarget: string
+  selectedService: GrpcService | null
+  selectedMethod: GrpcMethod | null
+  initialRequestBody?: Record<string, unknown> | null
+}
+
+// Inner component that uses context - memoized to prevent excessive re-renders
+const MethodExplorerContent: React.FC = React.memo(() => {
+  const {
+    selectedTarget,
+    selectedService,
+    selectedMethod,
+    request,
+    stream,
+    execution,
+    history,
+  } = useMethodExplorerContext()
+
+  // Share current request as a link
+  const handleShare = (): string => {
+    try {
+      const body = request.isFormMode
+        ? request.formData
+        : JSON.parse(request.body || '{}')
+      return buildShareableUrl(selectedService.fullName, selectedMethod.name, body)
+    } catch {
+      return buildShareableUrl(selectedService.fullName, selectedMethod.name, {})
+    }
+  }
+
+  const { isBidirectional, isAnyStreaming } = useMethodKind()
+  const showStreamPanel = isAnyStreaming && stream.sentMessages.length > 0
+
+  return (
+    <div className="px-8 py-6">
+      <MethodHeader 
+        selectedService={selectedService}
+        selectedMethod={selectedMethod}
+        onShare={handleShare}
+      />
+
+      <div className="space-y-8">
+        {/* Request Input — always full width */}
+        <RequestInput />
+
+        {/* Streaming Info - hide once streaming has started */}
+        {!showStreamPanel && <StreamingInfo selectedMethod={selectedMethod} />}
+
+        {/* Execute Button / Streaming Controls */}
+        <ExecutionControls />
+
+        {/* Error Display */}
+        <ErrorDisplay 
+          error={execution.error}
+          onDismiss={() => execution.setError(null)}
+        />
+
+        {/* Streaming panel: sent messages (left 30%) | responses (right 70%) — all streaming types */}
+        {!history.visible && showStreamPanel && (
+          <div className="grid grid-cols-[30%_70%] gap-4">
+            <StreamingMessageDisplay
+              label="Sent Messages"
+              messages={stream.sentMessages}
+              schema={request.schema}
+              colorScheme="blue"
+              schemaNode={<ProtoViewer selectedTarget={selectedTarget} selectedService={selectedService} selectedMethod={selectedMethod} inline />}
+            />
+            {isBidirectional ? <BidirectionalPanel /> : <ResponseDisplay />}
+          </div>
+        )}
+
+        {/* Unary response */}
+        {!history.visible && !isAnyStreaming && <ResponseDisplay />}
+      </div>
+    </div>
+  )
+})
+
+MethodExplorerContent.displayName = 'MethodExplorerContent'
+
+// Main component with Provider wrapper
+const MethodExplorer: React.FC<MethodExplorerProps> = ({ tabId, selectedTarget, selectedService, selectedMethod, initialRequestBody }) => {
+  // Empty state (before provider, for performance)
+  if (!selectedMethod || !selectedService) {
+    return (
+      <div className="py-16 text-center text-muted-foreground">
+        <img src="/logo.svg" alt="" className="mx-auto mb-4 size-12 opacity-50" />
+        <h3 className="mb-2 text-lg font-medium">Ready to Play</h3>
+        <p className="text-sm">
+          Select a service and method from the sidebar to start playing with your gRPC endpoints
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <MethodExplorerProvider
+      tabId={tabId}
+      selectedTarget={selectedTarget}
+      selectedService={selectedService}
+      selectedMethod={selectedMethod}
+      initialRequestBody={initialRequestBody}
+    >
+      <MethodExplorerContent />
+    </MethodExplorerProvider>
+  )
+}
+
+export default MethodExplorer

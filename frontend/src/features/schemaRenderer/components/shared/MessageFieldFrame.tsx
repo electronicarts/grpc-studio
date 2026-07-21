@@ -26,23 +26,27 @@ const MessageFieldFrame: React.FC<MessageFieldFrameProps> = ({
 }) => {
   const { expanded, toggleExpand } = useProtoMessageRendererContext()
   const isExpanded = expanded.has(path)
-  const headerMeta = meta ?? (typeName ? <span className="text-xs text-gray-500">({typeName})</span> : null)
+  const headerMeta = meta ?? (typeName ? <span className="break-all text-xs text-muted-foreground">({typeName})</span> : null)
 
   return (
-    <div className={cn('space-y-2 border border-gray-200 dark:border-gray-700 rounded-lg p-3', className)}>
+    <div className={cn('min-w-0 space-y-2 rounded-lg border border-border p-3', className)}>
       <button
         type="button"
         aria-expanded={isExpanded}
         onClick={() => toggleExpand(path)}
-        className="flex items-center gap-2 w-full text-left"
+        className="flex w-full items-start gap-2 text-left"
       >
-        {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-        <span className="font-medium text-gray-900 dark:text-gray-100">{name}</span>
-        {headerMeta}
+        {isExpanded
+          ? <ChevronDown className="mt-0.5 size-4 flex-shrink-0" />
+          : <ChevronRight className="mt-0.5 size-4 flex-shrink-0" />}
+        <span className="flex min-w-0 flex-wrap items-baseline gap-x-2">
+          <span className="break-all font-medium text-foreground">{name}</span>
+          {headerMeta}
+        </span>
       </button>
 
       {isExpanded && (
-        <div className={cn('ml-4 pt-2 border-t border-gray-200 dark:border-gray-700', bodyClassName)}>
+        <div className={cn('ml-4 border-t border-border pt-2', bodyClassName)}>
           {children}
         </div>
       )}

@@ -2,31 +2,30 @@
 
 import type { CertificateStatusType } from '../types'
 import type { StatusConfig } from '../types'
-import { STATUS_TONES } from '../../../utils/statusStyles'
 
 export const statusConfigs: Record<CertificateStatusType, StatusConfig> = {
   valid: {
-    ...STATUS_TONES.green,
+    tone: 'success',
     label: 'Certificate Valid'
   },
   warning: {
-    ...STATUS_TONES.yellow,
+    tone: 'warning',
     label: 'Expiring Soon'
   },
   critical: {
-    ...STATUS_TONES.orange,
+    tone: 'critical',
     label: 'Expires in < 7 days'
   },
   expired: {
-    ...STATUS_TONES.red,
+    tone: 'danger',
     label: 'Certificate Expired'
   },
   unreadable: {
-    ...STATUS_TONES.gray,
+    tone: 'neutral',
     label: 'Certificate Unreadable'
   },
   unknown: {
-    ...STATUS_TONES.gray,
+    tone: 'neutral',
     label: 'Certificate Status Unknown'
   }
 }

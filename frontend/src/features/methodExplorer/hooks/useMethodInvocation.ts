@@ -14,6 +14,7 @@ import type { StreamingMethodKind } from '@grpc-studio/shared'
 import type { RequestModel, ResponseModel, StreamModel, ResponseStatus, MethodInvocation } from '../types'
 
 export function useMethodInvocation(
+  selectedTarget: string,
   selectedService: GrpcService | null,
   selectedMethod: GrpcMethod | null,
   request: RequestModel,
@@ -26,10 +27,11 @@ export function useMethodInvocation(
 
   function prepareRequest(): Payload {
     const input = request.isFormMode ? request.formData : JSON.parse(request.body)
-    return toWireFormat(input, selectedMethod?.inputType ?? null)
+    return toWireFormat(input, selectedMethod?.inputType ?? null, selectedTarget)
   }
 
   const { recordUnarySuccess, recordUnaryError } = useUnaryInvocationRecorder({
+    selectedTarget,
     selectedMethod,
     response,
     stream,
@@ -37,6 +39,7 @@ export function useMethodInvocation(
   })
 
   const streamCallbacks = useStreamInvocationCallbacks({
+    selectedTarget,
     selectedService,
     selectedMethod,
     response,
@@ -64,6 +67,7 @@ export function useMethodInvocation(
     stream.start(prepared.display)
 
     grpcWs.start({
+      target: selectedTarget,
       service: selectedService.fullName,
       method: selectedMethod.name,
       methodKind,
@@ -93,6 +97,7 @@ export function useMethodInvocation(
 
       formLogger.debug('Using HTTP for unary call')
       const result = await invokeUnary({
+        target: selectedTarget,
         service: selectedService.fullName,
         method: selectedMethod.name,
         methodKind: selectedMethod.kind,
@@ -105,7 +110,18 @@ export function useMethodInvocation(
         recordUnaryError(err, prepared)
       }
 
-      setError(err instanceof Error ? err.message : 'Unknown error occurred')
+      // Provide helpful error messages for common connection issues
+      let errorMessage = err instanceof Error ? err.message : 'Unknown error occurred'
+
+      if (errorMessage.includes('ECONNREFUSED') ||
+          errorMessage.includes('ENOTFOUND') ||
+          errorMessage.includes('timeout') ||
+          errorMessage.includes('network') ||
+          errorMessage.includes('CONNECTION_ERROR')) {
+        errorMessage += '\n\nThis may indicate a stale connection. Try refreshing the schemas (click the refresh button in the header or server selector).'
+      }
+
+      setError(errorMessage)
       setLoading(false)
       stream.deactivate()
     }
@@ -133,6 +149,19 @@ export function useMethodInvocation(
     grpcWs.cancel()
     stream.deactivate()
     setLoading(false)
+
+    // Save cancelled stream to history
+    const streamedRequest = stream.currentRequest()
+    if (selectedService && selectedMethod && streamedRequest) {
+      saveToHistory(
+        streamedRequest,
+        {
+          ok: false,
+          message: 'Cancelled by user',
+          responseTimeMs: stream.durationMs(),
+        }
+      )
+    }
   }
 
   return { loading, error, setError, invoke, sendMessage, endStream, cancelStream }

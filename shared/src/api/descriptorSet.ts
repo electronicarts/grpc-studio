@@ -6,6 +6,10 @@
  * Response body: descriptor set for that message and its transitive dependencies.
  */
 export interface DescriptorSetRequest {
+  /**
+   * Target server name (from config).
+   */
+  target: string
   messageType: string
 }
 

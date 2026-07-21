@@ -37,7 +37,7 @@ const ScalarField: React.FC<ScalarFieldProps> = ({ name, scalar, value, onChange
     onChange(parseValue(e.target.value, scalar))
   }
 
-  const typeMeta = <span className="text-xs text-gray-500">({typeName})</span>
+  const typeMeta = <span className="text-xs text-muted-foreground">({typeName})</span>
 
   if (isBool) {
     return (
@@ -47,7 +47,7 @@ const ScalarField: React.FC<ScalarFieldProps> = ({ name, scalar, value, onChange
           checked={!!value}
           onChange={handleCheckboxChange}
           disabled={readOnly}
-          className="rounded border-gray-300"
+          className="rounded border-input"
         />
       </FormField>
     )

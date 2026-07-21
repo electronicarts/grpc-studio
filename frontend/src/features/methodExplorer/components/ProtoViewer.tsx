@@ -35,22 +35,22 @@ function highlightProto(text: string): React.ReactNode[] {
       if (ws) {
         tokens.push(ws)
       } else if (comment) {
-        tokens.push(<span key={key} className="text-gray-500 dark:text-gray-500 italic">{comment}</span>)
+        tokens.push(<span key={key} className="italic text-muted-foreground">{comment}</span>)
       } else if (punct) {
-        tokens.push(<span key={key} className="text-gray-500 dark:text-gray-500">{punct}</span>)
+        tokens.push(<span key={key} className="text-muted-foreground">{punct}</span>)
       } else if (fieldNum) {
-        tokens.push(<span key={key} className="text-amber-600 dark:text-amber-400">{fieldNum}</span>)
+        tokens.push(<span key={key} className="text-warning">{fieldNum}</span>)
       } else if (word) {
         if (PROTO_KEYWORDS.has(word)) {
-          tokens.push(<span key={key} className="text-purple-600 dark:text-purple-400 font-semibold">{word}</span>)
+          tokens.push(<span key={key} className="font-semibold text-brand">{word}</span>)
         } else if (PROTO_SCALARS.has(word)) {
-          tokens.push(<span key={key} className="text-blue-600 dark:text-blue-400">{word}</span>)
+          tokens.push(<span key={key} className="text-info">{word}</span>)
         } else if (word[0] === word[0].toUpperCase() && /^[A-Z]/.test(word)) {
           // PascalCase → message/enum type name
-          tokens.push(<span key={key} className="text-teal-600 dark:text-teal-400">{word}</span>)
+          tokens.push(<span key={key} className="text-syntax-type">{word}</span>)
         } else {
           // field name
-          tokens.push(<span key={key} className="text-gray-800 dark:text-gray-200">{word}</span>)
+          tokens.push(<span key={key} className="text-foreground">{word}</span>)
         }
       } else if (other) {
         tokens.push(other)
@@ -67,13 +67,14 @@ function highlightProto(text: string): React.ReactNode[] {
 }
 
 interface ProtoViewerProps {
+  selectedTarget: string
   selectedService: GrpcService
   selectedMethod: GrpcMethod
   inline?: boolean
   outputOnly?: boolean
 }
 
-const ProtoViewer: React.FC<ProtoViewerProps> = ({ selectedService, selectedMethod, inline = false, outputOnly = false }) => {
+const ProtoViewer: React.FC<ProtoViewerProps> = ({ selectedTarget, selectedService, selectedMethod, inline = false, outputOnly = false }) => {
   const [expanded, setExpanded] = useState(!inline)
 
   // Re-render when schemas arrive in the cache
@@ -86,19 +87,19 @@ const ProtoViewer: React.FC<ProtoViewerProps> = ({ selectedService, selectedMeth
     return formatMethodProto(
       selectedService.fullName,
       selectedMethod,
-      (type) => schemaCache.getCachedSchema(type),
+      (type) => schemaCache.getCachedSchema(selectedTarget, type),
       outputOnly ? { outputOnly: true } : undefined
     )
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedService.fullName, selectedMethod, cacheSize, outputOnly])
+  }, [selectedTarget, selectedService.fullName, selectedMethod, cacheSize, outputOnly])
 
   const highlighted = useMemo(() => highlightProto(protoText), [protoText])
 
   // Inline mode: always-visible content inside a tab
   if (inline) {
     return (
-      <div className="border rounded-md overflow-hidden">
-        <pre className="p-4 text-sm font-mono leading-relaxed overflow-x-auto bg-gray-50 dark:bg-gray-900/50 whitespace-pre max-h-[500px] overflow-y-auto">
+      <div className="overflow-hidden rounded-md border">
+        <pre className="max-h-[500px] overflow-auto whitespace-pre bg-muted p-4 font-mono text-sm leading-relaxed">
           {highlighted}
         </pre>
       </div>
@@ -107,19 +108,19 @@ const ProtoViewer: React.FC<ProtoViewerProps> = ({ selectedService, selectedMeth
 
   // Collapsible mode: standalone block
   return (
-    <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+    <div className="overflow-hidden rounded-lg border border-border">
       <button
         type="button"
         onClick={() => setExpanded(!expanded)}
-        className="flex items-center gap-2 w-full px-4 py-2.5 text-left text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+        className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm font-medium text-foreground/90 transition-colors hover:bg-accent"
       >
-        {expanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-        <Code className="w-4 h-4" />
+        {expanded ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
+        <Code className="size-4" />
         <span>Proto Definition</span>
       </button>
       {expanded && (
-        <div className="border-t border-gray-200 dark:border-gray-700">
-          <pre className="p-4 text-sm font-mono leading-relaxed overflow-x-auto bg-gray-50 dark:bg-gray-900/50 whitespace-pre">
+        <div className="border-t border-border">
+          <pre className="overflow-x-auto whitespace-pre bg-muted p-4 font-mono text-sm leading-relaxed">
             {highlighted}
           </pre>
         </div>

@@ -97,4 +97,3 @@ export const formLogger = createLogger('Form');
 export const schemaLogger = createLogger('Schema');
 export const wsLogger = createLogger('WebSocket');
 
-export default DebugLogger;

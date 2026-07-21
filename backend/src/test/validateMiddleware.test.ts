@@ -9,8 +9,8 @@ import { AppError } from '../errors/AppError.js'
 function createMockRequest(body?: unknown, params?: unknown, query?: unknown): Partial<Request> {
   return {
     body: body || {},
-    params: params || {},
-    query: query || {}
+    params: (params || {}) as Request['params'],
+    query: (query || {}) as Request['query']
   }
 }
 

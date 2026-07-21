@@ -83,6 +83,24 @@ function getCertificateStatus(
   return CertificateStatus.VALID
 }
 
+/**
+ * Status string for the connection-status API (server/client cert indicators).
+ * Narrower than the full CertificateStatus: a certificate that could be read
+ * is always valid/warning/critical/expired.
+ */
+export function getCertificateHealthStatus(
+  daysRemaining: number | undefined,
+  warnDaysCritical: number,
+  warnDaysWarning: number
+): 'valid' | 'warning' | 'critical' | 'expired' {
+  if (daysRemaining === undefined) return 'valid'
+  if (daysRemaining < 0) return 'expired'
+  if (daysRemaining < warnDaysCritical) return 'critical'
+  if (daysRemaining < warnDaysWarning) return 'warning'
+
+  return 'valid'
+}
+
 function getDaysUntil(date: Date | null, nowMs: number): number | null {
   if (!date) return null
 

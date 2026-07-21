@@ -37,19 +37,19 @@ const ResponseActions: React.FC<ResponseActionsProps> = ({
       <Button
         variant="outline"
         size="sm"
-        className="h-7 px-3 rounded-full"
+        className="h-7 rounded-full px-3"
         onClick={copyResponse}
       >
-        {copied ? <Check className="w-3 h-3 mr-1 text-green-500" /> : <Copy className="w-3 h-3 mr-1" />}
+        {copied ? <Check className="mr-1 size-3 text-success" /> : <Copy className="mr-1 size-3" />}
         {copied ? 'Copied!' : 'Copy'}
       </Button>
       <Button
         variant="outline"
         size="sm"
-        className="h-7 px-3 rounded-full"
+        className="h-7 rounded-full px-3"
         onClick={downloadResponse}
       >
-        <Download className="w-3 h-3 mr-1" />
+        <Download className="mr-1 size-3" />
         Save
       </Button>
     </>

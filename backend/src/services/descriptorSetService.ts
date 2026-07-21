@@ -18,24 +18,25 @@ const descriptorSetLogger = logger.child({ module: 'descriptor-set-service' })
 export class DescriptorSetService {
   constructor(private readonly schemaRepository: ReflectionSchemaRepository = reflectionSchemaRepository) {}
 
-  /** Returns a base64-encoded FileDescriptorSet for `messageType`. */
-  async getDescriptorSetBase64(messageType: string): Promise<string> {
-    descriptorSetLogger.info('Loading descriptor set', { messageType })
+  /** Returns a base64-encoded FileDescriptorSet for `messageType` from the specified target. */
+  async getDescriptorSetBase64(target: string, messageType: string): Promise<string> {
+    descriptorSetLogger.info('Loading descriptor set', { target, messageType })
 
     try {
-      const fileDescriptorSet = await this.schemaRepository.getFileDescriptorSet(messageType)
-      const registry = await this.schemaRepository.getFileRegistry(messageType)
+      const fileDescriptorSet = await this.schemaRepository.getFileDescriptorSet(target, messageType)
+      const registry = await this.schemaRepository.getFileRegistry(target, messageType)
       if (!registry.getMessage(messageType) && !registry.getService(messageType)) {
-        descriptorSetLogger.warn(`Symbol '${messageType}' not found after resolving descriptors`)
+        descriptorSetLogger.warn(`Symbol '${messageType}' not found after resolving descriptors`, { target })
       }
 
       const binary = toBinary(FileDescriptorSetSchema, fileDescriptorSet)
       const descriptorSetBase64 = Buffer.from(binary).toString('base64')
 
-      descriptorSetLogger.info('Serialized descriptor set', { messageType, bytes: Math.round(descriptorSetBase64.length * 0.75) })
+      descriptorSetLogger.info('Serialized descriptor set', { target, messageType, bytes: Math.round(descriptorSetBase64.length * 0.75) })
       return descriptorSetBase64
     } catch (error) {
       descriptorSetLogger.error('Failed to serialize descriptor set', {
+        target,
         error: error instanceof Error ? error.message : String(error),
         messageType,
       })

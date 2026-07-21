@@ -3,6 +3,7 @@
 import { createContext, useContext, ReactNode, useMemo } from 'react'
 
 export interface ProtoMessageRendererContextValue {
+  target: string
   readOnly: boolean
   hideEmptyFields: boolean
   formData: Record<string, unknown>
@@ -25,6 +26,7 @@ export function useProtoMessageRendererContext(): ProtoMessageRendererContextVal
 }
 
 interface ProtoMessageRendererProviderProps {
+  target: string
   formData: Record<string, unknown>
   schemasLoaded: boolean
   expanded: Set<string>
@@ -38,6 +40,7 @@ interface ProtoMessageRendererProviderProps {
 }
 
 export function ProtoMessageRendererProvider({
+  target,
   formData,
   schemasLoaded,
   expanded,
@@ -50,6 +53,7 @@ export function ProtoMessageRendererProvider({
   children
 }: ProtoMessageRendererProviderProps) {
   const value = useMemo<ProtoMessageRendererContextValue>(() => ({
+    target,
     readOnly,
     hideEmptyFields,
     formData,
@@ -60,7 +64,7 @@ export function ProtoMessageRendererProvider({
     toggleExpand: onToggleExpand,
     setOneOfSelection: onSetOneOfSelection,
   }), [
-    readOnly, hideEmptyFields, formData, schemasLoaded,
+    target, readOnly, hideEmptyFields, formData, schemasLoaded,
     expanded, oneOfSelections, searchQuery,
     onToggleExpand, onSetOneOfSelection,
   ])

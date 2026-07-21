@@ -1,20 +1,28 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import { describe, expect, it, vi } from 'vitest'
-import { toWireFormat } from '../payload'
+import { toWireFormat as rawToWireFormat } from '../payload'
 import {
   schemaCache as testSchemaMap,
 } from '../../../schemaRenderer/__tests__/protoMessageRenderer.fixtures'
 
-
-
+// In production a target is always supplied (the selected server); schemas are
+// cached per (target, messageType). These tests exercise a single fixed target.
+const TEST_TARGET = 'test-target'
 
 vi.mock('../../../schemaLoader/lib/schemaCache', () => ({
   schemaCache: {
-    getCachedSchema: vi.fn((type: string) => testSchemaMap.get(type) ?? null),
+    // Matches the real two-arg signature: getCachedSchema(target, messageType).
+    getCachedSchema: vi.fn((_target: string, type: string) => testSchemaMap.get(type) ?? null),
     getSchemaMap: vi.fn(() => testSchemaMap),
   },
 }))
+
+// Thin wrapper so the existing (obj, messageType) call sites keep working while
+// always passing the target the real lookup requires.
+function toWireFormat(obj: Record<string, unknown>, messageType: string | null) {
+  return rawToWireFormat(obj, messageType, TEST_TARGET)
+}
 
 describe('payload conversion', () => {
   it('keeps empty protobuf maps as JSON objects', () => {

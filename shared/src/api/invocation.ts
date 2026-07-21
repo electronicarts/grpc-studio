@@ -9,6 +9,10 @@ import type { JsonValue } from './json.js'
  * Response body: unary invocation result.
  */
 export interface InvokeUnaryRequest {
+  /**
+   * Target server name (from config).
+   */
+  target: string
   service: string
   method: string
   methodKind: typeof MethodKind.UNARY

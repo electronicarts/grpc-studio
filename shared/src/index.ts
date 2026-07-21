@@ -51,6 +51,7 @@ export type {
 export type {
   ApiMethod,
   ApiService,
+  ApiServer,
   DiscoveryRequest,
   DiscoveryResponse,
 } from './api/discovery.js'
@@ -76,6 +77,7 @@ export type {
 export type {
   StatusRequest,
   StatusResponse,
+  ServerStatus,
 } from './api/status.js'
 
 export type {

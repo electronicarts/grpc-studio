@@ -99,12 +99,13 @@ function parseFrame(frame: Record<string, unknown>): ParseClientMessageResult {
 function parseStartPayload(payload: unknown): InvokeStreamStartPayload | null {
   if (!isObject(payload)) return null
 
-  const { service, method, methodKind } = payload
-  if (typeof service !== 'string' || typeof method !== 'string' || !isStreamingMethodKind(methodKind)) {
+  const { target, service, method, methodKind } = payload
+  if (typeof target !== 'string' || typeof service !== 'string' || typeof method !== 'string' || !isStreamingMethodKind(methodKind)) {
     return null
   }
 
   const startPayload: InvokeStreamStartPayload = {
+    target,
     service,
     method,
     methodKind,

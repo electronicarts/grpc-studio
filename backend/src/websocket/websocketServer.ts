@@ -122,7 +122,7 @@ function acceptConnection(ws: LiveWebSocket, headers: IncomingHttpHeaders, path:
 
   if (isAtCapacity()) {
     rejectAtCapacity(ws, connectionId)
-    wsConnectionsTotal.inc({ status: 'rejected' })
+    wsConnectionsTotal.inc({ status: 'rejected', reason: 'at_capacity' })
     return
   }
 
@@ -150,7 +150,7 @@ function acceptConnection(ws: LiveWebSocket, headers: IncomingHttpHeaders, path:
   // Now add to map and open connection
   connections.set(connectionId, connection)
   wsActiveConnections.inc()
-  wsConnectionsTotal.inc({ status: 'accepted' })
+  wsConnectionsTotal.inc({ status: 'accepted', reason: 'ok' })
   connection.open()
 
   serverLogger.info('WebSocket connection opened', { connectionId })

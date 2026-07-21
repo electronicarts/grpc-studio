@@ -7,7 +7,7 @@
 import * as certificateMetadataCache from '../cache/certificateMetadataCache.js'
 import configManager from '../config/configManager.js'
 import type { CertificateMetadata } from '../types/index.js'
-import * as certificateReader from '../utils/certificateReader.js'
+import { readLocalCertificateFile } from '../utils/certificateUtils.js'
 import logger from '../utils/logger.js'
 
 const certLogger = logger.child({ module: 'certificate-repository' })
@@ -23,7 +23,21 @@ export class CertificateRepository {
 
     try {
       const { certReadTimeoutMs } = configManager.getCertificateConfig()
-      const certificate = await certificateReader.readCertificate(certPath, certReadTimeoutMs)
+      const certInfo = await readLocalCertificateFile(certPath, certReadTimeoutMs)
+
+      if (!certInfo) {
+        certLogger.warn('Failed to read certificate', { certPath })
+        const certificate: CertificateMetadata = {}
+        certificateCache.set(certPath, certificate)
+        return certificate
+      }
+
+      // Convert to legacy CertificateMetadata format (ISO strings, optional fields)
+      const certificate: CertificateMetadata = {
+        subject: certInfo.subject,
+        validFrom: certInfo.validFrom.toISOString(),
+        validTo: certInfo.validTo.toISOString(),
+      }
 
       certLogger.info('Certificate metadata read', {
         validTo: certificate.validTo,
@@ -47,5 +61,5 @@ export class CertificateRepository {
   }
 }
 
-export const certificateRepository = new CertificateRepository()
+const certificateRepository = new CertificateRepository()
 export default certificateRepository

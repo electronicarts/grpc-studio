@@ -6,7 +6,7 @@ import { getHistogramBuckets } from '../histograms.js'
 export const wsConnectionsTotal = metricsRegistry.counter(
   'grpc_studio_ws_connections_total',
   'Total WebSocket connections',
-  ['status']  // accepted, rejected
+  ['status', 'reason']  // status: accepted, rejected; reason: origin_late_check, at_capacity, ... (optional)
 )
 
 export const wsActiveConnections = metricsRegistry.gauge(

@@ -21,7 +21,7 @@ const TimestampField: React.FC<TimestampFieldProps> = ({ name, value, onChange }
     onChange(newValue)
   }
 
-  const typeMeta = <span className="text-xs text-gray-500">(google.protobuf.Timestamp)</span>
+  const typeMeta = <span className="text-xs text-muted-foreground">(google.protobuf.Timestamp)</span>
 
   return (
     <FormField label={name} labelMeta={typeMeta}>
@@ -33,7 +33,7 @@ const TimestampField: React.FC<TimestampFieldProps> = ({ name, value, onChange }
             disabled={readOnly}
           />
         </div>
-        <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">UTC</span>
+        <span className="whitespace-nowrap text-xs font-medium text-muted-foreground">UTC</span>
       </div>
     </FormField>
   )

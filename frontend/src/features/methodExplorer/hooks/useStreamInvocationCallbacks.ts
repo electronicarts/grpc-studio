@@ -3,12 +3,13 @@
 import { useEffect, useRef } from 'react'
 import type { GrpcMethod, GrpcService } from '@/types/grpc'
 import { formLogger } from '@/utils/debugLogger'
-import { parseGrpcErrorString } from '../utils/grpcErrorParser'
+import { parseGrpcErrorString } from '../../../lib/http/apiErrorParser'
 import { applyResponseSchema, normalizeResponseMessage } from '../utils/responseHandlerUtils'
 import { applyResponseSnapshot, errorStatus, okStatus, stringifyPretty } from '../utils/responseStatus'
 import type { ResponseModel, ResponseStatus, StreamModel } from '../types'
 
 interface UseStreamInvocationCallbacksOptions {
+  selectedTarget: string
   selectedService: GrpcService | null
   selectedMethod: GrpcMethod | null
   response: ResponseModel
@@ -19,6 +20,7 @@ interface UseStreamInvocationCallbacksOptions {
 }
 
 export function useStreamInvocationCallbacks({
+  selectedTarget,
   selectedService,
   selectedMethod,
   response,
@@ -40,7 +42,7 @@ export function useStreamInvocationCallbacks({
   function handleStreamResponse(data: unknown): void {
     formLogger.debug('WebSocket message received:', data)
 
-    const normalized = normalizeResponseMessage(data, selectedMethod?.outputType ?? null)
+    const normalized = normalizeResponseMessage(data, selectedMethod?.outputType ?? null, selectedTarget)
     const messages = stream.appendReceived(normalized.display)
 
     response.setData(messages)
@@ -48,7 +50,7 @@ export function useStreamInvocationCallbacks({
 
     if (!streamSchemaFetchedRef.current) {
       streamSchemaFetchedRef.current = true
-      applyResponseSchema(selectedMethod, response)
+      applyResponseSchema(selectedTarget, selectedMethod, response)
     }
   }
 
@@ -78,7 +80,7 @@ export function useStreamInvocationCallbacks({
 
     const messages = stream.currentMessages()
     const responseSizeBytes = applyResponseSnapshot(response, messages, stringifyPretty(messages), duration)
-    applyResponseSchema(selectedMethod, response)
+    applyResponseSchema(selectedTarget, selectedMethod, response)
 
     const streamedRequest = stream.currentRequest()
     if (selectedService && selectedMethod && messages.length > 0 && streamedRequest) {

@@ -2,19 +2,24 @@
 
 // Manages request history in localStorage
 import type { ResponseStatus, RequestHistoryItem } from '../types'
-import { safeGetJSON, safeSetJSON } from '../../../utils/storageHelpers'
+import { safeGetJSON, safeSetJSON, safeRemove } from '../../../utils/storageHelpers'
+import { createLogger } from '../../../utils/debugLogger'
 
 const MAX_HISTORY_ITEMS = 20
+const historyLogger = createLogger('History')
 
-function getStorageKey(serviceName: string, methodName: string): string {
-  return `grpc_history_${serviceName}_${methodName}`
+function getStorageKey(target: string, serviceName: string, methodName: string): string {
+  const key = `grpc_history_${target}_${serviceName}_${methodName}`
+  historyLogger.debug('Storage key:', key)
+  return key
 }
 
-export function getHistory(serviceName: string, methodName: string): RequestHistoryItem[] {
-  return safeGetJSON<RequestHistoryItem[]>(getStorageKey(serviceName, methodName)) ?? []
+export function getHistory(target: string, serviceName: string, methodName: string): RequestHistoryItem[] {
+  return safeGetJSON<RequestHistoryItem[]>(getStorageKey(target, serviceName, methodName)) ?? []
 }
 
 export function saveRequest(
+  target: string,
   serviceName: string,
   methodName: string,
   requestBody: Record<string, unknown>,
@@ -22,8 +27,9 @@ export function saveRequest(
   label?: string,
   responseStatus?: ResponseStatus,
 ): void {
-  const key = getStorageKey(serviceName, methodName)
-  const history = getHistory(serviceName, methodName)
+  historyLogger.debug('Saving request:', { target, serviceName, methodName })
+  const key = getStorageKey(target, serviceName, methodName)
+  const history = getHistory(target, serviceName, methodName)
 
   const newItem: RequestHistoryItem = {
     id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -35,18 +41,16 @@ export function saveRequest(
   }
 
   const trimmedHistory = [newItem, ...history].slice(0, MAX_HISTORY_ITEMS)
+  historyLogger.debug('Saving to localStorage, count:', trimmedHistory.length)
   safeSetJSON(key, trimmedHistory)
 }
 
-export function deleteHistoryItem(serviceName: string, methodName: string, itemId: string): void {
-  const key = getStorageKey(serviceName, methodName)
-  const updatedHistory = getHistory(serviceName, methodName).filter(item => item.id !== itemId)
+export function deleteHistoryItem(target: string, serviceName: string, methodName: string, itemId: string): void {
+  const key = getStorageKey(target, serviceName, methodName)
+  const updatedHistory = getHistory(target, serviceName, methodName).filter(item => item.id !== itemId)
   safeSetJSON(key, updatedHistory)
 }
 
-export function clearHistory(serviceName: string, methodName: string): void {
-  const key = getStorageKey(serviceName, methodName)
-  try {
-    localStorage.removeItem(key)
-  } catch { /* best-effort */ }
+export function clearHistory(target: string, serviceName: string, methodName: string): void {
+  safeRemove(getStorageKey(target, serviceName, methodName))
 }

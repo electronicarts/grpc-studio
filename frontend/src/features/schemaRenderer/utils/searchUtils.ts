@@ -3,9 +3,6 @@
 /**
  * Search / filter matching helpers for proto message fields and values.
  */
-import type { DescField } from '@bufbuild/protobuf'
-import { fieldTypeName } from '../../../utils/descUtils'
-import { getNestedValue } from './fieldOperations'
 
 /**
  * Check if a value matches a search query recursively.
@@ -29,28 +26,5 @@ export const valueMatchesSearch = (value: unknown, query: string): boolean => {
       k.toLowerCase().includes(lowerQuery) || valueMatchesSearch(v, query)
     )
   }
-  return false
-}
-
-/**
- * Check if a field matches the search query (name, type, or current value).
- */
-export const fieldMatchesSearch = (
-  field: DescField,
-  formData: Record<string, unknown>,
-  basePath: string,
-  searchQuery: string
-): boolean => {
-  if (!searchQuery) return true
-
-  const lowerQuery = searchQuery.toLowerCase()
-
-  if (field.name.toLowerCase().includes(lowerQuery)) return true
-  if (fieldTypeName(field).toLowerCase().includes(lowerQuery)) return true
-
-  const fieldPath = basePath ? `${basePath}.${field.name}` : field.name
-  const value = getNestedValue(formData, fieldPath)
-  if (valueMatchesSearch(value, searchQuery)) return true
-
   return false
 }

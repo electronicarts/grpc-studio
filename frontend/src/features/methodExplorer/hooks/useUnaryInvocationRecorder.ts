@@ -9,6 +9,7 @@ import type { ResponseModel, ResponseStatus, StreamModel } from '../types'
 import type { InvokeUnaryResponse } from '@grpc-studio/shared'
 
 interface UseUnaryInvocationRecorderOptions {
+  selectedTarget: string
   selectedMethod: GrpcMethod | null
   response: ResponseModel
   stream: StreamModel
@@ -16,6 +17,7 @@ interface UseUnaryInvocationRecorderOptions {
 }
 
 export function useUnaryInvocationRecorder({
+  selectedTarget,
   selectedMethod,
   response,
   stream,
@@ -30,14 +32,14 @@ export function useUnaryInvocationRecorder({
     if (duration !== undefined) response.setTime(duration)
 
     const actualResponseData = result.success ? result.data : result
-    const normalized = normalizeResponseMessage(actualResponseData, selectedMethod?.outputType ?? null)
+    const normalized = normalizeResponseMessage(actualResponseData, selectedMethod?.outputType ?? null, selectedTarget)
     const rawPayload = result.success
       ? { ...result, data: normalized.display, responseTime: duration ? `${duration}ms` : undefined }
       : { ...normalized.display, responseTime: duration ? `${duration}ms` : undefined }
     const rawJson = stringifyPretty(rawPayload)
 
     const size = applyResponseSnapshot(response, normalized.display, rawJson, duration)
-    applyResponseSchema(selectedMethod, response)
+    applyResponseSchema(selectedTarget, selectedMethod, response)
 
     if (result.success) {
       saveToHistory(

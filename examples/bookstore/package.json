@@ -1,0 +1,21 @@
+{
+  "name": "grpc-studio-bookstore-example",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Demo gRPC BookStore service for testing gRPC Studio",
+  "scripts": {
+    "start": "node src/server.js",
+    "proto:generate": "protoc --include_imports --descriptor_set_out=proto/bookstore_descriptor.bin --proto_path=proto proto/bookstore.proto"
+  },
+  "dependencies": {
+    "@grpc/grpc-js": "^1.12.0",
+    "@grpc/proto-loader": "^0.7.0",
+    "@grpc/reflection": "^1.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "protoc": "^35.1.0"
+  }
+}

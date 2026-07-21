@@ -13,7 +13,6 @@ api:
     health: "/health"
   timeout: 120000  # ms for HTTP API requests only
   websocketTimeout: 5000  # ms to wait for the WebSocket connection to open
-
 # Authentication (disabled by default)
 # Supports: entra-id (Microsoft Entra ID / Azure AD)
 auth:

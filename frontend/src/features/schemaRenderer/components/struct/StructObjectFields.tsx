@@ -40,7 +40,7 @@ export function StructObjectFields({ value, onChange }: StructObjectFieldsProps)
       ))}
 
       {entries.length === 0 && (
-        <div className="text-sm text-gray-500 italic">No fields</div>
+        <div className="text-sm italic text-muted-foreground">No fields</div>
       )}
 
       {!readOnly && <StructFieldAdder onAdd={addField} />}

@@ -133,11 +133,11 @@ describe('StreamRequestQueue', () => {
     it('should be idempotent - multiple closes are safe', () => {
       const queue = new StreamRequestQueue<number>()
 
-      queue.close()
-      queue.close()
-      queue.close()
-
-      assert.ok(true, 'Multiple closes should not throw')
+      assert.doesNotThrow(() => {
+        queue.close()
+        queue.close()
+        queue.close()
+      }, 'Multiple closes should not throw')
     })
   })
 

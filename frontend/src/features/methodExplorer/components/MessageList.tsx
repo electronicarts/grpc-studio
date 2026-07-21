@@ -67,9 +67,9 @@ const MessageList: React.FC<MessageListProps> = ({
         <div className="flex justify-end">
           <Button variant="ghost" size="sm" onClick={toggleAll} className="h-7 px-2 text-xs">
             {expandAll ? (
-              <><ChevronUp className="w-3 h-3 mr-1" />Collapse All</>
+              <><ChevronUp className="mr-1 size-3" />Collapse All</>
             ) : (
-              <><ChevronDown className="w-3 h-3 mr-1" />Expand All</>
+              <><ChevronDown className="mr-1 size-3" />Expand All</>
             )}
           </Button>
         </div>

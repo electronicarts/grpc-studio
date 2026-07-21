@@ -7,7 +7,7 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 import dayjs, { Dayjs } from 'dayjs'
 import utc from 'dayjs/plugin/utc'
-import { useDarkMode } from '@/features/theme/hooks/useDarkMode'
+import { useDarkMode } from '@/features/theme'
 
 dayjs.extend(utc)
 

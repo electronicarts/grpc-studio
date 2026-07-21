@@ -12,8 +12,9 @@ import type { ResponseModel } from '../types'
 export function normalizeResponseMessage(
   data: unknown,
   outputType: string | null,
+  target?: string,
 ): ReturnType<typeof toDisplayFormat> {
-  return toDisplayFormat(data, outputType)
+  return toDisplayFormat(data, outputType, target)
 }
 
 /**
@@ -21,12 +22,13 @@ export function normalizeResponseMessage(
  * No-op if method is null.
  */
 export function applyResponseSchema(
+  target: string,
   method: GrpcMethod | null,
   response: ResponseModel,
 ): void {
   if (!method) return
 
-  schemaCache.getSchema(method.outputType)
+  schemaCache.getSchema(target, method.outputType)
     .then(schema => {
       response.setSchema(schema)
     })

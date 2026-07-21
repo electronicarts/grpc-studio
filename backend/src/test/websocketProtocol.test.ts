@@ -2,7 +2,7 @@
 
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { MethodKind } from '@grpc-studio/shared'
+import { MethodKind, type InvokeStreamStartRequest } from '@grpc-studio/shared'
 import { parseClientMessage } from '../websocket/websocketProtocol.js'
 
 describe('WebSocket protocol', () => {
@@ -10,6 +10,7 @@ describe('WebSocket protocol', () => {
     const result = parseClientMessage(Buffer.from(JSON.stringify({
       type: 'start',
       payload: {
+        target: 'test-target',
         service: 'test.Service',
         method: 'List',
         methodKind: MethodKind.SERVER_STREAMING,
@@ -21,6 +22,7 @@ describe('WebSocket protocol', () => {
     assert.deepEqual(result.ok ? result.message : null, {
       type: 'start',
       payload: {
+        target: 'test-target',
         service: 'test.Service',
         method: 'List',
         methodKind: MethodKind.SERVER_STREAMING,
@@ -33,6 +35,7 @@ describe('WebSocket protocol', () => {
     const result = parseClientMessage(Buffer.from(JSON.stringify({
       type: 'start',
       payload: {
+        target: 'test-target',
         service: 'test.Service',
         method: 'List',
         methodKind: MethodKind.SERVER_STREAMING,
@@ -45,7 +48,7 @@ describe('WebSocket protocol', () => {
     })), 1024)
 
     assert.equal(result.ok, true)
-    assert.deepEqual(result.ok ? result.message.payload.userHeaders : null, {
+    assert.deepEqual(result.ok ? (result.message as InvokeStreamStartRequest).payload.userHeaders : null, {
       'X-User-Id': 'user-1',
       'X-User-Email': 'ada@example.com',
       'X-User-Name': 'Ada',

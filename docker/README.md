@@ -35,6 +35,8 @@ docker pull ghcr.io/electronicarts/grpc-studio/frontend:latest
 
 ### Backend Configuration
 
+> **Upgrading from 1.x?** The `client` config changed from a single target to a list of targets. See [`MIGRATION.md`](../MIGRATION.md).
+
 Create a `config/backend.yaml` file:
 
 ```yaml
@@ -43,10 +45,11 @@ server:
   host: 0.0.0.0
 
 client:
-  mode: plaintext  # or tls, mtls
-  target:
-    host: your-grpc-server.com
-    port: 50051
+  targets:
+    - name: My gRPC Server  # display name shown in the UI
+      host: your-grpc-server.com
+      port: 50051
+      mode: plaintext  # or tls, mtls
 
 observability:
   enabled: true
@@ -190,10 +193,11 @@ data:
       port: 3001
       host: 0.0.0.0
     client:
-      mode: plaintext
-      target:
-        host: your-grpc-server
-        port: 50051
+      targets:
+        - name: My gRPC Server
+          host: your-grpc-server
+          port: 50051
+          mode: plaintext
     observability:
       enabled: true
       metrics:

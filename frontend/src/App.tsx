@@ -7,6 +7,7 @@ import { ErrorBoundary } from '@/components/shared/ErrorBoundary'
 import { LoadingPanel } from '@/components/shared/LoadingPanel'
 import { isConfigLoaded } from '@/config'
 import { useAutoLogin } from '@/features/auth'
+import { SchemaLoaderProvider } from '@/features/schemaLoader'
 
 const Playground = lazy(() => import('@/pages/Playground'))
 
@@ -21,39 +22,41 @@ function App({ configError = null }: AppProps) {
   const { isAuthenticated, isSsoEnabled } = useAutoLogin()
 
   return (
-    <div className="min-h-screen bg-background">
-      <AppHeader />
+    <SchemaLoaderProvider>
+      <div className="flex min-h-screen flex-col bg-background">
+        <AppHeader />
 
-      {configError && <ConfigError message={configError} />}
+        {configError && <ConfigError message={configError} />}
 
-      {!configLoaded && !configError && (
-        <LoadingPanel message="Loading configuration..." testId="app-config-loading" />
-      )}
+        {!configLoaded && !configError && (
+          <LoadingPanel message="Loading configuration..." testId="app-config-loading" />
+        )}
 
-      {configLoaded && !configError && (
-        <>
-          {isSsoEnabled && !isAuthenticated && (
-            <LoadingPanel
-              message="Authenticating..."
-              className="p-6"
-              testId="app-auth-loading"
-            />
-          )}
+        {configLoaded && !configError && (
+          <>
+            {isSsoEnabled && !isAuthenticated && (
+              <LoadingPanel
+                message="Authenticating..."
+                className="p-6"
+                testId="app-auth-loading"
+              />
+            )}
 
-          {(!isSsoEnabled || isAuthenticated) && (
-            <main className="px-4 py-8 pb-16">
-              <ErrorBoundary>
-                <Suspense
-                  fallback={<LoadingPanel message="Loading playground..." testId="app-playground-loading" />}
-                >
-                  <Playground />
-                </Suspense>
-              </ErrorBoundary>
-            </main>
-          )}
-        </>
-      )}
-    </div>
+            {(!isSsoEnabled || isAuthenticated) && (
+              <main className="flex min-h-0 flex-1 flex-col px-4 py-6">
+                <ErrorBoundary>
+                  <Suspense
+                    fallback={<LoadingPanel message="Loading playground..." testId="app-playground-loading" />}
+                  >
+                    <Playground />
+                  </Suspense>
+                </ErrorBoundary>
+              </main>
+            )}
+          </>
+        )}
+      </div>
+    </SchemaLoaderProvider>
   )
 }
 

@@ -22,6 +22,24 @@ export interface ApiService {
   methods: ApiMethod[]
 }
 
-export interface DiscoveryResponse {
+export interface ApiServer {
+  /**
+   * Unique name/identifier for this target server from config
+   */
+  name: string
+  /**
+   * Target address (host:port)
+   */
+  target: string
+  /**
+   * Services discovered from this target via reflection
+   */
   services: ApiService[]
+}
+
+export interface DiscoveryResponse {
+  /**
+   * List of servers with their discovered services.
+   */
+  servers: ApiServer[]
 }

@@ -2,11 +2,12 @@
 
 import React from 'react'
 import { Button } from '@/components/ui/button'
+import { Spinner } from '@/components/ui/spinner'
 import { Play } from 'lucide-react'
 import ServerStreamControls from './ServerStreamControls'
 import ClientStreamControls from './ClientStreamControls'
 import { useMethodExplorerContext } from '../stores'
-import { useMethodKind } from '../hooks'
+import { useMethodKind } from '../hooks/useMethodKind'
 
 const ExecutionControls: React.FC = () => {
   const { execution, stream, history } = useMethodExplorerContext()
@@ -28,16 +29,16 @@ const ExecutionControls: React.FC = () => {
         <Button
           onClick={execution.invoke}
           disabled={execution.loading}
-          className="h-8 px-6 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
+          className="h-8 bg-gradient-to-r from-info to-brand px-6 text-white hover:from-info/90 hover:to-brand/90"
         >
           {execution.loading ? (
             <>
-              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-2" />
+              <Spinner size={3} tone="onAccent" className="mr-2" />
               Executing...
             </>
           ) : (
             <>
-              <Play className="w-3 h-3 mr-2" />
+              <Play className="mr-2 size-3" />
               Execute Method
             </>
           )}

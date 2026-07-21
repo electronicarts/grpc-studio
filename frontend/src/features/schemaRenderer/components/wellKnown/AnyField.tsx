@@ -3,6 +3,7 @@
 import React, { useMemo, useSyncExternalStore } from 'react'
 import type { DescMessage } from '@bufbuild/protobuf'
 import { FormField } from '../../../../components/shared'
+import { Select } from '@/components/ui/select'
 import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
 import { schemaCache } from '../../../schemaLoader/lib/schemaCache'
 import AnyContentRenderer from './AnyContentRenderer'
@@ -35,7 +36,7 @@ function parseAnyValue(value: unknown): { typeName: string; formData: Record<str
 // The backend passes a WKT registry to fromJson/toJson so well-known types
 // embedded in Any decode correctly end-to-end.
 const AnyField: React.FC<AnyFieldProps> = ({ name, value, onChange }) => {
-  const { readOnly } = useProtoMessageRendererContext()
+  const { target, readOnly } = useProtoMessageRendererContext()
 
   // Subscribe to cache updates so the type list refreshes after reflection loads.
   const cacheVersion = useSyncExternalStore(
@@ -52,7 +53,7 @@ const AnyField: React.FC<AnyFieldProps> = ({ name, value, onChange }) => {
 
   const { typeName: currentTypeName, formData } = parseAnyValue(value)
   const currentSchema: DescMessage | null = currentTypeName
-    ? schemaCache.getCachedSchema(currentTypeName)
+    ? schemaCache.getCachedSchema(target, currentTypeName)
     : null
 
   const handleTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -69,24 +70,24 @@ const AnyField: React.FC<AnyFieldProps> = ({ name, value, onChange }) => {
     onChange({ '@type': `type.googleapis.com/${currentTypeName}`, ...data })
   }
 
-  const typeMeta = <span className="text-xs text-gray-500">(google.protobuf.Any)</span>
+  const typeMeta = <span className="text-xs text-muted-foreground">(google.protobuf.Any)</span>
 
   return (
     <FormField label={name} labelMeta={typeMeta}>
-      <div className="space-y-2 border border-input rounded-md p-3 bg-background">
+      <div className="space-y-2 rounded-md border border-input bg-background p-3">
         {/* Type selector */}
-        <select
+        <Select
           value={currentTypeName}
           onChange={handleTypeChange}
           disabled={readOnly}
-          className="w-full px-3 py-1.5 text-sm border border-input rounded-md bg-background disabled:opacity-50"
+          className="py-1.5"
           data-testid="anyField-typeSelect"
         >
           <option value="">Select a type…</option>
           {knownTypeNames.map(t => (
             <option key={t} value={t}>{t}</option>
           ))}
-        </select>
+        </Select>
 
         {/* Nested form for the selected type */}
         {currentTypeName && currentSchema && (
@@ -100,7 +101,7 @@ const AnyField: React.FC<AnyFieldProps> = ({ name, value, onChange }) => {
         )}
 
         {currentTypeName && !currentSchema && (
-          <p className="text-xs text-muted-foreground italic">
+          <p className="text-xs italic text-muted-foreground">
             Schema for &quot;{currentTypeName}&quot; is not in the reflection cache
           </p>
         )}

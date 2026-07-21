@@ -2,15 +2,18 @@
 
 import { useState, useRef, useCallback } from 'react'
 import type { StreamModel } from '../types'
+import type { TabStreamSnapshot } from '@/stores'
 
-export function useStreamModel(): StreamModel {
+export function useStreamModel(restored?: TabStreamSnapshot): StreamModel {
+  // A restored tab has no live socket (streaming tabs never unmount), so it is
+  // always inactive on remount — we only rehydrate the accumulated messages.
   const [active, setActive] = useState(false)
-  const [completed, setCompleted] = useState(false)
-  const [messages, setMessages] = useState<unknown[]>([])
-  const [sentMessages, setSentMessages] = useState<Record<string, unknown>[]>([])
+  const [completed, setCompleted] = useState(restored?.completed ?? false)
+  const [messages, setMessages] = useState<unknown[]>(restored?.messages ?? [])
+  const [sentMessages, setSentMessages] = useState<Record<string, unknown>[]>(restored?.sentMessages ?? [])
   const [isStreamingResponse, setStreamingResponse] = useState(false)
 
-  const messagesRef = useRef<unknown[]>([])
+  const messagesRef = useRef<unknown[]>(restored?.messages ?? [])
   const requestRef = useRef<Record<string, unknown> | null>(null)
   const startTimeRef = useRef<number | null>(null)
 

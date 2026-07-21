@@ -6,39 +6,31 @@
  */
 
 // Field operations (get/set)
-export { getFieldValue, setFieldValue, getNestedValue } from './fieldOperations'
+export {  setFieldValue,  } from './fieldOperations'
 
 // OneOf detection
 export { detectOneOfSelections } from './oneOfDetection'
 
 // Scalar type utilities
-export { getInputType, parseValue, isEmpty } from './scalarTypeUtils'
+
 
 // Search utilities
-export { valueMatchesSearch, fieldMatchesSearch } from './searchUtils'
+
 
 // Path analysis
-export { collectExpandablePaths, hasDataAtPath } from './pathAnalysis'
+
 
 // Field filtering
-export { filterFields } from './fieldFiltering'
+
 
 // Descriptor traversal
-export { isCompositeField, forEachNestedMessageValue } from './descriptorTraversal'
+
 
 // Collection mutation helpers
-export { replaceArrayItem, removeArrayItem, setObjectEntry, removeObjectEntry } from './collectionMutation'
+
 
 // Map utilities
-export { filterMapEntries } from './mapUtils'
+
 
 // Struct utilities (google.protobuf.Struct)
-export {
-  STRUCT_KIND_OPTIONS,
-  defaultStructValue,
-  isJsonObject,
-  scalarType,
-  structKind,
-  structKindFieldName,
-  type StructKind,
-} from './structValueUtils'
+

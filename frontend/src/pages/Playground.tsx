@@ -1,31 +1,30 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-import React from 'react'
-
+import React, { useState } from 'react'
 import { ServiceExplorer, useServiceSelection } from '@/features/serviceExplorer'
-import MethodExplorer from '@/features/methodExplorer'
-import { CertificateStatus } from '@/features/certificateValidator'
-import { SchemaReloadStatus, SchemaLoadingScreen, useSchemaLoader } from '@/features/schemaLoader'
-import { StatusPill } from '@/features/connectionValidator'
+import { ServerSelector } from '@/features/serverSelector'
+import { SchemaLoadingScreen, SchemaLoaderNotifications, useSchemaLoaderContext } from '@/features/schemaLoader'
+import { MethodTabs, TabPanel, useMethodTabs } from '@/features/tabs'
 import { AlertPanel } from '@/components/shared/AlertPanel'
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary'
 import { clearShareFragment } from '@/utils/shareableLink'
 import { HOME_NAVIGATION_EVENT } from '@/utils/homeNavigation'
+import { createLogger } from '@/utils/debugLogger'
+
+const playgroundLogger = createLogger('Playground')
 
 const Playground: React.FC = () => {
   const {
     loading,
     error,
     reloadError,
-    targetServer,
-    lastFetchedAt,
-    lastReloadSuccess,
-    reloading,
     reload,
-  } = useSchemaLoader()
+  } = useSchemaLoaderContext()
 
   const {
+    servers,
     services,
+    selectedTarget,
     selectedService,
     selectedMethod,
     sharedRequestBody,
@@ -34,10 +33,35 @@ const Playground: React.FC = () => {
     clearSelection,
   } = useServiceSelection()
 
-  const handleReload = React.useCallback(async () => {
-    clearSelection()
-    await reload()
-  }, [clearSelection, reload])
+  const [selectedServerNames, setSelectedServerNames] = useState<string[]>([])
+  const [serviceSearchQuery, setServiceSearchQuery] = useState('')
+
+  const {
+    tabs,
+    activeTabId,
+    setActiveTabId,
+    closeTab,
+    closeAllTabs,
+    duplicateTab,
+  } = useMethodTabs({
+    selectedTarget,
+    selectedService,
+    selectedMethod,
+    sharedRequestBody,
+    onClearSelection: clearSelection,
+  })
+
+  // Handle manual tab click - sync to sidebar
+  const handleTabClick = React.useCallback((tabId: string) => {
+    setActiveTabId(tabId)
+    const tab = tabs.find(t => t.id === tabId)
+    if (tab) {
+      const server = servers.find(s => s.name === tab.target)
+      if (server) {
+        selectMethod(tab.method, tab.service, server)
+      }
+    }
+  }, [tabs, servers, setActiveTabId, selectMethod])
 
   React.useEffect(() => {
     const handleHomeNavigation = () => {
@@ -50,89 +74,127 @@ const Playground: React.FC = () => {
     return () => window.removeEventListener(HOME_NAVIGATION_EVENT, handleHomeNavigation)
   }, [clearSelection])
 
+  // Handle tab visibility - refresh connections when user comes back
+  React.useEffect(() => {
+    let timeWentHidden: number | null = null
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // Tab became hidden - record the time
+        timeWentHidden = Date.now()
+      } else {
+        // Tab became visible again
+        if (timeWentHidden) {
+          const timeHidden = Date.now() - timeWentHidden
+          // If tab was hidden for more than 5 minutes, refresh schemas to reconnect
+          if (timeHidden > 5 * 60 * 1000) {
+            playgroundLogger.debug(`Tab was hidden for ${Math.round(timeHidden / 1000)}s, refreshing connections...`)
+            reload()
+          }
+          timeWentHidden = null
+        }
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [reload])
+
   const displayError = error ?? reloadError
 
   return (
-    <div className="space-y-8 px-6 pb-10 relative">
-      {/* Header Section */}
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden relative">
-        <div className="px-8 py-6 text-center">
-          {/* Certificate Status - positioned in top right */}
-          <div className="absolute top-4 right-4 z-10 flex flex-col items-end space-y-2">
-            <CertificateStatus />
-            {!loading && (
-              <SchemaReloadStatus
-                lastFetchedAt={lastFetchedAt}
-                lastReloadSuccess={lastReloadSuccess}
-                reloading={reloading}
-                onReload={handleReload}
-              />
-            )}
-          </div>
-          
-          <h1 className="text-3xl font-semibold text-gray-900 dark:text-white mb-2">gRPC Studio</h1>
-          <p className="text-lg text-gray-600 dark:text-gray-400">Connect, inspect, and call any gRPC service</p>
-
-          {/* Error State */}
-          {displayError && !loading && !reloading && (
-            <div className="mt-6">
-              <AlertPanel title="Connection Failed" className="rounded-xl p-3 text-left" titleClassName="text-sm mb-1">
-                <p className="mt-1 text-sm text-red-700 dark:text-red-400">{displayError}</p>
-              </AlertPanel>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Loading Screen */}
-      {(loading || reloading) && <SchemaLoadingScreen targetServer={targetServer} />}
-
-      {/* Main Content Area - Only show if we have services */}
-      {!loading && !reloading && !error && services.length > 0 && (
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Left Sidebar - Service Explorer */}
-          <div className="w-full lg:w-1/4 min-w-0">
-            <ErrorBoundary>
-              <ServiceExplorer
-                selectedService={selectedService}
-                selectedMethod={selectedMethod}
-                onServiceSelect={selectService}
-                onMethodSelect={selectMethod}
-              />
-            </ErrorBoundary>
-          </div>
-
-          {/* Right Panel - Method Explorer */}
-          <div className="w-full lg:flex-1 min-w-0">
-            <ErrorBoundary>
-            {selectedMethod && selectedService ? (
-              <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
-                <MethodExplorer
-                  key={`${selectedService?.fullName}-${selectedMethod.name}`}
-                  selectedMethod={selectedMethod}
-                  selectedService={selectedService}
-                  initialRequestBody={sharedRequestBody}
-                />
-              </div>
-            ) : (
-              <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
-                <div className="flex items-center justify-center h-96">
-                  <div className="text-center">
-                    <img src="/logo.svg" alt="gRPC Studio" className="w-16 h-16 mx-auto mb-6 rounded-2xl" />
-                    <h3 className="text-2xl font-semibold text-gray-900 dark:text-white mb-3">Ready to Play</h3>
-                    <p className="text-lg text-gray-600 dark:text-gray-400 max-w-sm mx-auto">
-                      Select a service and method from the sidebar to start playing with your gRPC endpoints
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-            </ErrorBoundary>
+    <div className="relative flex min-h-0 flex-1 flex-col gap-6 px-2">
+      {/* Error State */}
+      {displayError && !loading && (
+        <div className="relative overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+          <div className="px-8 py-6">
+            <AlertPanel title="Connection Failed" className="rounded-xl p-3 text-left" titleClassName="text-sm mb-1">
+              <p className="mt-1 text-sm text-danger">{displayError}</p>
+            </AlertPanel>
           </div>
         </div>
       )}
 
-      <StatusPill />
+      {/* Initial Loading Screen - only on first load */}
+      {loading && <SchemaLoadingScreen />}
+
+      {/* Centralized loading/success notifications */}
+      <SchemaLoaderNotifications />
+
+      {/* Main Content Area - Only show if we have services */}
+      {!loading && !error && services.length > 0 && (
+        <div className="flex flex-1 flex-col gap-6">
+          {/* Server Selector */}
+          <ErrorBoundary>
+            <ServerSelector
+              selectedServerNames={selectedServerNames}
+              onServerSelect={setSelectedServerNames}
+            />
+          </ErrorBoundary>
+
+          {/* Two Column Layout */}
+          <div className="flex flex-1 flex-col gap-6 lg:flex-row">
+            {/* Left: Methods — stretches to match the method explorer height so
+                both columns are equal height; the service list scrolls inside. */}
+            <div className="flex w-full min-w-0 flex-col lg:w-1/4">
+              <ErrorBoundary>
+                <ServiceExplorer
+                  selectedTarget={selectedTarget}
+                  selectedService={selectedService}
+                  selectedMethod={selectedMethod}
+                  onServiceSelect={selectService}
+                  onMethodSelect={selectMethod}
+                  selectedServerNames={selectedServerNames}
+                  serviceSearchQuery={serviceSearchQuery}
+                  onSearchChange={setServiceSearchQuery}
+                />
+              </ErrorBoundary>
+            </div>
+
+            {/* Right: Method Explorer */}
+            <div className="flex w-full min-w-0 flex-col lg:flex-1">
+            <ErrorBoundary>
+              {tabs.length > 0 ? (
+                <div className="flex w-full flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-lg">
+                  {/* Tab Bar */}
+                  <MethodTabs
+                    tabs={tabs}
+                    activeTabId={activeTabId}
+                    onTabSelect={handleTabClick}
+                    onTabClose={closeTab}
+                    onTabDuplicate={duplicateTab}
+                    onCloseAll={closeAllTabs}
+                  />
+
+                  {/* Tab Content — the active tab and any tab with live work
+                      (in-flight call / active stream) stay mounted; idle tabs
+                      unmount and rehydrate from the per-tab store on return.
+                      Height flows with content so the whole page scrolls. */}
+                  <div>
+                    {tabs.map((tab) => (
+                      <TabPanel key={tab.id} tab={tab} isActive={tab.id === activeTabId} />
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="min-h-[420px] w-full flex-1 self-stretch overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+                  <div className="flex h-full items-center justify-center">
+                    <div className="text-center">
+                      <img src="/logo.svg" alt="gRPC Studio" className="mx-auto mb-6 size-16 rounded-2xl" />
+                      <h3 className="mb-3 text-2xl font-semibold text-foreground">Ready to Play</h3>
+                      <p className="mx-auto max-w-sm text-lg text-muted-foreground">
+                        Select a service and method from the sidebar to start playing with your gRPC endpoints
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </ErrorBoundary>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }

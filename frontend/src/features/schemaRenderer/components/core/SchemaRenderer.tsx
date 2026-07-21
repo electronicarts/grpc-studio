@@ -27,6 +27,7 @@ import { useFormState } from '../../hooks/useFormState'
 import type { ProtoMessageRendererProps } from '../../types'
 
 const SchemaRenderer: React.FC<ProtoMessageRendererProps> = ({
+  target,
   schema,
   data,
   onChange,
@@ -53,7 +54,7 @@ const SchemaRenderer: React.FC<ProtoMessageRendererProps> = ({
 
   if (!schema) {
     return (
-      <div className="text-sm text-gray-500 p-4 border rounded-lg">
+      <div className="rounded-lg border p-4 text-sm text-muted-foreground">
         No schema available
       </div>
     )
@@ -63,6 +64,7 @@ const SchemaRenderer: React.FC<ProtoMessageRendererProps> = ({
 
   return (
     <ProtoMessageRendererProvider
+      target={target}
       formData={formData}
       schemasLoaded={schemasLoaded}
       expanded={expanded}
@@ -75,29 +77,29 @@ const SchemaRenderer: React.FC<ProtoMessageRendererProps> = ({
     >
       <div className="space-y-4">
         {/* Header with controls */}
-        <div className="flex items-center justify-between pb-2 border-b gap-2">
-          <div className="text-sm text-gray-600 dark:text-gray-400 truncate">
+        <div className="flex items-center justify-between gap-2 border-b pb-2">
+          <div className="truncate text-sm text-muted-foreground">
             {schema.typeName}
           </div>
           
           {showControls && (
-            <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex flex-shrink-0 items-center gap-2">
               {/* Search input */}
               <div className="relative">
-                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 w-3 h-3 text-gray-400" />
+                <Search className="absolute left-2 top-1/2 size-3 -translate-y-1/2 transform text-muted-foreground" />
                 <Input
                   type="text"
                   placeholder="Search fields..."
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  className="pl-7 h-7 w-36 text-xs"
+                  className="h-7 w-36 pl-7 text-xs"
                 />
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery('')}
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 transform text-muted-foreground hover:text-foreground"
                   >
-                    <X className="w-3 h-3" />
+                    <X className="size-3" />
                   </button>
                 )}
               </div>
@@ -113,7 +115,7 @@ const SchemaRenderer: React.FC<ProtoMessageRendererProps> = ({
                     className="h-7 px-2 text-xs"
                     title="Expand all"
                   >
-                    <ChevronsUpDown className="w-3 h-3 mr-1" />
+                    <ChevronsUpDown className="mr-1 size-3" />
                     Expand
                   </Button>
                   <Button
@@ -124,7 +126,7 @@ const SchemaRenderer: React.FC<ProtoMessageRendererProps> = ({
                     className="h-7 px-2 text-xs"
                     title="Collapse all"
                   >
-                    <ChevronRight className="w-3 h-3 mr-1" />
+                    <ChevronRight className="mr-1 size-3" />
                     Collapse
                   </Button>
                 </div>
