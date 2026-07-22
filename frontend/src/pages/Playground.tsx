@@ -7,6 +7,8 @@ import { SchemaLoadingScreen, SchemaLoaderNotifications, useSchemaLoaderContext 
 import { MethodTabs, TabPanel, useMethodTabs } from '@/features/tabs'
 import { AlertPanel } from '@/components/shared/AlertPanel'
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary'
+import { CollapsibleSidebar } from '@/components/ui/collapsibleSidebar'
+import { useSidebarLayout } from '@/hooks/useSidebarLayout'
 import { clearShareFragment } from '@/utils/shareableLink'
 import { HOME_NAVIGATION_EVENT } from '@/utils/homeNavigation'
 import { createLogger } from '@/utils/debugLogger'
@@ -35,6 +37,8 @@ const Playground: React.FC = () => {
 
   const [selectedServerNames, setSelectedServerNames] = useState<string[]>([])
   const [serviceSearchQuery, setServiceSearchQuery] = useState('')
+
+  const { collapsed: sidebarCollapsed, toggleCollapsed: toggleSidebar } = useSidebarLayout()
 
   const {
     tabs,
@@ -132,11 +136,12 @@ const Playground: React.FC = () => {
             />
           </ErrorBoundary>
 
-          {/* Two Column Layout */}
-          <div className="flex flex-1 flex-col gap-6 lg:flex-row">
-            {/* Left: Methods — stretches to match the method explorer height so
-                both columns are equal height; the service list scrolls inside. */}
-            <div className="flex w-full min-w-0 flex-col lg:w-1/4">
+          {/* Two Column Layout — the sidebar can be collapsed to hand the full
+              width to the method explorer. */}
+          <CollapsibleSidebar
+            collapsed={sidebarCollapsed}
+            onExpand={toggleSidebar}
+            sidebar={
               <ErrorBoundary>
                 <ServiceExplorer
                   selectedTarget={selectedTarget}
@@ -147,12 +152,12 @@ const Playground: React.FC = () => {
                   selectedServerNames={selectedServerNames}
                   serviceSearchQuery={serviceSearchQuery}
                   onSearchChange={setServiceSearchQuery}
+                  onCollapse={toggleSidebar}
                 />
               </ErrorBoundary>
-            </div>
-
-            {/* Right: Method Explorer */}
-            <div className="flex w-full min-w-0 flex-col lg:flex-1">
+            }
+          >
+            {/* Method Explorer */}
             <ErrorBoundary>
               {tabs.length > 0 ? (
                 <div className="flex w-full flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-lg">
@@ -190,8 +195,7 @@ const Playground: React.FC = () => {
                 </div>
               )}
             </ErrorBoundary>
-            </div>
-          </div>
+          </CollapsibleSidebar>
         </div>
       )}
 

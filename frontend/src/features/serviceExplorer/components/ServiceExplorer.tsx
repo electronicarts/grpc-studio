@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import React, { useState, useMemo, useCallback, useRef } from 'react'
-import { Server } from 'lucide-react'
+import { Server, PanelLeftClose } from 'lucide-react'
 import ServiceItem from './ServiceItem'
 import MethodItem from './MethodItem'
 import { Panel } from '@/components/ui/panel'
@@ -18,6 +18,8 @@ interface ServiceExplorerWithServerProps extends ServiceExplorerProps {
   selectedServerNames: string[]
   serviceSearchQuery: string
   onSearchChange: (query: string) => void
+  /** Collapse the panel to give the method explorer the full width. */
+  onCollapse?: () => void
 }
 
 // A service's identity in the sidebar is (server, service) — two servers can
@@ -35,6 +37,7 @@ const ServiceExplorer: React.FC<ServiceExplorerWithServerProps> = ({
   selectedServerNames,
   serviceSearchQuery,
   onSearchChange,
+  onCollapse,
 }) => {
   const { servers } = useSchemas()
 
@@ -156,6 +159,18 @@ const ServiceExplorer: React.FC<ServiceExplorerWithServerProps> = ({
             value={serviceSearchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
           />
+
+          {onCollapse && (
+            <button
+              type="button"
+              onClick={onCollapse}
+              aria-label="Collapse services panel"
+              title="Collapse services panel"
+              className="flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            >
+              <PanelLeftClose className="size-4" />
+            </button>
+          )}
         </div>
       </div>
 
