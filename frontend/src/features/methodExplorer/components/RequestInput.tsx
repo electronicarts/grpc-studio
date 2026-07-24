@@ -9,10 +9,12 @@ import HistoryPanel from './HistoryPanel'
 import ViewTabs, { type ViewTab } from './ViewTabs'
 import { useMethodExplorerContext } from '../stores'
 import { useMethodKind } from '../hooks/useMethodKind'
+import { usePersistentHeight } from '@/hooks/usePersistentHeight'
 
 const RequestInput: React.FC = () => {
   const { selectedTarget, selectedService, selectedMethod, request, response, stream, execution, history, toggleHistory, loadFromHistory } = useMethodExplorerContext()
   const [activeTab, setActiveTab] = useState<ViewTab>(request.isFormMode ? 'form' : 'json')
+  const jsonInput = usePersistentHeight<HTMLTextAreaElement>('grpc-studio-request-json-height', '10rem')
 
   const handleTabChange = (tab: ViewTab) => {
     setActiveTab(tab)
@@ -111,9 +113,11 @@ const RequestInput: React.FC = () => {
 
           {activeTab === 'json' && (
             <textarea
+              ref={jsonInput.ref}
+              style={jsonInput.style}
               value={request.body}
               onChange={(e) => request.setBody(e.target.value)}
-              className="h-40 w-full rounded-md border bg-background p-4 font-mono text-sm"
+              className="min-h-40 w-full resize-y rounded-md border bg-background p-4 font-mono text-sm"
               placeholder="Enter your gRPC request as JSON..."
             />
           )}

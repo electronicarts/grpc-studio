@@ -101,8 +101,9 @@ const StreamingMessageDisplay: React.FC<StreamingMessageDisplayProps> = ({
           schema={effectiveTab === 'form' ? schema : null}
           isFormMode={effectiveTab === 'form'}
           colorScheme={colorScheme}
-          maxHeight="max-h-80"
           showExpandAll={messages.length > 1}
+          resizable
+          storageKey="grpc-studio-stream-messages-height"
         />
       ) : showStatusBadge ? (
         <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
