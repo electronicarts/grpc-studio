@@ -7,6 +7,8 @@ import { FileDescriptorSetSchema, FileDescriptorProtoSchema, DescriptorProtoSche
 import { DescriptorSetService } from '../services/descriptorSetService.js'
 import type { ReflectionSchemaRepository } from '../repositories/reflectionSchemaRepository.js'
 
+const TEST_TARGET = 'test-target'
+
 describe('DescriptorSetService', () => {
   describe('getDescriptorSetBase64', () => {
     it('should return base64-encoded descriptor set', async () => {
@@ -33,7 +35,7 @@ describe('DescriptorSetService', () => {
       } as unknown as ReflectionSchemaRepository
 
       const service = new DescriptorSetService(mockSchemaRepository)
-      const result = await service.getDescriptorSetBase64('test.Message')
+      const result = await service.getDescriptorSetBase64(TEST_TARGET, 'test.Message')
 
       assert.ok(result)
       assert.strictEqual(typeof result, 'string')
@@ -70,7 +72,7 @@ describe('DescriptorSetService', () => {
       } as unknown as ReflectionSchemaRepository
 
       const service = new DescriptorSetService(mockSchemaRepository)
-      const result = await service.getDescriptorSetBase64('api.User')
+      const result = await service.getDescriptorSetBase64(TEST_TARGET, 'api.User')
 
       assert.ok(result)
       const calls = (mockRegistry.getMessage as unknown as { mock: { calls: Array<{ arguments: string[] }> } }).mock.calls
@@ -107,7 +109,7 @@ describe('DescriptorSetService', () => {
       } as unknown as ReflectionSchemaRepository
 
       const service = new DescriptorSetService(mockSchemaRepository)
-      const result = await service.getDescriptorSetBase64('api.UserService')
+      const result = await service.getDescriptorSetBase64(TEST_TARGET, 'api.UserService')
 
       assert.ok(result)
       const calls = (mockRegistry.getService as unknown as { mock: { calls: Array<{ arguments: string[] }> } }).mock.calls
@@ -139,7 +141,7 @@ describe('DescriptorSetService', () => {
       } as unknown as ReflectionSchemaRepository
 
       const service = new DescriptorSetService(mockSchemaRepository)
-      const result = await service.getDescriptorSetBase64('MissingSymbol')
+      const result = await service.getDescriptorSetBase64(TEST_TARGET, 'MissingSymbol')
 
       // Should still return result, just with warning logged
       assert.ok(result)
@@ -159,7 +161,7 @@ describe('DescriptorSetService', () => {
       const service = new DescriptorSetService(mockSchemaRepository)
 
       await assert.rejects(
-        async () => await service.getDescriptorSetBase64('test.Message'),
+        async () => await service.getDescriptorSetBase64(TEST_TARGET, 'test.Message'),
         {
           name: 'Error',
           message: 'Failed to fetch descriptor set'
@@ -200,7 +202,7 @@ describe('DescriptorSetService', () => {
       } as unknown as ReflectionSchemaRepository
 
       const service = new DescriptorSetService(mockSchemaRepository)
-      const result = await service.getDescriptorSetBase64('test.LargeMessage')
+      const result = await service.getDescriptorSetBase64(TEST_TARGET, 'test.LargeMessage')
 
       assert.ok(result)
       // Base64 encoding expands by ~33%, so bytes should be ~75% of base64 length
@@ -243,7 +245,7 @@ describe('DescriptorSetService', () => {
       } as unknown as ReflectionSchemaRepository
 
       const service = new DescriptorSetService(mockSchemaRepository)
-      const result = await service.getDescriptorSetBase64('complex.Outer')
+      const result = await service.getDescriptorSetBase64(TEST_TARGET, 'complex.Outer')
 
       assert.ok(result)
       assert.ok(result.length > 0)
@@ -266,16 +268,18 @@ describe('DescriptorSetService', () => {
       } as unknown as ReflectionSchemaRepository
 
       const service = new DescriptorSetService(mockSchemaRepository)
-      await service.getDescriptorSetBase64('com.example.TestMessage')
+      await service.getDescriptorSetBase64(TEST_TARGET, 'com.example.TestMessage')
 
       const descriptorCalls = (mockSchemaRepository.getFileDescriptorSet as unknown as { mock: { calls: Array<{ arguments: string[] }> } }).mock.calls
       const registryCalls = (mockSchemaRepository.getFileRegistry as unknown as { mock: { calls: Array<{ arguments: string[] }> } }).mock.calls
 
       assert.strictEqual(descriptorCalls.length, 1)
-      assert.strictEqual(descriptorCalls[0].arguments[0], 'com.example.TestMessage')
+      assert.strictEqual(descriptorCalls[0].arguments[0], TEST_TARGET)
+      assert.strictEqual(descriptorCalls[0].arguments[1], 'com.example.TestMessage')
 
       assert.strictEqual(registryCalls.length, 1)
-      assert.strictEqual(registryCalls[0].arguments[0], 'com.example.TestMessage')
+      assert.strictEqual(registryCalls[0].arguments[0], TEST_TARGET)
+      assert.strictEqual(registryCalls[0].arguments[1], 'com.example.TestMessage')
     })
   })
 })

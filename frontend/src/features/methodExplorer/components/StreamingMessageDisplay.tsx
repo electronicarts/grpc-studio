@@ -27,8 +27,8 @@ interface StreamingMessageDisplayProps {
 }
 
 const countBadgeClass = {
-  blue: 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200',
-  purple: 'bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200',
+  blue: 'bg-info/10 text-info',
+  purple: 'bg-brand/10 text-brand',
 }
 
 const StreamingMessageDisplay: React.FC<StreamingMessageDisplayProps> = ({
@@ -59,33 +59,33 @@ const StreamingMessageDisplay: React.FC<StreamingMessageDisplayProps> = ({
 
   return (
     <div className="space-y-2">
-      <div className="space-y-1.5 pb-1 border-b border-gray-200 dark:border-gray-700">
+      <div className="space-y-1.5 border-b border-border pb-1">
         {/* Row 1: label + status badges */}
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex flex-wrap items-center gap-2">
           <label className="text-xs font-medium text-muted-foreground">{label}</label>
 
           {showStatusBadge && (active ? (
-            <span className="px-2 py-0.5 text-xs bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-full flex items-center gap-1 font-medium">
-              <Loader2 className="w-3 h-3 animate-spin" />
+            <span className="flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-xs font-medium text-success">
+              <Loader2 className="size-3 animate-spin" />
               Live
             </span>
           ) : (
-            <span className="px-2 py-0.5 text-xs bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 rounded-full">
+            <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
               Ended
             </span>
           ))}
 
-          <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${countBadgeClass[colorScheme]}`}>
+          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${countBadgeClass[colorScheme]}`}>
             {messages.length} {messages.length === 1 ? 'message' : 'messages'}
           </span>
-          <span className="px-2 py-0.5 text-xs bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 rounded-full">
+          <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
             newest first
           </span>
 
           <ResponseMetadata time={time} size={size} />
         </div>
         {/* Row 2: view tabs + actions */}
-        <div className="flex items-center gap-2 justify-end">
+        <div className="flex items-center justify-end gap-2">
           <ViewTabs activeTab={effectiveTab} onTabChange={setTab} showSchemaTab={!!schemaNode} />
           {raw && (
             <ResponseActions raw={raw} serviceName={serviceName} methodName={methodName} />
@@ -101,14 +101,15 @@ const StreamingMessageDisplay: React.FC<StreamingMessageDisplayProps> = ({
           schema={effectiveTab === 'form' ? schema : null}
           isFormMode={effectiveTab === 'form'}
           colorScheme={colorScheme}
-          maxHeight="max-h-80"
           showExpandAll={messages.length > 1}
+          resizable
+          storageKey="grpc-studio-stream-messages-height"
         />
       ) : showStatusBadge ? (
         <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
           {active ? (
             <>
-              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              <Loader2 className="mr-2 size-4 animate-spin" />
               Waiting for messages...
             </>
           ) : (

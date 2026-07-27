@@ -20,20 +20,40 @@ server:
     heartbeatIntervalMs: 25000  # ms between server ping frames; stale sockets are terminated on missed heartbeat
 
 # Outbound gRPC client configuration
-# Change these to point to your gRPC server
+# Configure multiple gRPC targets (servers) to connect to
 client:
-  mode: plaintext  # plaintext | tls | mtls
-  target:
-    host: localhost
-    port: 50051  # Your gRPC server port
-  rpc:
-    unaryDeadlineMs: 30000        # ms max duration for unary RPCs
-    streamDeadlineMs: 120000      # ms max duration for server/client/bidi streaming RPCs
-  reflection:
-    deadlineMs: 25000             # ms max duration for backend reflection requests; must be below server.http.responseTimeoutMs
-  keepalive:
-    pingIntervalMs: 30000  # ms between HTTP/2 keepalive pings
-    pingTimeoutMs: 10000   # ms to wait for a keepalive ping ack
+  targets:
+    - name: "PetStore"  # Display name for the server in UI (bundled example: npm run dev:petstore)
+      host: localhost
+      port: 50051  # Your gRPC server port
+      mode: plaintext  # plaintext | tls | mtls
+      rpc:
+        unaryDeadlineMs: 30000        # ms max duration for unary RPCs
+        streamDeadlineMs: 120000      # ms max duration for server/client/bidi streaming RPCs
+      reflection:
+        deadlineMs: 25000             # ms max duration for backend reflection requests; must be below server.http.responseTimeoutMs
+      keepalive:
+        pingIntervalMs: 30000  # ms between HTTP/2 keepalive pings
+        pingTimeoutMs: 10000   # ms to wait for a keepalive ping ack
+    - name: "BookStore"  # Display name for the server in UI (bundled example: npm run dev:bookstore)
+      host: localhost
+      port: 50052  # Your gRPC server port
+      mode: plaintext  # plaintext | tls | mtls
+      rpc:
+        unaryDeadlineMs: 30000        # ms max duration for unary RPCs
+        streamDeadlineMs: 120000      # ms max duration for server/client/bidi streaming RPCs
+      reflection:
+        deadlineMs: 25000             # ms max duration for backend reflection requests; must be below server.http.responseTimeoutMs
+      keepalive:
+        pingIntervalMs: 30000  # ms between HTTP/2 keepalive pings
+        pingTimeoutMs: 10000   # ms to wait for a keepalive ping ack
+
+    # Add more targets as needed:
+    # - name: "Production API"
+    #   host: api.example.com
+    #   port: 443
+    #   mode: tls
+    #   # ... (same structure as above)
 
 # Authentication for outgoing gRPC calls
 auth:

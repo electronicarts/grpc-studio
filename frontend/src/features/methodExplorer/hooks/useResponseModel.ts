@@ -3,15 +3,16 @@
 import { useState, useCallback } from 'react'
 import type { DescMessage } from '@bufbuild/protobuf'
 import type { ResponseModel } from '../types'
+import type { TabResponseSnapshot } from '@/stores'
 
-export function useResponseModel(): ResponseModel {
-  const [raw, setRaw] = useState('')
-  const [data, setData] = useState<unknown>(null)
-  const [time, setTime] = useState<number | null>(null)
-  const [size, setSize] = useState<number | null>(null)
-  const [schema, setSchema] = useState<DescMessage | null>(null)
-  const [isFormMode, setFormMode] = useState(false)
-  const [singleExpanded, setSingleExpanded] = useState(true)
+export function useResponseModel(restored?: TabResponseSnapshot): ResponseModel {
+  const [raw, setRaw] = useState(restored?.raw ?? '')
+  const [data, setData] = useState<unknown>(restored?.data ?? null)
+  const [time, setTime] = useState<number | null>(restored?.time ?? null)
+  const [size, setSize] = useState<number | null>(restored?.size ?? null)
+  const [schema, setSchema] = useState<DescMessage | null>(restored?.schema ?? null)
+  const [isFormMode, setFormMode] = useState(restored?.isFormMode ?? false)
+  const [singleExpanded, setSingleExpanded] = useState(restored?.singleExpanded ?? true)
 
   const clear = useCallback(() => {
     setRaw('')

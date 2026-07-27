@@ -8,11 +8,13 @@ import ProtoViewer from './ProtoViewer'
 import HistoryPanel from './HistoryPanel'
 import ViewTabs, { type ViewTab } from './ViewTabs'
 import { useMethodExplorerContext } from '../stores'
-import { useMethodKind } from '../hooks'
+import { useMethodKind } from '../hooks/useMethodKind'
+import { usePersistentHeight } from '@/hooks/usePersistentHeight'
 
 const RequestInput: React.FC = () => {
-  const { selectedService, selectedMethod, request, response, stream, execution, history, toggleHistory, loadFromHistory } = useMethodExplorerContext()
+  const { selectedTarget, selectedService, selectedMethod, request, response, stream, execution, history, toggleHistory, loadFromHistory } = useMethodExplorerContext()
   const [activeTab, setActiveTab] = useState<ViewTab>(request.isFormMode ? 'form' : 'json')
+  const jsonInput = usePersistentHeight<HTMLTextAreaElement>('grpc-studio-request-json-height', '10rem')
 
   const handleTabChange = (tab: ViewTab) => {
     setActiveTab(tab)
@@ -44,41 +46,42 @@ const RequestInput: React.FC = () => {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
+      <div className="mb-4 flex items-center justify-between">
         <label className="text-sm font-medium">{bidiStreaming ? 'Send Messages' : 'Request Input'}</label>
         <div className="flex items-center gap-2">
           {history.visible ? (
             <Button
               variant="outline"
               size="sm"
-              className="h-7 px-3 rounded-full"
+              className="h-7 rounded-full px-3"
               onClick={() => history.setVisible(false)}
             >
-              <ArrowLeft className="w-3 h-3 mr-1" />
+              <ArrowLeft className="mr-1 size-3" />
               Back
             </Button>
           ) : (
             <>
               <ViewTabs activeTab={activeTab} onTabChange={handleTabChange} />
-              {!stream.active && history.items.length > 0 && (
+              {!stream.active && (
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-7 px-3 rounded-full"
+                  className="h-7 rounded-full px-3"
                   onClick={handleHistory}
+                  disabled={history.items.length === 0}
                 >
-                  <History className="w-3 h-3 mr-1" />
-                  History ({history.items.length})
+                  <History className="mr-1 size-3" />
+                  History {history.items.length > 0 && `(${history.items.length})`}
                 </Button>
               )}
               {!stream.active && (
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-7 px-3 rounded-full"
+                  className="h-7 rounded-full px-3"
                   onClick={handleReset}
                 >
-                  <RotateCcw className="w-3 h-3 mr-1" />
+                  <RotateCcw className="mr-1 size-3" />
                   Reset
                 </Button>
               )}
@@ -90,14 +93,15 @@ const RequestInput: React.FC = () => {
       {!history.visible && (
         <>
           {activeTab === 'form' && (
-            <div className="border rounded-md p-6 bg-muted/50">
+            <div className="rounded-md border bg-muted/50 p-6">
               {request.loadingSchema ? (
                 <div className="flex items-center justify-center py-8">
-                  <Loader2 className="w-6 h-6 animate-spin mr-3" />
+                  <Loader2 className="mr-3 size-6 animate-spin" />
                   <span>Loading schema...</span>
                 </div>
               ) : (
                 <ProtoMessageRenderer
+                  target={selectedTarget}
                   key={`${selectedService?.fullName}-${selectedMethod.name}-${request.formKey}`}
                   schema={request.schema}
                   data={request.formData}
@@ -109,9 +113,11 @@ const RequestInput: React.FC = () => {
 
           {activeTab === 'json' && (
             <textarea
+              ref={jsonInput.ref}
+              style={jsonInput.style}
               value={request.body}
               onChange={(e) => request.setBody(e.target.value)}
-              className="w-full h-40 p-4 border rounded-md font-mono text-sm bg-background"
+              className="min-h-40 w-full resize-y rounded-md border bg-background p-4 font-mono text-sm"
               placeholder="Enter your gRPC request as JSON..."
             />
           )}
@@ -122,6 +128,7 @@ const RequestInput: React.FC = () => {
 
           {activeTab === 'schema' && (
             <ProtoViewer
+              selectedTarget={selectedTarget}
               selectedService={selectedService}
               selectedMethod={selectedMethod}
               inline

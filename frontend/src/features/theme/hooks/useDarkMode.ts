@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import { useContext } from 'react'
-import { DarkModeContext, type DarkModeContextValue } from '../contexts/darkModeContext'
+import { DarkModeContext, type DarkModeContextValue } from '../stores/darkModeContext'
 
 export function useDarkMode(): DarkModeContextValue {
   const context = useContext(DarkModeContext)

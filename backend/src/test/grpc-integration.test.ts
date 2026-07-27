@@ -25,6 +25,9 @@ import { WebSocket } from 'ws'
 // ---------------------------------------------------------------------------
 
 const SERVICE = 'petstore.v1.PetStoreService'
+// GRPC_TARGET_PORT overrides target index 0 in config/backend.yaml ("PetStore"),
+// which is the target the forked PetStore server is reachable on.
+const TARGET = 'PetStore'
 const GRPC_STARTUP_TIMEOUT_MS = 10_000
 const WS_RESPONSE_TIMEOUT_MS = 5_000
 
@@ -36,7 +39,7 @@ let grpcProcess: ChildProcess
 let grpcPort: number
 
 async function startGrpcServer(): Promise<number> {
-  const serverPath = path.resolve(import.meta.dirname, '../../../example/src/server.js')
+  const serverPath = path.resolve(import.meta.dirname, '../../../examples/petstore/src/server.js')
 
   return new Promise<number>((resolve, reject) => {
     const child = fork(serverPath, [], {
@@ -86,6 +89,11 @@ async function startBackend(targetPort: number): Promise<void> {
 
   const { createExpressApp } = await import('../app.js')
   const { createWebSocketServer } = await import('../websocket/websocketServer.js')
+  const { default: multiClientManager } = await import('../grpc/multiClientManager.js')
+
+  // Multi-server mode requires the client manager to be initialized from config
+  // before any target can be discovered/invoked (httpServer.ts does this at boot).
+  await multiClientManager.initialize()
 
   const app = createExpressApp()
   httpServer = createServer(app)
@@ -101,8 +109,10 @@ async function startBackend(targetPort: number): Promise<void> {
   })
 }
 
-function stopBackend(): Promise<void> {
-  return new Promise((resolve) => httpServer.close(() => resolve()))
+async function stopBackend(): Promise<void> {
+  const { default: multiClientManager } = await import('../grpc/multiClientManager.js')
+  multiClientManager.close()
+  await new Promise<void>((resolve) => httpServer.close(() => resolve()))
 }
 
 // ---------------------------------------------------------------------------
@@ -125,7 +135,7 @@ async function httpPost(urlPath: string, body?: unknown) {
 
 /** Invoke a unary RPC and return the parsed envelope. */
 async function invokeUnary(method: string, data: unknown) {
-  return httpPost('/api/grpc/invoke', { service: SERVICE, method, methodKind: 'unary', data })
+  return httpPost('/api/grpc/invoke', { target: TARGET, service: SERVICE, method, methodKind: 'unary', data })
 }
 
 // ---------------------------------------------------------------------------
@@ -187,7 +197,7 @@ async function streamRpc(opts: {
   try {
     wsSend(ws, {
       type: 'start',
-      payload: { service: SERVICE, method: opts.method, methodKind: opts.methodKind, data: opts.data },
+      payload: { target: TARGET, service: SERVICE, method: opts.method, methodKind: opts.methodKind, data: opts.data },
     })
 
     if (opts.clientMessages) {
@@ -244,8 +254,12 @@ describe('Integration: gRPC pipeline (PetStore)', () => {
       const res = await httpPost('/api/grpc/discover')
       assertSuccessEnvelope(res)
 
-      const { services } = res.body.data as { services: Array<{ fullName: string; methods: Array<{ name: string; kind: string }> }> }
-      const svc = services.find((s) => s.fullName === SERVICE)
+      const { servers } = res.body.data as {
+        servers: Array<{ name: string; target: string; services: Array<{ fullName: string; methods: Array<{ name: string; kind: string }> }> }>
+      }
+      const server = servers.find((s) => s.services.some((svc) => svc.fullName === SERVICE))
+      assert.ok(server, `Expected a server exposing ${SERVICE} in discovery`)
+      const svc = server.services.find((s) => s.fullName === SERVICE)
       assert.ok(svc, `Expected ${SERVICE} in discovery`)
 
       const kinds = Object.fromEntries(svc.methods.map((m) => [m.name, m.kind]))
@@ -260,7 +274,7 @@ describe('Integration: gRPC pipeline (PetStore)', () => {
 
   describe('descriptor-set', () => {
     it('returns valid base64 FileDescriptorSet', async () => {
-      const res = await httpPost('/api/grpc/descriptor-set', { messageType: 'petstore.v1.Pet' })
+      const res = await httpPost('/api/grpc/descriptor-set', { target: TARGET, messageType: 'petstore.v1.Pet' })
       assertSuccessEnvelope(res)
 
       const { messageType, descriptorSetBase64 } = res.body.data as { messageType: string; descriptorSetBase64: string }
@@ -269,7 +283,7 @@ describe('Integration: gRPC pipeline (PetStore)', () => {
     })
 
     it('rejects unknown message types', async () => {
-      const res = await httpPost('/api/grpc/descriptor-set', { messageType: 'nonexistent.Type' })
+      const res = await httpPost('/api/grpc/descriptor-set', { target: TARGET, messageType: 'nonexistent.Type' })
       assert.ok(res.status >= 400)
     })
   })
@@ -281,10 +295,14 @@ describe('Integration: gRPC pipeline (PetStore)', () => {
       const res = await httpGet('/api/grpc/status')
       assertSuccessEnvelope(res)
 
-      const data = res.body.data as { connected: boolean; targetServer: string; servicesCount: number }
-      assert.equal(data.connected, true)
-      assert.ok(data.targetServer.includes(String(grpcPort)))
-      assert.ok(data.servicesCount > 0)
+      const { servers } = res.body.data as {
+        servers: Array<{ name: string; target: string; connected: boolean; servicesCount: number }>
+      }
+      const server = servers.find((s) => s.name === TARGET)
+      assert.ok(server, `Expected target "${TARGET}" in status`)
+      assert.equal(server.connected, true)
+      assert.ok(server.target.includes(String(grpcPort)))
+      assert.ok(server.servicesCount > 0)
     })
   })
 
@@ -773,7 +791,7 @@ describe('Integration: gRPC pipeline (PetStore)', () => {
       try {
         wsSend(ws, {
           type: 'start',
-          payload: { service: SERVICE, method: 'WatchPets', methodKind: 'server_streaming', data: {} },
+          payload: { target: TARGET, service: SERVICE, method: 'WatchPets', methodKind: 'server_streaming', data: {} },
         })
 
         // Collect at least one response frame, then cancel
@@ -933,12 +951,14 @@ describe('Integration: gRPC pipeline (PetStore)', () => {
       const discoverRes = await httpPost('/api/grpc/discover')
       assertSuccessEnvelope(discoverRes)
 
-      const svc = (discoverRes.body.data as { services: Array<{ fullName: string; methods: Array<{ name: string; inputType: string }> }> })
-        .services.find((s) => s.fullName === SERVICE)!
+      const server = (discoverRes.body.data as {
+        servers: Array<{ services: Array<{ fullName: string; methods: Array<{ name: string; inputType: string }> }> }>
+      }).servers.find((s) => s.services.some((svc) => svc.fullName === SERVICE))!
+      const svc = server.services.find((s) => s.fullName === SERVICE)!
       const listMethod = svc.methods.find((m) => m.name === 'ListPets')!
 
       // 2. Descriptor
-      const descRes = await httpPost('/api/grpc/descriptor-set', { messageType: listMethod.inputType })
+      const descRes = await httpPost('/api/grpc/descriptor-set', { target: TARGET, messageType: listMethod.inputType })
       assertSuccessEnvelope(descRes)
       assert.ok((descRes.body.data as { descriptorSetBase64: string }).descriptorSetBase64.length > 0)
 

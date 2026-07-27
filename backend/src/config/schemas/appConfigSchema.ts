@@ -17,17 +17,6 @@ export const AppConfigSchema = z.object({
   health:      healthSchema.HealthSchema,
   certificate: certificateSchema.CertificateSchema,
   observability: observabilitySchema.ObservabilitySchema,
-}).superRefine((config, ctx) => {
-  const httpResponseTimeoutMs = config.server.http.responseTimeoutMs;
-  const reflectionDeadlineMs = config.client.reflection.deadlineMs;
-
-  if (httpResponseTimeoutMs <= reflectionDeadlineMs) {
-    ctx.addIssue({
-      code: 'custom',
-      path: ['server', 'http', 'responseTimeoutMs'],
-      message: `server.http.responseTimeoutMs (${httpResponseTimeoutMs}) must be greater than client.reflection.deadlineMs (${reflectionDeadlineMs})`,
-    });
-  }
 });
 
 export type AppConfig = z.infer<typeof AppConfigSchema>;

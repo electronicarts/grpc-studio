@@ -24,19 +24,18 @@ server:
     heartbeatIntervalMs: 25000
 
 client:
-  mode: plaintext
-  target:
-    host: localhost
-    port: 50051
-
-  timeout:
-    defaultMs: 30000
-
-  reflection:
-    deadlineMs: 10000
+  targets:
+    - name: "Local gRPC Server"
+      host: localhost
+      port: 50051
+      mode: plaintext
+      rpc:
+        unaryDeadlineMs: 30000
+      reflection:
+        deadlineMs: 10000
 
 auth:
-  plugins: []
+  plugins: {}
 
 cache:
   reflection:

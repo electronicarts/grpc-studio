@@ -3,6 +3,8 @@
 import { createServer } from 'http';
 import { pathToFileURL } from 'url';
 import configManager from '../config/configManager.js';
+import multiClientManager from '../grpc/multiClientManager.js';
+import certificateRefreshWorker from '../workers/certificateRefreshWorker.js';
 import logger from '../utils/logger.js';
 import * as version from '../utils/version.js';
 import * as appModule from '../app.js';
@@ -38,6 +40,15 @@ export async function startHttpServer(options: StartHttpServerOptions = {}) {
 
     await authManager.initialize(configManager.getAuthConfig());
 
+    // Initialize multi-client manager for all configured targets
+    await multiClientManager.initialize();
+    httpServerLogger.info('Initialized multi-client manager', {
+      targets: multiClientManager.getTargetNames(),
+    });
+
+    // Start background certificate refresh worker (non-blocking)
+    await certificateRefreshWorker.start();
+
     // Create Express app
     const app = appModule.createExpressApp();
 
@@ -53,7 +64,7 @@ export async function startHttpServer(options: StartHttpServerOptions = {}) {
 
     // Start listening on the configured host (not hardcoded '0.0.0.0')
     const serverConfig = configManager.getServerConfig();
-    const clientConfig = configManager.getClientConfig();
+    const targets = configManager.getTargets();
 
     await new Promise<void>((resolve, reject) => {
       httpServer.listen(serverConfig.port, serverConfig.host, () => {
@@ -62,8 +73,8 @@ export async function startHttpServer(options: StartHttpServerOptions = {}) {
           url: `http://${serverConfig.host}:${serverConfig.port}`,
           wsUrl: `ws://${serverConfig.host}:${serverConfig.port}/ws/grpc`,
           authPlugin: authManager.getCurrentPluginName(),
-          clientMode: clientConfig.mode,
-          grpcTarget: `${clientConfig.target.host}:${clientConfig.target.port}`,
+          targetCount: targets.length,
+          targets: targets.map(t => ({ name: t.name, address: `${t.host}:${t.port}`, mode: t.mode })),
         });
         resolve();
       });

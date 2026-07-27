@@ -7,6 +7,7 @@ import configManager from '../config/configManager.js';
 import * as websocketServer from '../websocket/websocketServer.js';
 import grpcMethodInvokerService from '../services/grpcMethodInvokerService.js';
 import authManager from '../auth/authManager.js';
+import certificateRefreshWorker from '../workers/certificateRefreshWorker.js';
 import { observabilityManager } from '../observability/observability.js';
 
 const serverLogger = logger.child({ module: 'graceful-shutdown' });
@@ -75,6 +76,9 @@ async function gracefulShutdown(signal: string, servers: ServerInstances, { exit
     grpcMethodInvokerService.close();
 
     await authManager.cleanup();
+
+    // Stop certificate refresh worker
+    certificateRefreshWorker.stop();
 
     // Shutdown observability (flush metrics)
     await observabilityManager.shutdown();

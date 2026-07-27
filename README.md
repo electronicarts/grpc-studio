@@ -8,7 +8,8 @@ gRPC Studio is a reflection-based UI for exploring and calling gRPC services. Po
 - Unary, server-streaming, client-streaming, and bidirectional-streaming RPCs
 - Dynamic protobuf forms from `@bufbuild/protobuf` descriptors
 - Nested messages, repeated fields, maps, oneofs, enums, bytes, timestamps, and wrapper types
-- TLS and mTLS outbound gRPC connections
+- Multiple gRPC targets in one instance, switchable from the UI's server selector
+- TLS and mTLS outbound gRPC connections, configurable per target
 - Backend auth plugins for outbound metadata
 - Optional Microsoft Entra ID auth for the web UI
 - Per-method request history and shareable request links
@@ -39,64 +40,126 @@ The backend returns raw descriptor sets, not custom schema JSON. The frontend pa
 
 ## Quick Start
 
-Install dependencies:
+### 1. Install dependencies
 
 ```bash
 npm install
 ```
 
-Run the default local setup:
+### 2. Try it out (recommended first run)
 
-```bash
-npm run dev
-```
-
-Run the example PetStore service too:
+Start everything at once — the UI, the backend, and both bundled example gRPC servers (PetStore + BookStore):
 
 ```bash
 npm run dev:all
 ```
 
-Point gRPC Studio at any local gRPC server with reflection enabled:
+Then open **http://localhost:3000**. Both example services appear in the UI's server selector, ready to explore. This is the easiest way to see gRPC Studio working end to end.
+
+| What starts | URL / port |
+| ----------- | ---------- |
+| Frontend (UI) | http://localhost:3000 |
+| Backend (API) | http://localhost:3001 |
+| PetStore example gRPC server | localhost:50051 |
+| BookStore example gRPC server | localhost:50052 |
+
+> Every `dev` command frees these ports first, so a leftover process from a previous run won't block startup. To clear them manually, run `npm run stop`.
+
+### 3. Run individual pieces
+
+Sometimes you only want part of the stack. Run each in its own terminal.
+
+**Frontend only** (the React UI):
 
 ```bash
-npm run quickstart -- 50051
+npm run dev:frontend
 ```
 
-Or pass an explicit host and port:
+**Backend only** (the API, using the default `config/backend.yaml`):
 
 ```bash
-npm run quickstart -- localhost:50051
+npm run dev:backend
 ```
 
-This starts the frontend on `http://localhost:3000` and the backend on `http://localhost:3001`, with the backend targeting the reflected gRPC service you provided.
-
-Start only the backend with the checked-in config:
+**PetStore example server only** (`localhost:50051`):
 
 ```bash
-cd backend
-GRPC_STUDIO_CONFIG=../config/backend.yaml npm start
+npm run dev:petstore
 ```
 
-Start only the frontend:
+**BookStore example server only** (`localhost:50052`):
 
 ```bash
-cd frontend
+npm run dev:bookstore
+```
+
+**UI + backend only** (no example servers — point the backend at your own service via config):
+
+```bash
 npm run dev
 ```
 
-By default the frontend runs on `http://localhost:3000` and the backend on `http://localhost:3001`.
+### 4. Point gRPC Studio at your own gRPC server
+
+If you already have a gRPC server with **reflection enabled**, use `quickstart` — it starts the UI and backend and connects them to the server(s) you name, no config file needed.
+
+```bash
+# a single server, by port (defaults to localhost) …
+npm run quickstart -- 50051
+
+# … or an explicit host:port
+npm run quickstart -- my-service.local:50051
+```
+
+Connect to **several servers at once** — each becomes a selectable target in the UI:
+
+```bash
+# bare ports/hosts
+npm run quickstart -- 50051 50052
+
+# named targets, with per-target mode (plaintext or tls)
+npm run quickstart -- \
+  --target localhost:50051 \
+  --target payments=payments.example.com:443,mode=tls
+```
+
+`quickstart` supports `plaintext` and `tls`. For **mTLS** (which needs client certificate paths) or any advanced setup, write a backend YAML and start the backend directly:
+
+```bash
+cd backend
+GRPC_STUDIO_CONFIG=../path/to/your-config.yaml npm run dev
+```
+
+See [Configuration](#configuration) for the YAML format.
 
 ## Configuration
 
+> **Upgrading from 1.x?** The backend `client` config changed from a single target to a list of targets. See [`MIGRATION.md`](MIGRATION.md).
+
 Backend config is YAML-driven. Set `GRPC_STUDIO_CONFIG` to the backend YAML file when starting the backend.
+
+The backend connects to one or more gRPC targets. Each target appears as a selectable server in the UI, and at least one is required. TLS/mTLS is configured per target.
 
 ```yaml
 client:
-  mode: plaintext # plaintext | tls | mtls
-  target:
-    host: localhost
-    port: 50051
+  targets:
+    - name: "PetStore"        # display name shown in the UI
+      host: localhost
+      port: 50051
+      mode: plaintext         # plaintext | tls | mtls
+    - name: "Payments"
+      host: payments.example.com
+      port: 443
+      mode: tls
+    # mTLS target with client certificates:
+    # - name: "Users"
+    #   host: users.example.com
+    #   port: 443
+    #   mode: mtls
+    #   security:
+    #     clientCertPath: ./certs/client.crt
+    #     clientKeyPath: ./certs/client.key
+    #     caCertPath: ./certs/ca.crt
 
 auth:
   plugins: {}
@@ -109,6 +172,8 @@ observability:
     includeSystemMetrics: true
 ```
 
+See `config/backend-multi-target.yaml` for a complete multi-target example.
+
 Frontend config lives in `frontend/public/config/frontend.yaml` at runtime, or `config/frontend.yaml` for repo examples:
 
 ```yaml
@@ -119,7 +184,7 @@ auth:
   enabled: false
 ```
 
-Checked-in example configs live under `config/`, including the default plaintext backend config, a TLS backend example, an mTLS example, and observability examples.
+Checked-in example configs live under `config/`, including the default backend config, a multi-target example, a TLS backend example, and observability examples.
 
 ## Development Commands
 
@@ -138,7 +203,7 @@ The shared package owns API contract types used by both frontend and backend.
 backend/    Express API, reflection discovery, dynamic invocation, WebSocket streams
 frontend/   React UI, descriptor cache, schema renderer, method explorer
 shared/     Shared HTTP/WebSocket contract types
-example/    Reflection-enabled PetStore gRPC test server
+examples/   Reflection-enabled gRPC test servers (petstore, bookstore)
 config/     Example backend/frontend YAML configs
 ```
 
@@ -186,20 +251,6 @@ docker-compose up -d
 ```
 
 See [docker/README.md](docker/README.md) for complete deployment documentation including Kubernetes manifests.
-
-## Helm Chart
-
-A Helm chart is published to GitHub Container Registry for Kubernetes deployments:
-
-```bash
-helm upgrade --install my-grpc-studio oci://ghcr.io/electronicarts/helm-charts/grpc-studio \
-  --set connection.target.host=my-grpc-server.default.svc.cluster.local \
-  --set connection.target.port=50051 \
-  --set connection.mode=insecure \
-  --namespace grpc-studio --create-namespace
-```
-
-See [helm/README.md](helm/README.md) for configuration options and [helm/examples/](helm/examples/) for ingress-nginx and Istio setups.
 
 ## CI/CD
 

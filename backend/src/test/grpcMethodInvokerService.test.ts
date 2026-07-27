@@ -1,17 +1,27 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-import { describe, it } from 'node:test'
+import { describe, it, mock, afterEach } from 'node:test'
 import assert from 'node:assert/strict'
 import { create, createFileRegistry, toJson } from '@bufbuild/protobuf'
 import type { DescMethod, FileRegistry } from '@bufbuild/protobuf'
 import type { Transport } from '@connectrpc/connect'
 import { FileDescriptorSetSchema } from '@bufbuild/protobuf/wkt'
 import { GrpcMethodInvokerService } from '../services/grpcMethodInvokerService.js'
-import type { ConnectTransportProvider } from '../grpc/connect/connectTransport.js'
+import multiClientManager from '../grpc/multiClientManager.js'
 import * as userContextMiddleware from '../middlewares/userContextMiddleware.js'
 import type { ReflectionSchemaRepository } from '../repositories/reflectionSchemaRepository.js'
 import type { StreamCallbacks } from '../types/index.js'
 import * as protoFixtures from './protoFixtures.js'
+
+const TEST_TARGET = 'test-target'
+
+/**
+ * Makes the service use `transport` by mocking the multiClientManager singleton's
+ * getConnectTransport (the service pulls its transport from there internally).
+ */
+function useTransport(transport: Transport): void {
+  mock.method(multiClientManager, 'getConnectTransport', () => transport)
+}
 
 function testRegistry(): FileRegistry {
   const file = protoFixtures.fileDescriptor({
@@ -77,13 +87,6 @@ function repository(registry: FileRegistry): Pick<ReflectionSchemaRepository, 'g
   }
 }
 
-function provider(transport: Transport): ConnectTransportProvider {
-  return {
-    getTransport: () => transport,
-    close: () => {},
-  } as ConnectTransportProvider
-}
-
 function normalizeHeaders(headers: unknown): Record<string, string> {
   if (headers instanceof Headers) return Object.fromEntries(headers.entries())
   if (!headers || typeof headers !== 'object') return {}
@@ -97,6 +100,10 @@ function normalizeHeaders(headers: unknown): Record<string, string> {
 }
 
 describe('GrpcMethodInvokerService', () => {
+  afterEach(() => {
+    mock.restoreAll()
+  })
+
   it('invokes unary methods through Connect transport descriptors', async () => {
     const registry = testRegistry()
     let receivedRequest: unknown = null
@@ -110,11 +117,12 @@ describe('GrpcMethodInvokerService', () => {
         }
       },
     } as unknown as Transport
-    const invoker = new GrpcMethodInvokerService(repository(registry), provider(transport))
+    useTransport(transport)
+    const invoker = new GrpcMethodInvokerService(repository(registry))
 
     const result = await userContextMiddleware.runWithUserContext(
       { userId: 'unary-user' },
-      () => invoker.invokeUnary('test.TestService', 'Get', { name: 'Ada' })
+      () => invoker.invokeUnary(TEST_TARGET, 'test.TestService', 'Get', { name: 'Ada' })
     )
 
     assert.deepEqual(receivedRequest, { name: 'Ada' })
@@ -153,9 +161,10 @@ describe('GrpcMethodInvokerService', () => {
           }
         },
       } as unknown as Transport
-      const invoker = new GrpcMethodInvokerService(repository(registry), provider(transport))
+      useTransport(transport)
+      const invoker = new GrpcMethodInvokerService(repository(registry))
 
-      void invoker.invokeClientStream('test.TestService', 'Upload', (async function* () {
+      void invoker.invokeClientStream(TEST_TARGET, 'test.TestService', 'Upload', (async function* () {
         yield { name: 'first' }
         yield { name: 'second' }
       })(), callbacks)
@@ -198,11 +207,12 @@ describe('GrpcMethodInvokerService', () => {
           }
         },
       } as unknown as Transport
-      const invoker = new GrpcMethodInvokerService(repository(registry), provider(transport))
+      useTransport(transport)
+      const invoker = new GrpcMethodInvokerService(repository(registry))
 
       void userContextMiddleware.runWithUserContext(
         { userId: 'stream-user' },
-        () => invoker.invokeServerStream('test.TestService', 'List', { name: 'Ada' }, callbacks)
+        () => invoker.invokeServerStream(TEST_TARGET, 'test.TestService', 'List', { name: 'Ada' }, callbacks)
       )
     })
 
@@ -244,9 +254,10 @@ describe('GrpcMethodInvokerService', () => {
           }
         },
       } as unknown as Transport
-      const invoker = new GrpcMethodInvokerService(repository(registry), provider(transport))
+      useTransport(transport)
+      const invoker = new GrpcMethodInvokerService(repository(registry))
 
-      void invoker.invokeBidiStream('test.TestService', 'Chat', (async function* () {
+      void invoker.invokeBidiStream(TEST_TARGET, 'test.TestService', 'Chat', (async function* () {
         yield { name: 'first' }
         yield { name: 'second' }
       })(), callbacks)
@@ -261,9 +272,10 @@ describe('GrpcMethodInvokerService', () => {
     it('should reject invalid service names', async () => {
       const registry = testRegistry()
       const mockTransport = {} as Transport
-      const invoker = new GrpcMethodInvokerService(repository(registry), provider(mockTransport))
+      useTransport(mockTransport)
+      const invoker = new GrpcMethodInvokerService(repository(registry))
 
-      const result = await invoker.invokeUnary('invalid service!', 'Method', {})
+      const result = await invoker.invokeUnary(TEST_TARGET, 'invalid service!', 'Method', {})
 
       assert.strictEqual(result.success, false)
       assert.ok(result.error)
@@ -273,9 +285,10 @@ describe('GrpcMethodInvokerService', () => {
     it('should reject invalid method names', async () => {
       const registry = testRegistry()
       const mockTransport = {} as Transport
-      const invoker = new GrpcMethodInvokerService(repository(registry), provider(mockTransport))
+      useTransport(mockTransport)
+      const invoker = new GrpcMethodInvokerService(repository(registry))
 
-      const result = await invoker.invokeUnary('test.TestService', 'invalid method!', {})
+      const result = await invoker.invokeUnary(TEST_TARGET, 'test.TestService', 'invalid method!', {})
 
       assert.strictEqual(result.success, false)
       assert.ok(result.error)
@@ -289,9 +302,10 @@ describe('GrpcMethodInvokerService', () => {
           message: create(method.output, { message: 'success' })
         })
       } as unknown as Transport
-      const invoker = new GrpcMethodInvokerService(repository(registry), provider(mockTransport))
+      useTransport(mockTransport)
+      const invoker = new GrpcMethodInvokerService(repository(registry))
 
-      const result = await invoker.invokeUnary('test.TestService', 'Get', { name: 'test' })
+      const result = await invoker.invokeUnary(TEST_TARGET, 'test.TestService', 'Get', { name: 'test' })
 
       assert.strictEqual(result.success, true)
     })
@@ -307,9 +321,10 @@ describe('GrpcMethodInvokerService', () => {
         getAllFileDescriptorSet: async () => create(FileDescriptorSetSchema, { file: [] })
       }
       const mockTransport = {} as Transport
-      const invoker = new GrpcMethodInvokerService(mockRepo, provider(mockTransport))
+      useTransport(mockTransport)
+      const invoker = new GrpcMethodInvokerService(mockRepo as unknown as Pick<ReflectionSchemaRepository, 'getFileRegistry' | 'getAllFileDescriptorSet'>)
 
-      const result = await invoker.invokeUnary('MissingService', 'Method', {})
+      const result = await invoker.invokeUnary(TEST_TARGET, 'MissingService', 'Method', {})
 
       assert.strictEqual(result.success, false)
       assert.ok(result.error)
@@ -319,9 +334,10 @@ describe('GrpcMethodInvokerService', () => {
     it('should throw when method not found on service', async () => {
       const registry = testRegistry()
       const mockTransport = {} as Transport
-      const invoker = new GrpcMethodInvokerService(repository(registry), provider(mockTransport))
+      useTransport(mockTransport)
+      const invoker = new GrpcMethodInvokerService(repository(registry))
 
-      const result = await invoker.invokeUnary('test.TestService', 'NonExistentMethod', {})
+      const result = await invoker.invokeUnary(TEST_TARGET, 'test.TestService', 'NonExistentMethod', {})
 
       assert.strictEqual(result.success, false)
       assert.ok(result.error)
@@ -331,10 +347,11 @@ describe('GrpcMethodInvokerService', () => {
     it('should throw when method type mismatch', async () => {
       const registry = testRegistry()
       const mockTransport = {} as Transport
-      const invoker = new GrpcMethodInvokerService(repository(registry), provider(mockTransport))
+      useTransport(mockTransport)
+      const invoker = new GrpcMethodInvokerService(repository(registry))
 
       // Try to call 'List' (server_streaming) as unary
-      const result = await invoker.invokeUnary('test.TestService', 'List', {})
+      const result = await invoker.invokeUnary(TEST_TARGET, 'test.TestService', 'List', {})
 
       assert.strictEqual(result.success, false)
       assert.ok(result.error)
@@ -350,9 +367,10 @@ describe('GrpcMethodInvokerService', () => {
         getAllFileDescriptorSet: async () => create(FileDescriptorSetSchema, { file: [] })
       }
       const mockTransport = {} as Transport
-      const invoker = new GrpcMethodInvokerService(mockRepo, provider(mockTransport))
+      useTransport(mockTransport)
+      const invoker = new GrpcMethodInvokerService(mockRepo as unknown as Pick<ReflectionSchemaRepository, 'getFileRegistry' | 'getAllFileDescriptorSet'>)
 
-      const result = await invoker.invokeUnary('com.example.UserService', 'Get', {})
+      const result = await invoker.invokeUnary(TEST_TARGET, 'com.example.UserService', 'Get', {})
 
       assert.strictEqual(result.success, false)
       assert.ok(result.error)
@@ -368,9 +386,10 @@ describe('GrpcMethodInvokerService', () => {
           throw new Error('Network timeout')
         }
       } as unknown as Transport
-      const invoker = new GrpcMethodInvokerService(repository(registry), provider(mockTransport))
+      useTransport(mockTransport)
+      const invoker = new GrpcMethodInvokerService(repository(registry))
 
-      const result = await invoker.invokeUnary('test.TestService', 'Get', { name: 'test' })
+      const result = await invoker.invokeUnary(TEST_TARGET, 'test.TestService', 'Get', { name: 'test' })
 
       assert.strictEqual(result.success, false)
       assert.ok(result.error)
@@ -398,9 +417,10 @@ describe('GrpcMethodInvokerService', () => {
         getAllFileDescriptorSet: async () => create(FileDescriptorSetSchema, { file: [] })
       }
       const mockTransport = {} as Transport
-      const invoker = new GrpcMethodInvokerService(mockRepo, provider(mockTransport))
+      useTransport(mockTransport)
+      const invoker = new GrpcMethodInvokerService(mockRepo as unknown as Pick<ReflectionSchemaRepository, 'getFileRegistry' | 'getAllFileDescriptorSet'>)
 
-      await invoker.invokeServerStream('MissingService', 'Method', {}, callbacks)
+      await invoker.invokeServerStream(TEST_TARGET, 'MissingService', 'Method', {}, callbacks)
 
       assert.strictEqual(errorCalled, true)
       assert.ok(errorMessage.includes('MissingService'))
@@ -419,13 +439,14 @@ describe('GrpcMethodInvokerService', () => {
         }
       }
       const mockTransport = {} as Transport
-      const invoker = new GrpcMethodInvokerService(mockRepo, provider(mockTransport))
+      useTransport(mockTransport)
+      const invoker = new GrpcMethodInvokerService(mockRepo as unknown as Pick<ReflectionSchemaRepository, 'getFileRegistry' | 'getAllFileDescriptorSet'>)
 
-      const handle = await invoker.invokeServerStream('test.TestService', 'List', {}, callbacks)
+      const handle = await invoker.invokeServerStream(TEST_TARGET, 'test.TestService', 'List', {}, callbacks)
 
-      // Should return noop handle that doesn't throw
-      handle.cancel()
-      assert.ok(true) // If we get here, cancel() didn't throw
+      // A failed initialization must still yield a usable noop handle whose cancel() is safe.
+      assert.equal(typeof handle.cancel, 'function')
+      assert.doesNotThrow(() => handle.cancel())
     })
   })
 
@@ -439,9 +460,10 @@ describe('GrpcMethodInvokerService', () => {
           }
         }
       } as unknown as Transport
-      const invoker = new GrpcMethodInvokerService(repository(registry), provider(mockTransport))
+      useTransport(mockTransport)
+      const invoker = new GrpcMethodInvokerService(repository(registry))
 
-      const result = await invoker.invokeUnary('test.TestService', 'Get', undefined)
+      const result = await invoker.invokeUnary(TEST_TARGET, 'test.TestService', 'Get', undefined)
 
       assert.strictEqual(result.success, true)
       // undefined request should be handled gracefully
@@ -478,9 +500,10 @@ describe('GrpcMethodInvokerService', () => {
             }
           }
         } as unknown as Transport
-        const invoker = new GrpcMethodInvokerService(repository(registry), provider(mockTransport))
+        useTransport(mockTransport)
+        const invoker = new GrpcMethodInvokerService(repository(registry))
 
-        void invoker.invokeClientStream('test.TestService', 'Upload', (async function* () {
+        void invoker.invokeClientStream(TEST_TARGET, 'test.TestService', 'Upload', (async function* () {
           // Empty iterator
         })(), callbacks)
       })
@@ -512,14 +535,15 @@ describe('GrpcMethodInvokerService', () => {
           }
         }
       } as unknown as Transport
-      const invoker = new GrpcMethodInvokerService(repository(registry), provider(mockTransport))
+      useTransport(mockTransport)
+      const invoker = new GrpcMethodInvokerService(repository(registry))
 
-      const handle = await invoker.invokeServerStream('test.TestService', 'List', {}, callbacks)
+      const handle = await invoker.invokeServerStream(TEST_TARGET, 'test.TestService', 'List', {}, callbacks)
 
-      // Cancel should work without throwing
-      handle.cancel()
+      // Cancelling an in-flight (infinite) stream must be safe and not throw.
+      assert.equal(typeof handle.cancel, 'function')
+      assert.doesNotThrow(() => handle.cancel())
       cancelled = true
-      assert.ok(true)
     })
   })
 })

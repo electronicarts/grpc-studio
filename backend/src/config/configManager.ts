@@ -16,6 +16,7 @@ import type {
   ServerConfig,
   ObservabilityConfig,
 } from './schemas/appConfigSchema.js';
+import type { TargetConfig } from './schemas/clientSchema.js';
 
 class ConfigManager {
   private appConfig: AppConfig | null = null;
@@ -51,8 +52,31 @@ class ConfigManager {
   }
 
   getPublicConfig(): PublicConfig {
-    const { mode, target } = this.config.client;
-    return { client: { mode, target } };
+    // Public config is empty in multi-server mode
+    // Server details are available via discovery endpoint
+    return {};
+  }
+
+  /**
+   * Get all configured targets.
+   * @returns Array of target configs
+   */
+  getTargets(): TargetConfig[] {
+    return this.config.client.targets;
+  }
+
+  /**
+   * Get a specific target by name
+   */
+  getTarget(name: string): TargetConfig | undefined {
+    return this.getTargets().find(t => t.name === name);
+  }
+
+  /**
+   * Reload config from disk (clears cache and re-reads config files)
+   */
+  reload(): void {
+    this.appConfig = null;
   }
 
   private get config(): AppConfig {

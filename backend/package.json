@@ -1,6 +1,6 @@
 {
   "name": "grpc-studio-backend",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Production-ready backend for gRPC Studio - A modern interface for testing gRPC services",
   "type": "module",
   "main": "dist/server/httpServer.js",
@@ -17,7 +17,8 @@
     "lint": "eslint src/ --ext .ts",
     "format": "prettier --write src/",
     "health": "curl -f http://localhost:3001/health || exit 1",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "typecheck:test": "tsc --noEmit -p tsconfig.test.json"
   },
   "dependencies": {
     "@bufbuild/protobuf": "^2.9.0",

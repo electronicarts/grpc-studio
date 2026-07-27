@@ -3,12 +3,11 @@
 import { z } from 'zod';
 import * as schemaUtils from '../schemaUtils.js';
 
-const ClientObjectSchema = z.object({
+const TargetConfigSchema = z.object({
+  name: schemaUtils.requiredNonEmptyString('target.name is required'),
   mode: z.enum(['plaintext', 'tls', 'mtls']).default('plaintext'),
-  target: schemaUtils.optional(z.object({
-    host: schemaUtils.requiredNonEmptyString('client.target.host is required'),
-    port: z.coerce.number().int().min(1).max(65535).default(50051),
-  })),
+  host: schemaUtils.requiredNonEmptyString('target.host is required'),
+  port: z.coerce.number().int().min(1).max(65535).default(50051),
   rpc: schemaUtils.optional(z.object({
     unaryDeadlineMs: z.coerce.number().int().positive().default(30000),
     streamDeadlineMs: z.coerce.number().int().positive().default(120000),
@@ -26,26 +25,31 @@ const ClientObjectSchema = z.object({
     clientKeyPath: z.string().default(''),
     caCertPath: z.string().default(''),
   })),
-}).superRefine((client, ctx) => {
-  if (client.mode !== 'mtls') return;
+}).superRefine((target, ctx) => {
+  if (target.mode !== 'mtls') return;
 
-  if (!client.security.clientCertPath) {
+  if (!target.security.clientCertPath) {
     ctx.addIssue({
       code: 'custom',
       path: ['security', 'clientCertPath'],
-      message: 'mTLS mode requires client.security.clientCertPath',
+      message: 'mTLS mode requires security.clientCertPath',
     });
   }
 
-  if (!client.security.clientKeyPath) {
+  if (!target.security.clientKeyPath) {
     ctx.addIssue({
       code: 'custom',
       path: ['security', 'clientKeyPath'],
-      message: 'mTLS mode requires client.security.clientKeyPath',
+      message: 'mTLS mode requires security.clientKeyPath',
     });
   }
+});
+
+const ClientObjectSchema = z.object({
+  targets: z.array(TargetConfigSchema).min(1, 'At least one target is required'),
 });
 
 export const ClientSchema = schemaUtils.optional(ClientObjectSchema);
 
 export type ClientConfig = z.infer<typeof ClientSchema>;
+export type TargetConfig = z.infer<typeof TargetConfigSchema>;

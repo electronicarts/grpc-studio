@@ -1,8 +1,8 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
+import type { Tone } from '@/utils/tones'
+
 export interface StatusConfig {
-  color: string
-  bgColor: string
-  borderColor: string
+  tone: Tone
   label: string
 }

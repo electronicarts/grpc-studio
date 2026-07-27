@@ -2,6 +2,7 @@
 
 import React from 'react'
 import { Badge } from '@/components/ui/badge'
+import { Select } from '@/components/ui/select'
 import type { DescField, DescOneof } from '@bufbuild/protobuf'
 import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
 import { getFieldValue } from '../../utils/fieldOperations'
@@ -62,17 +63,17 @@ const OneOfField: React.FC<OneOfFieldProps> = ({ oneof, value, onChange, basePat
   const selected = fields.find(f => f.name === selectedField)
 
   return (
-    <div className="space-y-3 border-2 border-purple-200 dark:border-purple-800 rounded-lg p-4 bg-purple-50/50 dark:bg-purple-900/20">
+    <div className="space-y-3 rounded-lg border-2 border-brand/30 bg-brand/10 p-4">
       <div className="flex items-center gap-2">
-        <Badge className="bg-purple-500 text-white">oneof</Badge>
-        <span className="font-medium text-gray-900 dark:text-gray-100">{oneof.name}</span>
+        <Badge className="bg-brand text-white">oneof</Badge>
+        <span className="font-medium text-foreground">{oneof.name}</span>
       </div>
 
-      <select
+      <Select
         value={selectedField}
         onChange={handleSelectionChange}
         disabled={readOnly}
-        className="w-full px-3 py-2 border border-purple-300 dark:border-purple-700 rounded-md bg-white dark:bg-gray-800"
+        className="border-brand/30"
       >
         <option value="">Select an option</option>
         {fields.map(f => (
@@ -80,10 +81,10 @@ const OneOfField: React.FC<OneOfFieldProps> = ({ oneof, value, onChange, basePat
             {f.name} ({fieldTypeName(f)})
           </option>
         ))}
-      </select>
+      </Select>
 
       {selected && (
-        <div className="mt-3 pt-3 border-t border-purple-200 dark:border-purple-700">
+        <div className="mt-3 border-t border-brand/30 pt-3">
           <FieldRenderer
             field={selected}
             value={getFieldValue(value, selected.name)}

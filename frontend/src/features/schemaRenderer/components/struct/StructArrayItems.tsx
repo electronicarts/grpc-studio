@@ -35,7 +35,7 @@ export function StructArrayItems({ value, onChange }: StructArrayItemsProps) {
       ))}
 
       {value.length === 0 && (
-        <div className="text-sm text-gray-500 italic">No items</div>
+        <div className="text-sm italic text-muted-foreground">No items</div>
       )}
 
       {!readOnly && (
@@ -46,7 +46,7 @@ export function StructArrayItems({ value, onChange }: StructArrayItemsProps) {
           onClick={() => onChange([...value, ''])}
           data-testid="structField-addItemButton"
         >
-          <Plus className="w-3 h-3 mr-1" />
+          <Plus className="mr-1 size-3" />
           Add item
         </Button>
       )}

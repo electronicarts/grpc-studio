@@ -16,28 +16,25 @@ server:
     {{- end }}
 
 client:
-  mode: {{ .Values.connection.mode }}
-  target:
-    host: {{ .Values.connection.target.host | quote }}
-    port: {{ .Values.connection.target.port }}
-  rpc:
-    unaryDeadlineMs: {{ .Values.connection.timeout.request }}
-  {{- if eq .Values.connection.mode "tls" }}
-  security:
-    clientCertPath: ""
-    clientKeyPath: ""
-    caCertPath: ""
-  {{- end }}
-  {{- if eq .Values.connection.mode "mtls" }}
-  security:
-    clientCertPath: "/certs/{{ .Values.secrets.keys.cert }}"
-    clientKeyPath: "/certs/{{ .Values.secrets.keys.key }}"
-    {{- if .Values.secrets.keys.ca }}
-    caCertPath: "/certs/{{ .Values.secrets.keys.ca }}"
-    {{- else }}
-    caCertPath: ""
+  targets:
+    {{- range .Values.connection.targets }}
+    - name: {{ .name | quote }}
+      host: {{ .host | quote }}
+      port: {{ .port }}
+      mode: {{ .mode | default "plaintext" }}
+      rpc:
+        unaryDeadlineMs: {{ (default dict .timeout).request | default 30000 }}
+      {{- if eq .mode "mtls" }}
+      security:
+        clientCertPath: "/certs/{{ $.Values.secrets.keys.cert }}"
+        clientKeyPath: "/certs/{{ $.Values.secrets.keys.key }}"
+        {{- if $.Values.secrets.keys.ca }}
+        caCertPath: "/certs/{{ $.Values.secrets.keys.ca }}"
+        {{- else }}
+        caCertPath: ""
+        {{- end }}
+      {{- end }}
     {{- end }}
-  {{- end }}
 
 auth:
   plugins:

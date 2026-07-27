@@ -6,4 +6,5 @@ export interface Cache<K, V> {
   set(key: K, value: V): void;
   delete(key: K): boolean;
   clear(): void;
+  keys(): IterableIterator<K>;
 }

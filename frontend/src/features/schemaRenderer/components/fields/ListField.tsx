@@ -55,9 +55,9 @@ const ListField: React.FC<ListFieldProps> = ({ field, value, onChange, path }) =
       )}
     >
       {filteredItems.map(({ item, index }) => (
-        <div key={`${path}[${index}]`} className="flex gap-2 items-start border-l-2 border-gray-300 pl-3">
+        <div key={`${path}[${index}]`} className="flex items-start gap-2 border-l-2 border-border pl-3">
           <div className="flex-1">
-            <div className="text-xs text-gray-500 mb-1">Item {index + 1}</div>
+            <div className="mb-1 text-xs text-muted-foreground">Item {index + 1}</div>
             {field.listKind === 'scalar' ? (
               <ScalarField
                 name={field.name}
@@ -73,7 +73,7 @@ const ListField: React.FC<ListFieldProps> = ({ field, value, onChange, path }) =
                 onChange={val => updateItem(index, val)}
               />
             ) : field.listKind === 'message' ? (
-              <div className="bg-gray-50 dark:bg-gray-800/50 rounded p-2">
+              <div className="rounded bg-muted p-2">
                 <MessageRenderer
                   schema={field.message}
                   value={(item || {}) as Record<string, unknown>}
@@ -90,14 +90,14 @@ const ListField: React.FC<ListFieldProps> = ({ field, value, onChange, path }) =
               size="sm"
               onClick={() => onChange(removeArrayItem(allItems, index))}
             >
-              <X className="w-4 h-4" />
+              <X className="size-4" />
             </Button>
           )}
         </div>
       ))}
 
       {searchQuery && filteredItems.length === 0 && allItems.length > 0 && (
-        <div className="text-sm text-gray-500 italic">
+        <div className="text-sm italic text-muted-foreground">
           No items matching "{searchQuery}"
         </div>
       )}
@@ -112,7 +112,7 @@ const ListField: React.FC<ListFieldProps> = ({ field, value, onChange, path }) =
             onChange([...allItems, newItem])
           }}
         >
-          <Plus className="w-4 h-4 mr-1" /> Add {field.name}
+          <Plus className="mr-1 size-4" /> Add {field.name}
         </Button>
       )}
     </MessageFieldFrame>

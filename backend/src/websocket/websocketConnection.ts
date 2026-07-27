@@ -23,6 +23,7 @@ interface WebSocketConnectionOptions {
 type ActiveStream = ServerStream | WritableStream
 
 interface StreamBase {
+  readonly target: string
   readonly service: string
   readonly method: string
   readonly generation: number
@@ -192,6 +193,7 @@ export class WebSocketConnection {
     switch (stream.kind) {
       case MethodKind.SERVER_STREAMING:
         return this.grpcMethodInvokerService.invokeServerStream(
+          stream.target,
           stream.service,
           stream.method,
           stream.request,
@@ -200,6 +202,7 @@ export class WebSocketConnection {
 
       case MethodKind.CLIENT_STREAMING:
         return this.grpcMethodInvokerService.invokeClientStream(
+          stream.target,
           stream.service,
           stream.method,
           stream.requests,
@@ -208,6 +211,7 @@ export class WebSocketConnection {
 
       case MethodKind.BIDI_STREAMING:
         return this.grpcMethodInvokerService.invokeBidiStream(
+          stream.target,
           stream.service,
           stream.method,
           stream.requests,
@@ -283,8 +287,13 @@ export class WebSocketConnection {
 }
 
 function createActiveStream(payload: InvokeStreamStartPayload, generation: number): ActiveStream {
+  if (!payload.target) {
+    throw new Error('Target is required for streaming RPC')
+  }
+
   if (payload.methodKind === MethodKind.SERVER_STREAMING) {
     return {
+      target: payload.target,
       service: payload.service,
       method: payload.method,
       kind: MethodKind.SERVER_STREAMING,
@@ -300,6 +309,7 @@ function createActiveStream(payload: InvokeStreamStartPayload, generation: numbe
   }
 
   return {
+    target: payload.target,
     service: payload.service,
     method: payload.method,
     kind: payload.methodKind,

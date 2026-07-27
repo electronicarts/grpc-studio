@@ -128,19 +128,21 @@ export function createExpiredCertificateMetadata(daysExpired: number = 10): Cert
 // ============================================================================
 
 // Store original once at module load time
-const originalGetClientConfig = configManager.getClientConfig
+const originalGetTargets = configManager.getTargets
 
 /**
- * Mocks configManager to return mTLS configuration
+ * Mocks configManager to return an mTLS target (multi-server config shape)
  *
  * Usage:
  *   beforeEach(() => mockMtlsConfig())
  *   afterEach(() => restoreConfigManager())
  */
 export function mockMtlsConfig(): void {
-  configManager.getClientConfig = () => ({
+  configManager.getTargets = () => [{
+    name: 'mtls-target',
     mode: 'mtls' as const,
-    target: { host: 'localhost', port: 50051 },
+    host: 'localhost',
+    port: 50051,
     rpc: { unaryDeadlineMs: 30000, streamDeadlineMs: 120000 },
     reflection: { deadlineMs: 25000 },
     keepalive: { pingIntervalMs: 30000, pingTimeoutMs: 10000 },
@@ -150,14 +152,14 @@ export function mockMtlsConfig(): void {
       clientKeyPath: '/path/to/key.pem',
       caCertPath: '/path/to/ca.pem'
     }
-  })
+  }]
 }
 
 /**
- * Restores the original configManager.getClientConfig method
+ * Restores the original configManager.getTargets method
  */
 export function restoreConfigManager(): void {
-  configManager.getClientConfig = originalGetClientConfig
+  configManager.getTargets = originalGetTargets
 }
 
 // ============================================================================

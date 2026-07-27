@@ -28,11 +28,11 @@ const FormField: React.FC<FormFieldProps> = ({
 }) => {
   if (inline) {
     return (
-      <label className={cn('flex items-center gap-2 cursor-pointer', className)}>
+      <label className={cn('flex cursor-pointer items-center gap-2', className)}>
         {children}
-        <span className={cn('text-sm text-gray-700 dark:text-gray-300', labelClassName)}>
+        <span className={cn('text-sm text-foreground/90', labelClassName)}>
           {label}
-          {required && <span className="text-red-500 ml-1">*</span>}
+          {required && <span className="ml-1 text-danger">*</span>}
           {labelMeta && <span className="ml-1">{labelMeta}</span>}
         </span>
       </label>
@@ -42,12 +42,12 @@ const FormField: React.FC<FormFieldProps> = ({
   return (
     <div className={cn('space-y-1', className)}>
       <label className={cn(
-        'flex items-center gap-1 text-sm font-medium text-gray-700 dark:text-gray-300',
+        'flex flex-wrap items-baseline gap-x-1 text-sm font-medium text-foreground/90',
         labelClassName
       )}>
-        <span>
+        <span className="break-all">
           {label}
-          {required && <span className="text-red-500 ml-1">*</span>}
+          {required && <span className="ml-1 text-danger">*</span>}
         </span>
         {labelMeta}
       </label>
@@ -55,11 +55,11 @@ const FormField: React.FC<FormFieldProps> = ({
       {children}
 
       {hint && !error && (
-        <p className="text-xs text-gray-500 dark:text-gray-400">{hint}</p>
+        <p className="text-xs text-muted-foreground">{hint}</p>
       )}
 
       {error && (
-        <p className="text-xs text-red-500 dark:text-red-400">{error}</p>
+        <p className="text-xs text-danger">{error}</p>
       )}
     </div>
   )

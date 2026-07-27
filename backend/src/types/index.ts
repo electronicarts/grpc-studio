@@ -2,7 +2,7 @@
 
 import type { InvokeUnaryResponse, JsonValue } from '@grpc-studio/shared';
 
-export type { ApiMethod, ApiService, DiscoveryResponse } from '@grpc-studio/shared';
+export type { ApiMethod, ApiService,  } from '@grpc-studio/shared';
 export type {
   CertificateMetadata,
 } from './certificate.js';

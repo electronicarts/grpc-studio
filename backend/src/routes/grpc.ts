@@ -7,6 +7,8 @@ import { invoke } from '../controllers/InvocationController.js';
 import { getConfig } from '../controllers/ConfigController.js';
 import { getCertificateInfo } from '../controllers/CertificateController.js';
 import { getStatus } from '../controllers/StatusController.js';
+import { refreshAllCertificates, refreshTargetCertificate } from '../controllers/CertificateRefreshController.js';
+import { debugCertificates } from '../controllers/CertificateDebugController.js';
 import { requireValidCertificate } from '../middlewares/certValidationMiddleware.js';
 import { isMethodKind, isNonEmptyString, validate } from '../middlewares/validateMiddleware.js';
 
@@ -38,5 +40,10 @@ router.get('/status', requireValidCertificate, getStatus);
 // Configuration
 router.get('/config', getConfig);
 router.get('/config/certificate', getCertificateInfo);
+
+// Certificate refresh
+router.post('/certificates/refresh', refreshAllCertificates);
+router.post('/certificates/refresh/:targetName', refreshTargetCertificate);
+router.get('/certificates/debug', debugCertificates);
 
 export default router;

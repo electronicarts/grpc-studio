@@ -72,6 +72,12 @@ jobs:
           npm run build:shared
           cd frontend && npx tsc --noEmit
 
+      - name: Type check backend (source + tests)
+        run: |
+          cd backend
+          npm run typecheck
+          npm run typecheck:test
+
   lint-frontend:
     name: Lint Frontend
     runs-on: ubuntu-latest

@@ -2,25 +2,19 @@
 
 import React from 'react'
 
-interface SchemaLoadingScreenProps {
-  targetServer: string
-}
-
-const SchemaLoadingScreen: React.FC<SchemaLoadingScreenProps> = ({ targetServer }) => {
+const SchemaLoadingScreen: React.FC = () => {
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
-      <div className="flex items-center justify-center h-96">
-        <div className="text-center w-full max-w-md px-8">
-          <img src="/logo.svg" alt="gRPC Studio" className="w-16 h-16 mx-auto mb-6 rounded-2xl animate-pulse" />
-          <h3 className="text-2xl font-semibold text-gray-900 dark:text-white mb-3">Connecting to gRPC Server</h3>
-          <p className="text-lg text-gray-600 dark:text-gray-400 mx-auto mb-6">
-            {targetServer
-              ? `Discovering services on ${targetServer}`
-              : 'Establishing connection...'}
+    <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+      <div className="flex h-96 items-center justify-center">
+        <div className="w-full max-w-md px-8 text-center">
+          <img src="/logo.svg" alt="gRPC Studio" className="mx-auto mb-6 size-16 animate-pulse rounded-2xl" />
+          <h3 className="mb-3 text-2xl font-semibold text-foreground">Connecting to gRPC Servers</h3>
+          <p className="mx-auto mb-6 text-lg text-muted-foreground">
+            Discovering services from configured servers...
           </p>
 
-          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
-            <div className="bg-blue-500 h-2 rounded-full w-1/3 animate-[indeterminate_1.5s_ease-in-out_infinite]" />
+          <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+            <div className="h-2 w-1/3 animate-[indeterminate_1.5s_ease-in-out_infinite] rounded-full bg-info" />
           </div>
         </div>
       </div>

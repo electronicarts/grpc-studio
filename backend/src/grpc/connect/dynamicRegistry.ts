@@ -46,10 +46,3 @@ export function buildDynamicRegistry(fileDescriptorSet: FileDescriptorSet): Regi
   // Create a combined registry with WKTs + reflected types
   return createRegistry(...Array.from(wktRegistry), ...messageDescriptors)
 }
-
-/**
- * Returns the base WKT-only registry for cases where no FileRegistry is available.
- */
-export function getWktRegistry(): Registry {
-  return wktRegistry
-}

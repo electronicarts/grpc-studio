@@ -4,6 +4,7 @@ import React from 'react'
 import type { DescEnum } from '@bufbuild/protobuf'
 import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
 import { FormField } from '../../../../components/shared'
+import { Select } from '@/components/ui/select'
 
 interface EnumFieldProps {
   name: string
@@ -21,21 +22,20 @@ const EnumField: React.FC<EnumFieldProps> = ({ name, enumDesc, value, onChange }
     onChange(newValue)
   }
 
-  const typeMeta = <span className="text-xs text-gray-500">({enumDesc.typeName})</span>
+  const typeMeta = <span className="text-xs text-muted-foreground">({enumDesc.typeName})</span>
 
   return (
     <FormField label={name} labelMeta={typeMeta}>
-      <select
+      <Select
         value={value || ''}
         onChange={handleChange}
         disabled={readOnly}
-        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 disabled:opacity-50"
       >
         <option value="">Select {name}</option>
         {enumDesc.values.map((ev) => (
           <option key={ev.name} value={ev.name}>{ev.name}</option>
         ))}
-      </select>
+      </Select>
     </FormField>
   )
 }

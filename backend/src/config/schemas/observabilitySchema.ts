@@ -20,5 +20,5 @@ export const ObservabilitySchema = schemaUtils.optional(z.object({
 }))
 
 export type ObservabilityConfig = z.infer<typeof ObservabilitySchema>
-export type MetricsConfig = ObservabilityConfig['metrics']
-export type PerformanceConfig = ObservabilityConfig['performance']
+type MetricsConfig = ObservabilityConfig['metrics']
+type PerformanceConfig = ObservabilityConfig['performance']

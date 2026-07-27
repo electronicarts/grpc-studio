@@ -25,29 +25,58 @@ describe('useConnectionStatus', () => {
     vi.mocked(fetchConnectionStatus).mockImplementation(() => new Promise(() => {}))
     const { result } = renderHook(() => useConnectionStatus(), { wrapper })
     expect(result.current.loading).toBe(true)
-    expect(result.current.connected).toBe(false)
+    expect(result.current.servers).toEqual([])
   })
 
-  it('returns connection data on success', async () => {
+  it('returns server status data on success', async () => {
     vi.mocked(fetchConnectionStatus).mockResolvedValue({
-      connected: true,
-      targetServer: 'localhost:50051',
-      servicesCount: 3,
-      error: null,
+      servers: [
+        {
+          name: 'Server1',
+          target: 'localhost:50051',
+          connected: true,
+          servicesCount: 3,
+        },
+      ],
       loading: false,
     })
     const { result } = renderHook(() => useConnectionStatus(), { wrapper })
     await waitFor(() => expect(result.current.loading).toBe(false))
-    expect(result.current.connected).toBe(true)
-    expect(result.current.targetServer).toBe('localhost:50051')
-    expect(result.current.servicesCount).toBe(3)
+    expect(result.current.servers).toHaveLength(1)
+    expect(result.current.servers[0].name).toBe('Server1')
+    expect(result.current.servers[0].connected).toBe(true)
+    expect(result.current.servers[0].servicesCount).toBe(3)
   })
 
-  it('returns error message on fetch failure', async () => {
+  it('returns empty servers array on fetch failure', async () => {
     vi.mocked(fetchConnectionStatus).mockRejectedValue(new Error('Network error'))
     const { result } = renderHook(() => useConnectionStatus(), { wrapper })
     await waitFor(() => expect(result.current.loading).toBe(false))
-    expect(result.current.connected).toBe(false)
-    expect(result.current.error).toContain('Network error')
+    expect(result.current.servers).toEqual([])
+  })
+
+  it('handles multiple servers', async () => {
+    vi.mocked(fetchConnectionStatus).mockResolvedValue({
+      servers: [
+        {
+          name: 'Server1',
+          target: 'localhost:50051',
+          connected: true,
+          servicesCount: 3,
+        },
+        {
+          name: 'Server2',
+          target: 'localhost:50052',
+          connected: false,
+          servicesCount: 0,
+        },
+      ],
+      loading: false,
+    })
+    const { result } = renderHook(() => useConnectionStatus(), { wrapper })
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    expect(result.current.servers).toHaveLength(2)
+    expect(result.current.servers[0].name).toBe('Server1')
+    expect(result.current.servers[1].name).toBe('Server2')
   })
 })

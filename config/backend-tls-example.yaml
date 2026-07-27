@@ -18,21 +18,23 @@ server:
     heartbeatIntervalMs: 25000  # ms between server ping frames; stale sockets are terminated on missed heartbeat
 
 # Outbound gRPC client configuration
+# Configure one or more gRPC targets; each appears as a selectable server in the UI.
 client:
-  mode: tls  # plaintext | tls | mtls
-  target:
-    host: your-grpc-server.example.com
-    port: 443
-  rpc:
-    unaryDeadlineMs: 30000        # ms max duration for unary RPCs
-    streamDeadlineMs: 120000      # ms max duration for server/client/bidi streaming RPCs
-  keepalive:
-    pingIntervalMs: 30000  # ms between HTTP/2 keepalive pings
-    pingTimeoutMs: 10000   # ms to wait for a keepalive ping ack
-  security:
-    clientCertPath: "/path/to/client-cert.pem"
-    clientKeyPath: "/path/to/client-key.pem"
-    caCertPath: "/path/to/ca-cert.pem"
+  targets:
+    - name: "My gRPC Server"  # display name shown in the UI
+      host: your-grpc-server.example.com
+      port: 443
+      mode: tls  # plaintext | tls | mtls
+      rpc:
+        unaryDeadlineMs: 30000        # ms max duration for unary RPCs
+        streamDeadlineMs: 120000      # ms max duration for server/client/bidi streaming RPCs
+      keepalive:
+        pingIntervalMs: 30000  # ms between HTTP/2 keepalive pings
+        pingTimeoutMs: 10000   # ms to wait for a keepalive ping ack
+      security:
+        clientCertPath: "/path/to/client-cert.pem"
+        clientKeyPath: "/path/to/client-key.pem"
+        caCertPath: "/path/to/ca-cert.pem"
 
 # Authentication for outgoing gRPC calls
 auth:

@@ -3,6 +3,8 @@
 import { describe, it, mock, beforeEach, afterEach } from 'node:test'
 import assert from 'node:assert/strict'
 import { CertificateService } from '../services/certificateService.js'
+import type { CertificateRepository } from '../repositories/certificateRepository.js'
+import type { CertificateReadableInfo } from '@grpc-studio/shared'
 import {
   createMockCertificateRepository,
   createValidCertificateMetadata,
@@ -43,7 +45,7 @@ describe('CertificateService', () => {
 
       assert.strictEqual(result.valid, true)
       // Allow for slight timing differences (99-100 days)
-      assert.ok(result.daysRemaining !== null && result.daysRemaining >= 99 && result.daysRemaining <= 100)
+      assert.ok(result.daysRemaining !== null && result.daysRemaining! >= 99 && result.daysRemaining! <= 100)
       assert.ok(result.expiryDate)
     })
 
@@ -60,7 +62,7 @@ describe('CertificateService', () => {
 
       assert.strictEqual(result.valid, true)
       // Allow for slight timing differences (4-5 days)
-      assert.ok(result.daysRemaining !== null && result.daysRemaining >= 4 && result.daysRemaining <= 5)
+      assert.ok(result.daysRemaining !== null && result.daysRemaining! >= 4 && result.daysRemaining! <= 5)
     })
 
     it('should return invalid for expired certificate', async () => {
@@ -76,7 +78,7 @@ describe('CertificateService', () => {
 
       assert.strictEqual(result.valid, false)
       // Allow for slight timing differences (-11 to -10 days)
-      assert.ok(result.daysRemaining !== null && result.daysRemaining >= -11 && result.daysRemaining <= -10)
+      assert.ok(result.daysRemaining !== null && result.daysRemaining! >= -11 && result.daysRemaining! <= -10)
       assert.ok(result.expiryDate)
     })
 
@@ -126,8 +128,9 @@ describe('CertificateService', () => {
       if (response.configured) {
         assert.ok(response.certificate)
         // Allow for slight timing differences (89-90 days)
-        assert.ok(response.certificate.daysRemaining !== null && response.certificate.daysRemaining >= 89 && response.certificate.daysRemaining <= 90)
-        assert.ok(response.certificate.validTo)
+        const cert = response.certificate as CertificateReadableInfo
+        assert.ok(cert.daysRemaining !== null && cert.daysRemaining >= 89 && cert.daysRemaining <= 90)
+        assert.ok(cert.validTo)
       }
     })
 
@@ -146,7 +149,8 @@ describe('CertificateService', () => {
       if (response.configured) {
         assert.ok(response.certificate)
         // Allow for slight timing differences (7-8 days)
-        assert.ok(response.certificate.daysRemaining !== null && response.certificate.daysRemaining >= 7 && response.certificate.daysRemaining <= 8)
+        const cert = response.certificate as CertificateReadableInfo
+        assert.ok(cert.daysRemaining !== null && cert.daysRemaining >= 7 && cert.daysRemaining <= 8)
         // Warning status depends on warnDaysWarning config (typically 14 days)
       }
     })
@@ -167,7 +171,8 @@ describe('CertificateService', () => {
       if (response.configured) {
         assert.ok(response.certificate)
         // Allow for slight timing differences (2-3 days)
-        assert.ok(response.certificate.daysRemaining !== null && response.certificate.daysRemaining >= 2 && response.certificate.daysRemaining <= 3)
+        const cert = response.certificate as CertificateReadableInfo
+        assert.ok(cert.daysRemaining !== null && cert.daysRemaining >= 2 && cert.daysRemaining <= 3)
         // Critical status depends on warnDaysCritical config (typically 7 days)
       }
     })
@@ -188,7 +193,8 @@ describe('CertificateService', () => {
       if (response.configured) {
         assert.ok(response.certificate)
         // Allow for slight timing differences (-6 to -5 days)
-        assert.ok(response.certificate.daysRemaining !== null && response.certificate.daysRemaining >= -6 && response.certificate.daysRemaining <= -5)
+        const cert = response.certificate as CertificateReadableInfo
+        assert.ok(cert.daysRemaining !== null && cert.daysRemaining >= -6 && cert.daysRemaining <= -5)
       }
     })
 
@@ -266,7 +272,7 @@ describe('CertificateService', () => {
 
       assert.strictEqual(result.valid, true)
       // Allow for slight timing differences (13-14 days)
-      assert.ok(result.daysRemaining !== null && result.daysRemaining >= 13 && result.daysRemaining <= 14)
+      assert.ok(result.daysRemaining !== null && result.daysRemaining! >= 13 && result.daysRemaining! <= 14)
     })
 
     it('should handle certificate at exactly critical threshold', async () => {
@@ -283,7 +289,7 @@ describe('CertificateService', () => {
 
       assert.strictEqual(result.valid, true)
       // Allow for slight timing differences (6-7 days)
-      assert.ok(result.daysRemaining !== null && result.daysRemaining >= 6 && result.daysRemaining <= 7)
+      assert.ok(result.daysRemaining !== null && result.daysRemaining! >= 6 && result.daysRemaining! <= 7)
     })
   })
 })

@@ -13,9 +13,9 @@ import { executeWithRetry, fetchWithTimeout } from './requestHelpers'
 
 // ── types ───────────────────────────────────────────────────────
 
-export type { ApiError } from './apiErrorParser'
 
-export interface RequestOptions {
+
+interface RequestOptions {
   timeout?: number
   retries?: number
   retryDelay?: number

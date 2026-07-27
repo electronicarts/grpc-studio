@@ -1,0 +1,246 @@
+syntax = "proto3";
+
+package bookstore.v1;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/any.proto";
+import "google/protobuf/field_mask.proto";
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum Genre {
+  GENRE_UNSPECIFIED = 0;
+  GENRE_FICTION = 1;
+  GENRE_NONFICTION = 2;
+  GENRE_SCIENCE = 3;
+  GENRE_FANTASY = 4;
+  GENRE_BIOGRAPHY = 5;
+  GENRE_CHILDREN = 6;
+}
+
+enum Availability {
+  AVAILABILITY_UNSPECIFIED = 0;
+  AVAILABILITY_IN_STOCK = 1;
+  AVAILABILITY_OUT_OF_STOCK = 2;
+  AVAILABILITY_PREORDER = 3;
+  AVAILABILITY_DISCONTINUED = 4;
+}
+
+// ---------------------------------------------------------------------------
+// Nested messages (3 levels deep: Book → Publisher → Address → Coordinates)
+// ---------------------------------------------------------------------------
+
+message Coordinates {
+  double latitude = 1;
+  double longitude = 2;
+}
+
+message Address {
+  string street = 1;
+  string city = 2;
+  string state = 3;
+  string zip_code = 4;
+  string country = 5;
+  Coordinates coordinates = 6;
+}
+
+message Publisher {
+  string id = 1;
+  string name = 2;
+  string email = 3;
+  string phone = 4;
+  Address address = 5;
+  google.protobuf.Timestamp founded_at = 6;
+}
+
+// ---------------------------------------------------------------------------
+// OneOf example
+// ---------------------------------------------------------------------------
+
+message SeriesInfo {
+  string series_name = 1;
+  int32 volume = 2;
+  bool is_final_volume = 3;
+}
+
+message CatalogEntry {
+  oneof identifier {
+    string isbn_13 = 1;
+    string isbn_10 = 2;
+    int32 internal_sku = 3;
+    SeriesInfo series = 4;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Repeated message types
+// ---------------------------------------------------------------------------
+
+message Review {
+  string reviewer = 1;
+  int32 rating = 2;
+  string comment = 3;
+  google.protobuf.Timestamp posted_at = 4;
+  google.protobuf.BoolValue verified_purchase = 5;
+}
+
+message Edition {
+  string id = 1;
+  string format = 2;
+  string language = 3;
+  google.protobuf.Timestamp published_at = 4;
+  google.protobuf.Duration time_in_print = 5;
+  google.protobuf.FloatValue price_usd = 6;
+  bool signed_copy = 7;
+}
+
+// ---------------------------------------------------------------------------
+// Main Book message — exercises every proto3 feature
+// ---------------------------------------------------------------------------
+
+message Book {
+  string id = 1;
+  string title = 2;
+  Genre genre = 3;
+  string author = 4;
+  Availability availability = 5;
+
+  // Nested message (3 levels: Publisher → Address → Coordinates)
+  Publisher publisher = 6;
+
+  // Scalar types
+  int32 page_count = 7;
+  double weight_kg = 8;
+  bool is_hardcover = 9;
+  bytes cover_thumbnail = 10;
+
+  // Well-known types
+  google.protobuf.Timestamp created_at = 11;
+  google.protobuf.Timestamp updated_at = 12;
+  google.protobuf.StringValue synopsis = 13;
+  google.protobuf.Int32Value edition_number = 14;
+
+  // OneOf (via wrapper message)
+  CatalogEntry catalog_entry = 15;
+
+  // Repeated scalar
+  repeated string alternate_titles = 16;
+
+  // Repeated messages
+  repeated Review reviews = 17;
+  repeated Edition editions = 18;
+
+  // Map<string, string>
+  map<string, string> tags = 19;
+
+  // Map<string, message>
+  map<string, Edition> editions_by_format = 20;
+
+  // Struct — arbitrary JSON-like metadata
+  google.protobuf.Struct metadata = 21;
+
+  // Any — extensible typed payload (e.g. for event-specific data)
+  google.protobuf.Any extra_info = 22;
+}
+
+// ---------------------------------------------------------------------------
+// Request / Response messages
+// ---------------------------------------------------------------------------
+
+message CreateBookRequest {
+  Book book = 1;
+}
+
+message GetBookRequest {
+  string id = 1;
+}
+
+message UpdateBookRequest {
+  Book book = 1;
+  // Fields to update; omitting this performs a full replacement.
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+message DeleteBookRequest {
+  string id = 1;
+}
+
+message ListBooksRequest {
+  int32 page_size = 1;
+  string page_token = 2;
+  Genre genre_filter = 3;
+  Availability availability_filter = 4;
+}
+
+message ListBooksResponse {
+  repeated Book books = 1;
+  string next_page_token = 2;
+  int32 total_count = 3;
+}
+
+message SearchBooksRequest {
+  string query = 1;
+  repeated Genre genres = 2;
+  google.protobuf.Int32Value max_page_count = 3;
+  google.protobuf.DoubleValue max_price_usd = 4;
+}
+
+// Streaming messages
+
+message WatchBooksRequest {
+  repeated Genre genre_filter = 1;
+}
+
+message BookEvent {
+  string book_id = 1;
+  string event_type = 2;
+  google.protobuf.Timestamp timestamp = 3;
+  google.protobuf.Struct details = 4;
+}
+
+message BulkCreateBooksResponse {
+  int32 created_count = 1;
+  repeated string ids = 2;
+  repeated string errors = 3;
+}
+
+message StockCheckRequest {
+  string book_id = 1;
+  repeated string warehouses = 2;
+}
+
+message StockCheckResponse {
+  string book_id = 1;
+  map<string, int32> quantities = 2;
+  google.protobuf.Timestamp checked_at = 3;
+  bool is_available = 4;
+}
+
+// ---------------------------------------------------------------------------
+// Service — all four RPC patterns
+// ---------------------------------------------------------------------------
+
+service BookStoreService {
+  // Unary RPCs
+  rpc CreateBook(CreateBookRequest) returns (Book);
+  rpc GetBook(GetBookRequest) returns (Book);
+  rpc UpdateBook(UpdateBookRequest) returns (Book);
+  rpc DeleteBook(DeleteBookRequest) returns (google.protobuf.Empty);
+  rpc ListBooks(ListBooksRequest) returns (ListBooksResponse);
+  rpc SearchBooks(SearchBooksRequest) returns (ListBooksResponse);
+
+  // Server streaming — live catalog event feed
+  rpc WatchBooks(WatchBooksRequest) returns (stream BookEvent);
+
+  // Client streaming — bulk book upload
+  rpc BulkCreateBooks(stream CreateBookRequest) returns (BulkCreateBooksResponse);
+
+  // Bidirectional streaming — live stock checks
+  rpc CheckStock(stream StockCheckRequest) returns (stream StockCheckResponse);
+}

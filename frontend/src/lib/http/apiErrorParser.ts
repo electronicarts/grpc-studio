@@ -8,7 +8,22 @@ export interface ApiError {
 }
 
 const ERROR_PREVIEW_LENGTH = 200
-const GRPC_ERROR_PATTERN = /Code:\s*(\w+)\s*Message:\s*(.+?)(?:\n|$)/s
+const GRPC_ERROR_PATTERN = /Code:\s*(\w+).*?Message:\s*(.+?)(?:\n|$)/s
+
+export interface ParsedGrpcError {
+  message: string
+  code: string
+}
+
+/**
+ * Parse a gRPC error string (e.g. "Code: NotFound  Message: entity not found")
+ * into a structured object, or null if it isn't a recognizable gRPC error.
+ */
+export function parseGrpcErrorString(errorStr: string): ParsedGrpcError | null {
+  const match = errorStr.match(GRPC_ERROR_PATTERN)
+  if (!match) return null
+  return { code: match[1], message: `gRPC ${match[1]}: ${match[2].trim()}` }
+}
 
 function isHtmlResponse(responseText: string): boolean {
   const trimmed = responseText.trimStart()
@@ -16,15 +31,9 @@ function isHtmlResponse(responseText: string): boolean {
 }
 
 function parseGrpcError(errorMessage: string, status: number): ApiError | null {
-  const grpcMatch = errorMessage.match(GRPC_ERROR_PATTERN)
-
-  if (!grpcMatch) return null
-
-  return {
-    message: `gRPC ${grpcMatch[1]}: ${grpcMatch[2].trim()}`,
-    code: grpcMatch[1],
-    status,
-  }
+  const parsed = parseGrpcErrorString(errorMessage)
+  if (!parsed) return null
+  return { message: parsed.message, code: parsed.code, status }
 }
 
 function parseStructuredError(errorData: Record<string, unknown>, status: number): ApiError {

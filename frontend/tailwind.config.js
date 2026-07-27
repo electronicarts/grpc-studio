@@ -53,6 +53,14 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        // Semantic status colors — used as text-danger, bg-success/10, border-warning, etc.
+        danger: "hsl(var(--danger))",
+        success: "hsl(var(--success))",
+        warning: "hsl(var(--warning))",
+        critical: "hsl(var(--critical))",
+        info: "hsl(var(--info))",
+        brand: "hsl(var(--brand))",
+        "syntax-type": "hsl(var(--syntax-type))",
       },
       borderRadius: {
         lg: "var(--radius)",

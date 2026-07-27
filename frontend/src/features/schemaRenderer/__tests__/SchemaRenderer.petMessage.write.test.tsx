@@ -623,15 +623,12 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
       const removeButtons = screen.getAllByRole('button')
       const xButtons = removeButtons.filter(btn => btn.textContent === '×' || btn.innerHTML.includes('lucide-x'))
 
+      // Three nicknames means three remove buttons must be present; fail loudly
+      // if the UI changed rather than silently skipping the assertions.
+      expect(xButtons.length).toBeGreaterThanOrEqual(2)
+
       // Click second X button (for "Good Boy")
-      if (xButtons.length >= 2) {
-        await user.click(xButtons[1])
-      } else {
-        // Fallback: just verify we can click any remove button
-        const allButtons = screen.getAllByRole('button')
-        const xBtn = allButtons.find(b => b.innerHTML.includes('lucide-x'))
-        if (xBtn) await user.click(xBtn)
-      }
+      await user.click(xButtons[1])
 
       await waitFor(() => {
         const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
@@ -673,24 +670,21 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
       const allButtons = screen.getAllByRole('button')
       const xButtons = allButtons.filter(btn => btn.innerHTML.includes('lucide-x'))
 
-      if (xButtons.length > 0) {
-        await user.click(xButtons[0])
+      // Three map entries → at least one remove button; fail loudly if not.
+      expect(xButtons.length).toBeGreaterThan(0)
 
-        await waitFor(() => {
-          const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
+      await user.click(xButtons[0])
 
-          // Map should have 2 entries after removal
-          expect(Object.keys(latestCall.tags || {}).length).toBe(2)
-
-          // No undefined values in map
-          const mapValues = Object.values(latestCall.tags || {})
-          expect(mapValues.includes(undefined)).toBe(false)
-        })
-      } else {
-        // If we can't find X buttons, just verify map exists
+      await waitFor(() => {
         const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
-        expect(latestCall.tags).toBeDefined()
-      }
+
+        // Map should have 2 entries after removal
+        expect(Object.keys(latestCall.tags || {}).length).toBe(2)
+
+        // No undefined values in map
+        const mapValues = Object.values(latestCall.tags || {})
+        expect(mapValues.includes(undefined)).toBe(false)
+      })
     })
   })
 

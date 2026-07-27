@@ -20,7 +20,7 @@ The Helm chart deploys the app (Deployments, Services, ConfigMaps) only. The Ist
 
 ## Usage
 
-**1. Edit all four files** — replace `grpc-studio.example.com` with your domain, and update `connection.target.host` in `values.yaml`.
+**1. Edit all four files** — replace `grpc-studio.example.com` with your domain, and update `connection.targets` in `values.yaml`.
 
 **2. Install the chart:**
 

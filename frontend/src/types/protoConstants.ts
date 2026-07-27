@@ -17,5 +17,3 @@ export const WRAPPER_TYPE_TO_SCALAR: Readonly<Record<string, string>> = {
   'google.protobuf.StringValue': 'string',
   'google.protobuf.BytesValue': 'bytes'
 }
-
-export const WRAPPER_TYPES = new Set(Object.keys(WRAPPER_TYPE_TO_SCALAR))

@@ -29,14 +29,16 @@ export interface Payload {
   wire: JsonObject
 }
 
-function lookupSchema(type: string): DescMessage | null {
-  return schemaCache.getCachedSchema(type)
+function lookupSchema(target: string | undefined, type: string): DescMessage | null {
+  // Need target to lookup schema - if not provided, return null
+  if (!target) return null
+  return schemaCache.getCachedSchema(target, type)
 }
 
 export function canonicalizeProtoJson(
   data: Record<string, unknown>,
   schema: DescMessage | null,
-  options: { alwaysEmitImplicit?: boolean } = {},
+  options: { target?: string; alwaysEmitImplicit?: boolean} = {},
 ): JsonObject {
   if (!schema) {
     if (!isJsonObject(data)) {
@@ -69,9 +71,10 @@ export function canonicalizeProtoJson(
 export function toWireFormat(
   obj: Record<string, unknown>,
   messageType: string | null,
+  target?: string,
 ): Payload {
-  const schema = messageType ? lookupSchema(messageType) : null
-  const canonical = canonicalizeProtoJson(obj, schema)
+  const schema = messageType ? lookupSchema(target, messageType) : null
+  const canonical = canonicalizeProtoJson(obj, schema, { target })
 
   return {
     display: cloneJsonObject(canonical),
@@ -82,13 +85,14 @@ export function toWireFormat(
 export function toDisplayFormat(
   obj: unknown,
   messageType: string | null,
+  target?: string,
 ): Payload {
   if (!isRecord(obj)) {
     return { display: {}, wire: {} }
   }
 
-  const schema = messageType ? lookupSchema(messageType) : null
-  const canonical = canonicalizeProtoJson(obj, schema, { alwaysEmitImplicit: true })
+  const schema = messageType ? lookupSchema(target, messageType) : null
+  const canonical = canonicalizeProtoJson(obj, schema, { target, alwaysEmitImplicit: true })
 
   return {
     display: cloneJsonObject(canonical),

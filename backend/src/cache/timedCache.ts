@@ -82,6 +82,10 @@ export class TimedCache<K, V> implements Cache<K, V> {
     this.recordSize();
   }
 
+  keys(): IterableIterator<K> {
+    return this.entries.keys();
+  }
+
   private isFresh(timestamp: number): boolean {
     return this.nowMs() - timestamp < resolveOption(this.options.ttlMs);
   }

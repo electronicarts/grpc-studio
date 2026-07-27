@@ -38,9 +38,10 @@ export function bytesToBase64(value: unknown): string {
 }
 
 /**
- * Parse base64 string back to bytes for protobuf serialization.
- * Returns the input string (protobuf expects base64 for bytes fields in JSON).
+ * Format a byte count as a human-readable size (B / KB / MB).
  */
-export function base64ToBytes(base64: string): string {
-  return base64
+export function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }

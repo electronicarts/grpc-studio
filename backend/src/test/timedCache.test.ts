@@ -97,6 +97,25 @@ describe('TimedCache', () => {
     })
   })
 
+  describe('keys()', () => {
+    it('exposes current keys for prefix-based iteration', () => {
+      const cache = new TimedCache<string, number>({ ttlMs: 1000, maxEntries: 100 })
+      cache.set('targetA:service-names', 1)
+      cache.set('targetA:registry:Foo', 2)
+      cache.set('targetB:service-names', 3)
+
+      const keys = [...cache.keys()]
+      assert.equal(keys.length, 3)
+
+      // Callers (e.g. ReflectionSchemaRepository.clearCache) delete by target prefix.
+      const targetAKeys = keys.filter((k) => k.startsWith('targetA:'))
+      assert.deepEqual(targetAKeys.sort(), ['targetA:registry:Foo', 'targetA:service-names'])
+
+      for (const key of targetAKeys) cache.delete(key)
+      assert.deepEqual([...cache.keys()], ['targetB:service-names'])
+    })
+  })
+
   describe('TTL expiration', () => {
     it('should expire entries after TTL', () => {
       let now = 0

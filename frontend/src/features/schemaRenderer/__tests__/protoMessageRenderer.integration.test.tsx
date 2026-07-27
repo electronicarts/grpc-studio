@@ -27,15 +27,17 @@ import {
   schemaCache as testSchemaMap,
 } from './protoMessageRenderer.fixtures'
 
-// Mock protobuf registry to return our test schemas
+// Mock protobuf registry to return our test schemas.
+// Signatures match the real cache: getSchema(target, messageType) and
+// getCachedSchema(target, messageType); these tests key on the type only.
 vi.mock('../../schemaLoader/lib/schemaCache', () => ({
   schemaCache: {
-    getSchema: vi.fn((type: string) => {
+    getSchema: vi.fn((_target: string, type: string) => {
       return Promise.resolve(testSchemaMap.get(type) || null)
     }),
     getCacheSize: vi.fn(() => testSchemaMap.size),
     getSchemaMap: vi.fn(() => new Map(testSchemaMap)),
-    getCachedSchema: vi.fn((type: string) => testSchemaMap.get(type) ?? null),
+    getCachedSchema: vi.fn((_target: string, type: string) => testSchemaMap.get(type) ?? null),
     subscribe: vi.fn(() => () => {}),
     get allLoaded() { return true },
   },
@@ -494,7 +496,7 @@ describe('ProtoMessageRenderer Integration Tests', () => {
       await waitFor(() => {
         // Each item has a different oneof selected
         // Item 1: stringValue, Item 2: intValue, Item 3: messageValue
-        const oneofBadges = container.querySelectorAll('.bg-purple-500')
+        const oneofBadges = container.querySelectorAll('.bg-brand')
         expect(oneofBadges.length).toBeGreaterThan(0)
       })
     })

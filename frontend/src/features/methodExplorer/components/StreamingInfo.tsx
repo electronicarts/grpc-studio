@@ -3,7 +3,7 @@
 import React from 'react'
 import { AlertCircle } from 'lucide-react'
 import { GrpcMethod } from '../../../types/grpc'
-import { useMethodKind } from '../hooks'
+import { useMethodKind } from '../hooks/useMethodKind'
 import { MethodKind } from '@grpc-studio/shared'
 
 interface StreamingInfoProps {
@@ -16,10 +16,10 @@ const StreamingInfo: React.FC<StreamingInfoProps> = ({ selectedMethod }) => {
   if (selectedMethod.kind === MethodKind.UNARY) return null
 
   return (
-    <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-md">
+    <div className="mt-2 rounded-md border border-info/30 bg-info/10 p-3">
       <div className="flex items-start gap-2">
-        <AlertCircle className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-        <div className="text-sm text-blue-700 dark:text-blue-300">
+        <AlertCircle className="mt-0.5 size-4 flex-shrink-0 text-info" />
+        <div className="text-sm text-info">
           {isBidirectional && (
             <span>
               <strong>Bidirectional Streaming:</strong> Send your first message to start, 

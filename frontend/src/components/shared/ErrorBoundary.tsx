@@ -45,18 +45,18 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         <div className="p-6">
           <AlertPanel
             title="Something went wrong"
-            className="max-w-lg mx-auto"
+            className="mx-auto max-w-lg"
             footer={(
               <button
                 onClick={this.handleRetry}
-                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/40 rounded-md hover:bg-red-200 dark:hover:bg-red-900/60 transition-colors"
+                className="inline-flex items-center gap-2 rounded-md bg-danger/10 px-4 py-2 text-sm font-medium text-danger transition-colors hover:bg-danger/20"
               >
-                <RefreshCcw className="h-4 w-4" />
+                <RefreshCcw className="size-4" />
                 Try Again
               </button>
             )}
           >
-            <p className="text-sm text-red-700 dark:text-red-300 mb-4">
+            <p className="mb-4 text-sm text-danger">
               {this.state.error?.message || 'An unexpected error occurred.'}
             </p>
           </AlertPanel>

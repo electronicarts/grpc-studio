@@ -26,18 +26,10 @@ const ENV_OVERRIDES: readonly EnvOverride[] = [
   { env: ['WS_MAX_PAYLOAD_BYTES'], path: ['server', 'websocket', 'maxPayloadBytes'] },
   { env: ['WS_HEARTBEAT_INTERVAL_MS', 'WS_PING_INTERVAL_MS'], path: ['server', 'websocket', 'heartbeatIntervalMs'] },
 
-  { env: ['GRPC_CLIENT_MODE', 'CONNECTION_MODE'], path: ['client', 'mode'] },
-  { env: ['GRPC_TARGET_HOST', 'TARGET_HOST'], path: ['client', 'target', 'host'] },
-  { env: ['GRPC_TARGET_PORT', 'TARGET_PORT'], path: ['client', 'target', 'port'] },
-  { env: ['GRPC_UNARY_DEADLINE_MS', 'GRPC_REQUEST_TIMEOUT_MS'], path: ['client', 'rpc', 'unaryDeadlineMs'] },
-  { env: ['GRPC_STREAM_DEADLINE_MS'], path: ['client', 'rpc', 'streamDeadlineMs'] },
-  { env: ['GRPC_REFLECTION_DEADLINE_MS', 'REFLECTION_DEADLINE_MS'], path: ['client', 'reflection', 'deadlineMs'] },
-  { env: ['GRPC_KEEPALIVE_PING_INTERVAL_MS', 'GRPC_KEEPALIVE_TIME_MS'], path: ['client', 'keepalive', 'pingIntervalMs'] },
-  { env: ['GRPC_KEEPALIVE_PING_TIMEOUT_MS', 'GRPC_KEEPALIVE_TIMEOUT_MS'], path: ['client', 'keepalive', 'pingTimeoutMs'] },
-  { env: ['GRPC_MAX_RECEIVE_BYTES'], path: ['client', 'maxReceiveMessageBytes'] },
-  { env: ['GRPC_CLIENT_CERT', 'MTLS_CLIENT_CERT'], path: ['client', 'security', 'clientCertPath'] },
-  { env: ['GRPC_CLIENT_KEY', 'MTLS_CLIENT_KEY'], path: ['client', 'security', 'clientKeyPath'] },
-  { env: ['GRPC_CA_CERT', 'MTLS_CA_CERT'], path: ['client', 'security', 'caCertPath'] },
+  { env: ['GRPC_TARGET_NAME'], path: ['client', 'targets', '0', 'name'] },
+  { env: ['GRPC_TARGET_HOST'], path: ['client', 'targets', '0', 'host'] },
+  { env: ['GRPC_TARGET_PORT'], path: ['client', 'targets', '0', 'port'] },
+  { env: ['GRPC_TARGET_MODE'], path: ['client', 'targets', '0', 'mode'] },
 
   { env: ['CERT_READ_TIMEOUT_MS'], path: ['certificate', 'certReadTimeoutMs'] },
   { env: ['CERT_WARN_DAYS_CRITICAL'], path: ['certificate', 'warnDaysCritical'] },
@@ -93,10 +85,58 @@ function parseAppConfig(config: unknown): AppConfig {
 function applyEnvOverrides(config: Record<string, unknown>, env: NodeJS.ProcessEnv): Record<string, unknown> {
   const result = { ...config };
 
+  // Apply static overrides
   for (const override of ENV_OVERRIDES) {
     const value = getFirstEnvValue(env, override.env);
     if (value !== undefined) {
       setConfigValue(result, override.path, value);
+    }
+  }
+
+  // Apply dynamic indexed target overrides (GRPC_TARGET_0_HOST, GRPC_TARGET_1_HOST, etc.)
+  const targetFields = ['name', 'host', 'port', 'mode'];
+  const maxTargets = 10; // Support up to 10 targets via env vars
+
+  // Ensure client.targets exists as an array
+  if (!result.client || !isRecord(result.client)) {
+    result.client = {};
+  }
+  const client = result.client as Record<string, unknown>;
+  if (!Array.isArray(client.targets)) {
+    client.targets = [];
+  }
+  const targets = client.targets as Array<Record<string, unknown>>;
+
+  for (let i = 0; i < maxTargets; i++) {
+    let hasAnyOverride = false;
+    const overrides: Record<string, string> = {};
+
+    for (const field of targetFields) {
+      const envKey = `GRPC_TARGET_${i}_${field.toUpperCase()}`;
+      const value = env[envKey];
+
+      if (value !== undefined) {
+        hasAnyOverride = true;
+        overrides[field] = value;
+      }
+    }
+
+    if (hasAnyOverride) {
+      // Ensure target exists at this index
+      while (targets.length <= i) {
+        targets.push({});
+      }
+
+      // Apply overrides to target
+      for (const [field, value] of Object.entries(overrides)) {
+        if (!isRecord(targets[i])) {
+          targets[i] = {};
+        }
+        (targets[i] as Record<string, unknown>)[field] = value;
+      }
+    } else if (i > 0) {
+      // No overrides found for this index and we're past index 0, stop
+      break;
     }
   }
 
@@ -108,16 +148,49 @@ function getFirstEnvValue(env: NodeJS.ProcessEnv, names: readonly string[]): str
 }
 
 function setConfigValue(config: Record<string, unknown>, path: ConfigPath, value: string): void {
-  let target = config;
+  let target: any = config;
 
-  for (const key of path.slice(0, -1)) {
-    const current = target[key];
-    const next = isRecord(current) ? { ...current } : {};
-    target[key] = next;
-    target = next;
+  // Navigate to the parent of the final key
+  for (let i = 0; i < path.length - 1; i++) {
+    const key = path[i];
+
+    if (/^\d+$/.test(key)) {
+      // Key is an array index
+      const index = parseInt(key, 10);
+      if (!Array.isArray(target) || index >= target.length) {
+        return; // Skip if not an array or index out of bounds
+      }
+      target = target[index];
+    } else {
+      // Key is an object property
+      const current = target[key];
+      // Only create new object if it doesn't exist AND next key is not an array index
+      const nextKey = path[i + 1];
+      const nextIsArrayIndex = /^\d+$/.test(nextKey);
+
+      if (current === undefined || current === null) {
+        if (nextIsArrayIndex) {
+          return; // Can't create array dynamically
+        }
+        target[key] = {};
+      } else if (!isRecord(current) && !Array.isArray(current)) {
+        return; // Can't override primitive values with objects
+      }
+
+      target = target[key];
+    }
   }
 
-  target[path[path.length - 1]] = value;
+  // Set the final value
+  const lastKey = path[path.length - 1];
+  if (/^\d+$/.test(lastKey)) {
+    const index = parseInt(lastKey, 10);
+    if (Array.isArray(target) && index < target.length) {
+      target[index] = value;
+    }
+  } else {
+    target[lastKey] = value;
+  }
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

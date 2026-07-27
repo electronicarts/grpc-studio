@@ -29,7 +29,7 @@ interface AnyContentRendererProps {
  * - Render with SchemaRenderer as usual
  */
 const AnyContentRenderer: React.FC<AnyContentRendererProps> = ({ schema, formData, onChange }) => {
-  const { readOnly } = useProtoMessageRendererContext()
+  const { target, readOnly } = useProtoMessageRendererContext()
   const typeName = schema.typeName
 
   // For WKTs in Any, proto3 JSON encodes them as { "@type": "...", "value": <wkt-json> }
@@ -62,6 +62,7 @@ const AnyContentRenderer: React.FC<AnyContentRendererProps> = ({ schema, formDat
   // Not a WKT - render as regular message
   return (
     <SchemaRenderer
+      target={target}
       schema={schema}
       data={formData}
       onChange={onChange}

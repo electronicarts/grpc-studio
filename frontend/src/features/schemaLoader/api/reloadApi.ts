@@ -1,87 +1,100 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import { schemaCache } from '../lib/schemaCache'
+import { restoreServers, persistServers } from '../lib/schemaPersistence'
 import { apiClient } from '../../../lib/http/apiClient'
 import { createLogger } from '../../../utils/debugLogger'
 import { parseDiscoveryResponse } from './discoveryParser'
 import type { BackendDiscoveryResponse } from './discoveryTypes'
-import type { GrpcService } from '../../../types/grpc'
-import type { ConfigResponse } from '@grpc-studio/shared'
+import type { ApiServer } from '../../../types/grpc'
 
 const schemaLogger = createLogger('schema-loader')
 
-export interface LoadResult {
+export interface SchemaData {
+  servers: ApiServer[]
   fetchedAt: Date
 }
 
-interface FetchSchemasResult extends LoadResult {
-  services: GrpcService[]
+// ---------------------------------------------------------------------------
+// Initial load — returns from localStorage if available, else discovers
+// ---------------------------------------------------------------------------
+
+export async function loadSchemas(): Promise<SchemaData> {
+  const restored = restoreServers()
+  if (restored) {
+    schemaLogger.debug(`Using cached servers (fetched ${restored.fetchedAt.toISOString()})`)
+    return restored
+  }
+  return fetchAndPersist()
 }
 
 // ---------------------------------------------------------------------------
-// Initial load — returns from registry/localStorage if available
+// Force reload — re-discovers from backend, replacing cached descriptors
 // ---------------------------------------------------------------------------
 
-export async function loadSchemas(): Promise<LoadResult> {
-  if (schemaCache.restoreFromStorage()) {
-    const fetchedAt = schemaCache.getFetchedAt()!
-    schemaLogger.debug(`Using cached services (fetched ${fetchedAt.toISOString()})`)
-    return { fetchedAt }
+export async function reloadSchemas(current: ApiServer[], target?: string): Promise<SchemaData> {
+  schemaLogger.debug('Force-reloading schemas (bypassing cache)', { target })
+
+  if (target) {
+    // Reload a single target: drop its cached descriptors and merge its fresh
+    // service list into the existing servers, leaving other targets untouched.
+    const result = await fetchSchemas(true, target)
+    schemaCache.clearCache(target)
+    const merged = mergeReloadedTarget(current, result.servers, target)
+    return persist(merged, result.fetchedAt)
   }
 
-  return fetchAndCacheSchemas()
+  // Reload everything: the backend re-reads config, so the server set itself
+  // may change. Drop all cached descriptors and replace wholesale.
+  const result = await fetchSchemas(true)
+  schemaCache.clearCache()
+  return persist(result.servers, result.fetchedAt)
+}
+
+/**
+ * Merge a single reloaded target's fresh service list into the current servers.
+ * Only the matching server is replaced; the ordering of `current` is preserved.
+ */
+export function mergeReloadedTarget(
+  current: ApiServer[],
+  reloaded: ApiServer[],
+  target: string,
+): ApiServer[] {
+  return current.map(server =>
+    server.name === target
+      ? (reloaded.find(rs => rs.name === target) ?? server)
+      : server
+  )
 }
 
 // ---------------------------------------------------------------------------
-// Force reload — clears all caches, re-discovers from backend
+// Private — HTTP call to backend discovery endpoint + persistence
 // ---------------------------------------------------------------------------
 
-export async function reloadSchemas(): Promise<LoadResult> {
-  schemaLogger.debug('Force-reloading schemas (bypassing cache)')
+function persist(servers: ApiServer[], fetchedAt: Date): SchemaData {
+  persistServers(servers, fetchedAt)
+  return { servers, fetchedAt }
+}
+
+async function fetchAndPersist(): Promise<SchemaData> {
   const result = await fetchSchemas()
-  schemaCache.replaceServices(result.services, result.fetchedAt)
-  return { fetchedAt: result.fetchedAt }
+  return persist(result.servers, result.fetchedAt)
 }
 
-// ---------------------------------------------------------------------------
-// Fetch target server config
-// ---------------------------------------------------------------------------
+async function fetchSchemas(forceReload = false, target?: string): Promise<SchemaData> {
+  schemaLogger.debug('Calling backend discovery API', { forceReload, target })
 
-export async function fetchTargetServer(): Promise<string> {
-  try {
-    const data = await apiClient.get<ConfigResponse>('config')
-    const target = data.config.client.target
-    if (target?.host && target?.port) {
-      return `${target.host}:${target.port}`
+  const data = await apiClient.post<BackendDiscoveryResponse>(
+    'discover',
+    { reload: forceReload, target },
+    {
+      retries: 3,
+      onRetry: (attempt, error) => {
+        schemaLogger.debug(`Discovery retry ${attempt}/3: ${error.message}`)
+      },
     }
-    return ''
-  } catch {
-    return ''
-  }
-}
+  )
 
-// ---------------------------------------------------------------------------
-// Private — HTTP call to backend discovery endpoint
-// ---------------------------------------------------------------------------
-
-async function fetchAndCacheSchemas(): Promise<LoadResult> {
-  const result = await fetchSchemas()
-  schemaCache.setServices(result.services, result.fetchedAt)
-  return { fetchedAt: result.fetchedAt }
-}
-
-async function fetchSchemas(): Promise<FetchSchemasResult> {
-  schemaLogger.debug('Calling backend discovery API')
-
-  const data = await apiClient.post<BackendDiscoveryResponse>('discover', undefined, {
-    retries: 3,
-    onRetry: (attempt, error) => {
-      schemaLogger.debug(`Discovery retry ${attempt}/3: ${error.message}`)
-    },
-  })
-
-  const services = parseDiscoveryResponse(data)
-
-  const fetchedAt = new Date()
-  return { services, fetchedAt }
+  const servers = parseDiscoveryResponse(data)
+  return { servers, fetchedAt: new Date() }
 }

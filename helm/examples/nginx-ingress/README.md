@@ -30,7 +30,7 @@ Wait for the certificate to be issued:
 kubectl get certificate -n grpc-studio
 ```
 
-**3. Edit `values.yaml`** — replace `grpc-studio.example.com` with your domain and update `connection.target.host`.
+**3. Edit `values.yaml`** — replace `grpc-studio.example.com` with your domain and update `connection.targets`.
 
 **4. Install the chart:**
 

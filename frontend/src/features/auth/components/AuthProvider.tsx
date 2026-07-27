@@ -8,7 +8,6 @@ import { ReactNode } from 'react';
 import { getMsalInstance, isSsoEnabled } from '../stores/authState';
 import { EntraIdProvider } from './entra/EntraIdProvider';
 import { NoAuthProvider } from './noauth/NoAuthProvider';
-import { AuthenticatedTemplate, UnauthenticatedTemplate } from '@azure/msal-react';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const msalInstance = getMsalInstance();
@@ -24,5 +23,3 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     </EntraIdProvider>
   );
 }
-
-export { AuthenticatedTemplate, UnauthenticatedTemplate };

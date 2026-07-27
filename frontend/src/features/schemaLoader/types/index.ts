@@ -8,5 +8,6 @@ export interface SchemaLoaderState {
   lastFetchedAt: Date | null
   lastReloadSuccess: boolean | null
   reloading: boolean
-  reload: () => void
+  reloadingServer: string | null
+  reload: (target?: string) => void
 }

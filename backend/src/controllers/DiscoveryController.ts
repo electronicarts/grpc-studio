@@ -3,33 +3,14 @@
 import type { Request, Response } from 'express';
 import discoveryService from '../services/discoveryService.js';
 import { sendSuccess } from '../utils/responseHelpers.js';
-import logger from '../utils/logger.js';
-import type { ApiService, DiscoveryResponse } from '@grpc-studio/shared';
+import type { DiscoveryResponse } from '@grpc-studio/shared';
 
-const controllerLogger = logger.child({ controller: 'discovery' });
+export async function discover(req: Request, res: Response) {
+  const forceReload = req.query.reload === 'true' || req.body?.reload === true;
+  const targetFilter = (req.query.target as string | undefined) ?? (req.body?.target as string | undefined);
 
-export async function discover(_req: Request, res: Response) {
-  controllerLogger.info('Discovering services');
+  const servers = await discoveryService.discoverServers({ forceReload, targetFilter });
 
-  const serviceNames = await discoveryService.listServices();
-  const detailedServices: ApiService[] = [];
-
-  for (const serviceName of serviceNames) {
-    try {
-      controllerLogger.info(`Describing service ${serviceName}`);
-      const serviceDetails = await discoveryService.describeService(serviceName) as ApiService;
-      detailedServices.push(serviceDetails);
-    } catch (error) {
-      controllerLogger.warn(`Failed to describe service ${serviceName}`, { error: error instanceof Error ? error.message : String(error) });
-      detailedServices.push({
-        name: serviceName.split('.').pop(),
-        fullName: serviceName,
-        methods: [],
-      });
-    }
-  }
-
-  controllerLogger.info('Discovery completed', { servicesFound: serviceNames.length });
-  const responseBody: DiscoveryResponse = { services: detailedServices };
+  const responseBody: DiscoveryResponse = { servers };
   sendSuccess(res, responseBody);
 }

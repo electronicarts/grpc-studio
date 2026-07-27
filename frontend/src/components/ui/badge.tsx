@@ -17,6 +17,14 @@ const badgeVariants = cva(
         destructive:
           "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
         outline: "text-foreground",
+        // Soft tinted status pills — built on semantic tokens (auto light/dark).
+        danger: "border-transparent bg-danger/10 text-danger",
+        success: "border-transparent bg-success/10 text-success",
+        warning: "border-transparent bg-warning/10 text-warning",
+        critical: "border-transparent bg-critical/10 text-critical",
+        info: "border-transparent bg-info/10 text-info",
+        brand: "border-transparent bg-brand/10 text-brand",
+        neutral: "border-transparent bg-muted text-muted-foreground",
       },
     },
     defaultVariants: {
@@ -25,7 +33,7 @@ const badgeVariants = cva(
   }
 )
 
-export interface BadgeProps
+interface BadgeProps
   extends React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof badgeVariants> {}
 
@@ -35,4 +43,4 @@ function Badge({ className, variant, ...props }: BadgeProps) {
   )
 }
 
-export { Badge, badgeVariants }
+export { Badge,  }

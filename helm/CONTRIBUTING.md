@@ -50,9 +50,10 @@ helm install grpc-studio ./helm \
   --set frontend.image.repository=grpc-studio-frontend \
   --set frontend.image.tag=dev \
   --set frontend.image.pullPolicy=Never \
-  --set connection.target.host=my-grpc-server.default.svc.cluster.local \
-  --set connection.target.port=50051 \
-  --set connection.mode=plaintext \
+  --set connection.targets[0].name="My gRPC Server" \
+  --set connection.targets[0].host=my-grpc-server.default.svc.cluster.local \
+  --set connection.targets[0].port=50051 \
+  --set connection.targets[0].mode=plaintext \
   --namespace grpc-studio --create-namespace
 ```
 

@@ -40,18 +40,18 @@ const MapField: React.FC<MapFieldProps> = ({ field, value, onChange, path }) => 
       name={field.name}
       typeName={`map<${keyType}, ${valueType}>`}
       path={path}
-      className="border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-900/20"
+      className="border-info/30 bg-info/10"
       bodyClassName="ml-6 space-y-3"
       meta={(
-        <Badge variant="secondary" className="ml-auto bg-blue-100 dark:bg-blue-800">
+        <Badge variant="secondary" className="ml-auto bg-info/10">
           {countDisplay} {countDisplay === '1' ? 'entry' : 'entries'}
         </Badge>
       )}
     >
       {entries.map(([key, val]) => (
-        <div key={key} className="flex gap-2 items-start border-l-2 border-blue-300 pl-3">
+        <div key={key} className="flex items-start gap-2 border-l-2 border-l-info pl-3">
           <div className="flex-1">
-            <div className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-1">
+            <div className="mb-1 text-sm font-medium text-info">
               Key: {key}
             </div>
             {isScalarValue ? (
@@ -65,7 +65,7 @@ const MapField: React.FC<MapFieldProps> = ({ field, value, onChange, path }) => 
                 className="w-full"
               />
             ) : valueSchema ? (
-              <div className="bg-gray-50 dark:bg-gray-800/50 rounded p-2">
+              <div className="rounded bg-muted p-2">
                 <MessageRenderer
                   schema={valueSchema}
                   value={(val as Record<string, unknown>) || {}}
@@ -74,7 +74,7 @@ const MapField: React.FC<MapFieldProps> = ({ field, value, onChange, path }) => 
                 />
               </div>
             ) : (
-              <pre className="text-xs bg-gray-100 dark:bg-gray-800 p-2 rounded overflow-auto">
+              <pre className="overflow-auto rounded bg-muted p-2 text-xs">
                 {typeof val === 'object' ? JSON.stringify(val, null, 2) : String(val)}
               </pre>
             )}
@@ -86,7 +86,7 @@ const MapField: React.FC<MapFieldProps> = ({ field, value, onChange, path }) => 
               size="sm"
               onClick={() => onChange(removeObjectEntry(mapValue, key))}
             >
-              <X className="w-4 h-4" />
+              <X className="size-4" />
             </Button>
           )}
         </div>
@@ -101,7 +101,7 @@ const MapField: React.FC<MapFieldProps> = ({ field, value, onChange, path }) => 
       )}
 
       {entries.length === 0 && (
-        <div className="text-sm text-gray-500 italic">
+        <div className="text-sm italic text-muted-foreground">
           {searchQuery && allEntries.length > 0
             ? `No entries matching "${searchQuery}"`
             : 'No entries'}

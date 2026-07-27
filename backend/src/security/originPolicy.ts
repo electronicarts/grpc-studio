@@ -2,7 +2,7 @@
 
 export const DEFAULT_ALLOWED_ORIGINS = ['http://localhost:3000', 'http://localhost:4173']
 
-export type OriginPolicyRejectReason =
+type OriginPolicyRejectReason =
   | 'missing_origin'
   | 'origin_not_allowed'
 

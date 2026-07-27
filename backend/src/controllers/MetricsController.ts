@@ -2,9 +2,8 @@
 
 import type { Request, Response } from 'express';
 import { metricsRegistry } from '../metrics/registry.js';
-import logger from '../utils/logger.js';
-
-const metricsLogger = logger.child({ module: 'metrics-controller' });
+import { AppError } from '../errors/AppError.js';
+import { errorMessage } from '../utils/errorMessage.js';
 
 export async function metricsEndpoint(_req: Request, res: Response): Promise<void> {
   try {
@@ -12,9 +11,6 @@ export async function metricsEndpoint(_req: Request, res: Response): Promise<voi
     res.setHeader('Content-Type', metricsRegistry.getRegistry().contentType);
     res.send(metrics);
   } catch (error) {
-    metricsLogger.error('Failed to export metrics', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-    res.status(500).json({ error: 'Failed to export metrics' });
+    throw new AppError(`Failed to export metrics: ${errorMessage(error)}`, 500, 'METRICS_ERROR', false);
   }
 }

@@ -14,12 +14,22 @@ import {
   type Registry,
 } from '@bufbuild/protobuf'
 import type { FileDescriptorSet } from '@bufbuild/protobuf/wkt'
-import { Code, ConnectError, createClient, type CallOptions } from '@connectrpc/connect'
+import { Code, ConnectError, createClient, type CallOptions, type Transport } from '@connectrpc/connect'
 import { buildDynamicRegistry } from './dynamicRegistry.js'
 import type { JsonValue } from '@grpc-studio/shared'
-import configManager from '../../config/configManager.js'
 import type { FormattedGrpcError, StreamCallbacks, StreamHandle } from '../../types/index.js'
-import connectTransportProvider, { type ConnectTransportProvider } from './connectTransport.js'
+
+/**
+ * Supplies the Connect transport used to build reflected clients. Transports are
+ * created and cached per-target by multiClientManager, which is what the invoker
+ * service injects here; tests inject a fake transport.
+ */
+export interface TransportProvider {
+  getTransport(): Transport
+}
+
+const DEFAULT_UNARY_DEADLINE_MS = 30000
+const DEFAULT_STREAM_DEADLINE_MS = 120000
 
 type UnaryClientMethod = (
   request: MessageInitShape<DescMessage>,
@@ -47,7 +57,7 @@ export type RequestStream = AsyncIterable<JsonValue>
 export type OutboundHeaders = Record<string, string>
 
 export class ConnectInvoker {
-  constructor(private readonly transportProvider: ConnectTransportProvider = connectTransportProvider) {}
+  constructor(private readonly transportProvider: TransportProvider) {}
 
   async invokeUnary(
     method: DescMethodUnary,
@@ -58,7 +68,7 @@ export class ConnectInvoker {
     const registry = buildDynamicRegistry(fileDescriptorSet)
     const response = await this.getClientMethod<UnaryClientMethod>(method)(
       toProtoRequest(method.input, request, registry),
-      this.buildCallOptions(configManager.getClientConfig().rpc.unaryDeadlineMs, headers)
+      this.buildCallOptions(DEFAULT_UNARY_DEADLINE_MS, headers)
     )
 
     return toJsonResponse(method.output, response, registry)
@@ -76,7 +86,7 @@ export class ConnectInvoker {
       callbacks,
       async (signal) => this.getClientMethod<ServerStreamingClientMethod>(method)(
         toProtoRequest(method.input, request, registry),
-        this.buildCallOptions(configManager.getClientConfig().rpc.streamDeadlineMs, headers, signal)
+        this.buildCallOptions(DEFAULT_STREAM_DEADLINE_MS, headers, signal)
       ),
       method.output,
       registry
@@ -120,7 +130,7 @@ export class ConnectInvoker {
       callbacks,
       async (signal) => this.getClientMethod<BidiStreamingClientMethod>(method)(
         toConnectRequestStream(method, requests, registry),
-        this.buildCallOptions(configManager.getClientConfig().rpc.streamDeadlineMs, headers, signal)
+        this.buildCallOptions(DEFAULT_STREAM_DEADLINE_MS, headers, signal)
       ),
       method.output,
       registry
@@ -183,7 +193,7 @@ export class ConnectInvoker {
     try {
       const response = await this.getClientMethod<ClientStreamingClientMethod>(method)(
         toConnectRequestStream(method, requests, registry),
-        this.buildCallOptions(configManager.getClientConfig().rpc.streamDeadlineMs, headers, signal)
+        this.buildCallOptions(DEFAULT_STREAM_DEADLINE_MS, headers, signal)
       )
 
       callbacks.onData(toJsonResponse(method.output, response, registry))

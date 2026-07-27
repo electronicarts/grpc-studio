@@ -18,7 +18,7 @@ export function field(
   number: number,
   type: FieldDescriptorProto_Type,
   extra: Partial<MessageInitShape<typeof FieldDescriptorProtoSchema>> = {},
-) {
+): MessageInitShape<typeof FieldDescriptorProtoSchema> {
   return {
     name,
     number,
@@ -26,10 +26,10 @@ export function field(
     label: L.OPTIONAL,
     jsonName: name,
     ...extra,
-  }
+  } as MessageInitShape<typeof FieldDescriptorProtoSchema>
 }
 
-export function messageField(name: string, number: number, typeName: string) {
+export function messageField(name: string, number: number, typeName: string): MessageInitShape<typeof FieldDescriptorProtoSchema> {
   return field(name, number, T.MESSAGE, { typeName })
 }
 

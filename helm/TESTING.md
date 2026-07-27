@@ -38,13 +38,23 @@ Skip this step. The chart defaults reference `ghcr.io/electronicarts/grpc-studio
 
 ## 3. Deploy a sample gRPC server
 
-The chart only deploys gRPC Studio — it needs a target gRPC server to connect to. The repo ships with a reflection-enabled PetStore example under [`example/`](../example) that exercises every proto3 feature gRPC Studio supports (deep nesting, oneOf, maps, streaming, well-known types, etc.).
+The chart only deploys gRPC Studio — it needs a target gRPC server to connect to. The repo ships two reflection-enabled example services under [`examples/`](../examples): **PetStore** and **BookStore**, both exercising the full proto3 feature set (deep nesting, oneOf, maps, streaming, well-known types, etc.).
 
-Build and load it into Minikube:
+**Option A — pull the published images** (built by the Docker Publish workflow):
+
+```bash
+docker pull ghcr.io/electronicarts/grpc-studio/petstore:latest
+docker pull ghcr.io/electronicarts/grpc-studio/bookstore:latest
+```
+
+Use `ghcr.io/electronicarts/grpc-studio/petstore:latest` (port `50051`) or `.../bookstore:latest` (port `50052`) as the `image` below, with `imagePullPolicy: IfNotPresent`.
+
+**Option B — build locally into Minikube:**
 
 ```bash
 eval $(minikube docker-env)
-docker build -t petstore-example:dev ./example
+docker build -t petstore-example:dev  ./examples/petstore
+docker build -t bookstore-example:dev ./examples/bookstore
 ```
 
 Deploy it:
@@ -101,9 +111,10 @@ helm upgrade --install grpc-studio ./helm \
   --set frontend.image.repository=grpc-studio-frontend \
   --set frontend.image.tag=dev \
   --set frontend.image.pullPolicy=IfNotPresent \
-  --set connection.mode=plaintext \
-  --set connection.target.host=example-grpc-server.grpc-test.svc.cluster.local \
-  --set connection.target.port=50051 \
+  --set connection.targets[0].name=PetStore \
+  --set connection.targets[0].mode=plaintext \
+  --set connection.targets[0].host=example-grpc-server.grpc-test.svc.cluster.local \
+  --set connection.targets[0].port=50051 \
   --set 'backend.server.cors.origins[0]=http://localhost:8080'
 ```
 
@@ -128,7 +139,7 @@ Then open <http://localhost:8080>.
 
 - The UI should load without "configuration not found" errors.
 - The PetStore service appears in the sidebar with all 9 methods.
-- The backend pod logs should show `gRPC Studio HTTP server started` and `clientMode: plaintext`.
+- The backend pod logs should show `gRPC Studio HTTP server started` with `targetCount: 1` and the target listed (`PetStore … mode: plaintext`).
 - The frontend nginx logs should show successful proxy calls to `/api/grpc/*` and `/ws`.
 
 ```bash
@@ -150,7 +161,7 @@ Exercise the RPCs from the UI to confirm both unary and streaming paths work end
 | Symptom | Likely cause |
 |---|---|
 | `ImagePullBackOff` | Forgot `eval $(minikube docker-env)` before building, or `pullPolicy` not set to `IfNotPresent`/`Never` |
-| Backend pod `CrashLoopBackOff` with `client.target.host is required` | `connection.target.host` not set on the install command |
+| Backend pod `CrashLoopBackOff` with `At least one target is required` | `connection.targets` is empty — provide at least one target with `name`, `host`, and `port` |
 | Backend pod `CrashLoopBackOff` with `CORS misconfiguration: wildcard origin (*) cannot be combined with credentials` | `backend.server.cors.origins` set to `["*"]` — the backend sends credentials, so wildcard is rejected. List explicit origins (e.g. `http://localhost:8080`) or leave empty for the localhost defaults |
 | Frontend pod `CrashLoopBackOff` writing `/etc/nginx/nginx.conf` | Stale chart version — pull latest (the chart no longer mounts a custom nginx config) |
 | UI loads but shows "Configuration file not found" | `frontend.yaml` ConfigMap not mounted — check `kubectl describe pod` for the frontend |

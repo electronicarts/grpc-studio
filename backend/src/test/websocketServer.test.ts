@@ -220,7 +220,7 @@ describe('WebSocket Server', () => {
       ws.close()
       await closePromise
 
-      assert.ok([WebSocket.CLOSING, WebSocket.CLOSED].includes(ws.readyState))
+      assert.ok(([WebSocket.CLOSING, WebSocket.CLOSED] as number[]).includes(ws.readyState))
     })
   })
 
@@ -237,18 +237,14 @@ describe('WebSocket Server', () => {
         setTimeout(() => reject(new Error('Timeout')), 2000)
       })
 
-      const pongReceived = new Promise<void>((resolve) => {
-        ws.on('pong', () => resolve())
+      const pongReceived = new Promise<boolean>((resolve) => {
+        ws.on('pong', () => resolve(true))
+        setTimeout(() => resolve(false), 2000)
       })
 
       ws.ping()
 
-      await Promise.race([
-        pongReceived,
-        new Promise((_, reject) => setTimeout(() => reject(new Error('No pong received')), 2000))
-      ])
-
-      assert.ok(true, 'Pong received')
+      assert.equal(await pongReceived, true, 'Server should respond to ping with a pong')
     })
   })
 
@@ -265,16 +261,8 @@ describe('WebSocket Server', () => {
         setTimeout(() => reject(new Error('Timeout')), 2000)
       })
 
-      const messages: string[] = []
-      ws.on('message', (data) => {
-        messages.push(data.toString())
-      })
-
-      // Wait a bit to see if any messages arrive
-      await new Promise(resolve => setTimeout(resolve, 100))
-
-      // Just verify the connection worked, actual messages depend on protocol
-      assert.ok(true, 'Connection established successfully')
+      // The connection opened successfully (we got past the open await above).
+      assert.equal(ws.readyState, WebSocket.OPEN, 'Connection should be open')
     })
 
     it('should handle client sending messages', async () => {
@@ -289,16 +277,13 @@ describe('WebSocket Server', () => {
         setTimeout(() => reject(new Error('Timeout')), 2000)
       })
 
-      // Send a test message
-      const sendPromise = new Promise<void>((resolve, reject) => {
-        ws.send(JSON.stringify({ type: 'ping' }), (err) => {
-          if (err) reject(err)
-          else resolve()
-        })
+      // Send a test message; the callback surfaces any write error (null/undefined = ok).
+      const sendError = await new Promise<Error | null | undefined>((resolve) => {
+        ws.send(JSON.stringify({ type: 'ping' }), (err) => resolve(err))
       })
 
-      await sendPromise
-      assert.ok(true, 'Message sent successfully')
+      assert.ok(sendError == null, `Sending a message should not error (got ${sendError})`)
+      assert.equal(ws.readyState, WebSocket.OPEN, 'Connection should remain open after a valid message')
     })
   })
 
@@ -385,12 +370,18 @@ describe('WebSocket Server', () => {
         setTimeout(() => reject(new Error('Timeout')), 2000)
       })
 
-      // Abruptly terminate connection
+      // Abruptly terminate the connection and confirm the client observes closure.
+      // (The server-side cleanup is exercised via the metrics gauge test; here we just
+      // assert the terminate path resolves without hanging or throwing.)
+      const closed = new Promise<void>((resolve) => {
+        if (ws.readyState === WebSocket.CLOSED) return resolve()
+        ws.on('close', () => resolve())
+        setTimeout(() => resolve(), 2000)
+      })
       ws.terminate()
+      await closed
 
-      await new Promise(resolve => setTimeout(resolve, 100))
-
-      assert.ok(true, 'Server handled disconnect gracefully')
+      assert.notEqual(ws.readyState, WebSocket.OPEN, 'Connection should no longer be open after terminate')
     })
 
     it('should handle oversized messages', async () => {
@@ -408,23 +399,18 @@ describe('WebSocket Server', () => {
       // Send a large message (beyond maxPayload)
       const largeMessage = 'x'.repeat(20 * 1024 * 1024) // 20MB
 
-      let errorOccurred = false
-      ws.on('error', () => {
-        errorOccurred = true
-      })
-
-      ws.on('close', (code) => {
-        if (code === 1009) { // Message too big
-          errorOccurred = true
-        }
+      // Wait for the actual rejection signal (error or a close) rather than a fixed
+      // sleep, so the test resolves as soon as the server reacts and can't race.
+      const rejected = new Promise<boolean>((resolve) => {
+        ws.on('error', () => resolve(true))
+        ws.on('close', (code) => resolve(code === 1009 || code !== 1000))
+        setTimeout(() => resolve(ws.readyState !== WebSocket.OPEN), 2000)
       })
 
       ws.send(largeMessage)
 
-      await new Promise(resolve => setTimeout(resolve, 500))
-
-      // Connection should have closed or errored
-      assert.ok(errorOccurred || ws.readyState !== WebSocket.OPEN, 'Oversized message handled')
+      // The oversized message must cause the server to reject/close the connection.
+      assert.equal(await rejected, true, 'Oversized message should close or error the connection')
     })
   })
 

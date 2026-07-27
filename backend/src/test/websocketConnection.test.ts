@@ -46,6 +46,7 @@ function deferred<T>() {
 
 function startPayload(methodKind = MethodKind.SERVER_STREAMING): InvokeStreamStartPayload {
   return {
+    target: 'test-target',
     service: 'test.Service',
     method: 'List',
     methodKind,
@@ -58,7 +59,7 @@ describe('WebSocketConnection', () => {
     let callbacks: StreamCallbacks | null = null
     const stream: StreamHandle = { cancel: () => {} }
     const invoker = {
-      invokeServerStream: async (_service: string, _method: string, _data: unknown, cb: StreamCallbacks) => {
+      invokeServerStream: async (_target: string, _service: string, _method: string, _data: unknown, cb: StreamCallbacks) => {
         callbacks = cb
         return stream
       },
@@ -71,7 +72,7 @@ describe('WebSocketConnection', () => {
     })
 
     await connection.handleClientMessage({ type: 'start', payload: startPayload() })
-    callbacks?.onEnd()
+    ;(callbacks as StreamCallbacks | null)?.onEnd()
     await connection.handleClientMessage({ type: 'data', payload: { after: 'complete' } })
 
     assert.equal(sent.length, 2)
@@ -85,7 +86,7 @@ describe('WebSocketConnection', () => {
     let firstCanceled = false
     const streams: StreamHandle[] = [{ cancel: () => { firstCanceled = true } }, { cancel: () => {} }]
     const invoker = {
-      invokeServerStream: async (_service: string, _method: string, _data: unknown, cb: StreamCallbacks) => {
+      invokeServerStream: async (_target: string, _service: string, _method: string, _data: unknown, cb: StreamCallbacks) => {
         callbacks.push(cb)
         return streams[callbacks.length - 1]
       },
@@ -116,6 +117,7 @@ describe('WebSocketConnection', () => {
     const stream: StreamHandle = { cancel: () => {} }
     const invoker = {
       invokeClientStream: async (
+        _target: string,
         _service: string,
         _method: string,
         requests: AsyncIterable<unknown>
@@ -134,6 +136,7 @@ describe('WebSocketConnection', () => {
     const start = connection.handleClientMessage({
       type: 'start',
       payload: {
+        target: 'test-target',
         service: 'test.Service',
         method: 'Upload',
         methodKind: MethodKind.CLIENT_STREAMING,
@@ -194,7 +197,7 @@ describe('WebSocketConnection', () => {
   it('parses attached WebSocket messages inside the captured user context', async () => {
     let userIdFromMessageContext: string | null = null
     const invoker = {
-      invokeServerStream: async (_service: string, _method: string, _data: unknown, cb: StreamCallbacks) => {
+      invokeServerStream: async (_target: string, _service: string, _method: string, _data: unknown, cb: StreamCallbacks) => {
         userIdFromMessageContext = userContextMiddleware.getCurrentUserId()
         cb.onEnd()
         return { cancel: () => {} }
@@ -225,7 +228,7 @@ describe('WebSocketConnection', () => {
   it('uses start-frame user headers when the WebSocket upgrade had no user context', async () => {
     let userIdFromMessageContext: string | null = null
     const invoker = {
-      invokeServerStream: async (_service: string, _method: string, _data: unknown, cb: StreamCallbacks) => {
+      invokeServerStream: async (_target: string, _service: string, _method: string, _data: unknown, cb: StreamCallbacks) => {
         userIdFromMessageContext = userContextMiddleware.getCurrentUserId()
         cb.onEnd()
         return { cancel: () => {} }
@@ -274,6 +277,7 @@ describe('WebSocketConnection', () => {
     emitMessage(Buffer.from(JSON.stringify({
       type: 'start',
       payload: {
+        target: 'test-target',
         service: 'test.Service',
         method: 'Upload',
         methodKind: MethodKind.CLIENT_STREAMING,
@@ -315,7 +319,7 @@ describe('WebSocketConnection', () => {
         connectionId: 'test-conn',
         ws,
         grpcMethodInvokerService: {
-          invokeServerStream: async (_service, _method, _request, callbacks) => {
+          invokeServerStream: async (_target: string, _service: string, _method: string, _request: unknown, callbacks: StreamCallbacks) => {
             invokeCount++
             if (invokeCount === 1) {
               await promise1
@@ -375,7 +379,7 @@ describe('WebSocketConnection', () => {
         connectionId: 'test-conn',
         ws,
         grpcMethodInvokerService: {
-          invokeServerStream: async (_service, _method, _request, callbacks) => {
+          invokeServerStream: async (_target: string, _service: string, _method: string, _request: unknown, callbacks: StreamCallbacks) => {
             if (!stream1Callbacks) {
               stream1Callbacks = callbacks
               await promise1

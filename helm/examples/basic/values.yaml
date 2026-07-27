@@ -1,10 +1,11 @@
 # Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 connection:
-  mode: plaintext
-  target:
-    host: my-grpc-server.default.svc.cluster.local
-    port: 50051
+  targets:
+    - name: My gRPC Server
+      host: my-grpc-server.default.svc.cluster.local
+      port: 50051
+      mode: plaintext
 
 ingress:
   enabled: false

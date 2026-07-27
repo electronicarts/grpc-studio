@@ -1,0 +1,66 @@
+# Multi-target gRPC Studio backend configuration example
+
+server:
+  host: '0.0.0.0'
+  port: 3001
+
+client:
+  # Multi-target configuration — matches the two bundled example servers.
+  # Run both with `npm run dev:all` (or start each: dev:petstore / dev:bookstore).
+  targets:
+    - name: 'PetStore'
+      host: 'localhost'
+      port: 50051
+      mode: 'plaintext'
+      rpc:
+        unaryDeadlineMs: 30000
+        streamDeadlineMs: 120000
+      reflection:
+        deadlineMs: 25000
+
+    - name: 'BookStore'
+      host: 'localhost'
+      port: 50052
+      mode: 'plaintext'
+      rpc:
+        unaryDeadlineMs: 30000
+        streamDeadlineMs: 120000
+      reflection:
+        deadlineMs: 25000
+
+    # Example of a remote target (commented out - uncomment and configure to use)
+    # - name: 'PaymentService'
+    #   host: 'payments.example.com'
+    #   port: 443
+    #   mode: 'tls'
+    #   security:
+    #     caCertPath: './certs/ca.crt'
+    #     clientCertPath: ''
+    #     clientKeyPath: ''
+    #   rpc:
+    #     unaryDeadlineMs: 30000
+    #     streamDeadlineMs: 120000
+    #   reflection:
+    #     deadlineMs: 25000
+
+auth:
+  plugins: {}
+
+cache:
+  reflection:
+    ttlMs: 3600000 # 1 hour
+    maxEntries: 1000
+
+certificate:
+  warnExpiryThresholdDays: 30
+
+health:
+  endpoints:
+    liveness: '/health/liveness'
+    readiness: '/health/readiness'
+
+observability:
+  enabled: true
+  metrics:
+    enabled: true
+    path: '/metrics'

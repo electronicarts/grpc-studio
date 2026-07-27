@@ -14,8 +14,6 @@ export const setAuthState = (config: AuthConfig, msal: PublicClientApplication |
   msalInstance = msal;
 };
 
-export const getAuthConfig = (): AuthConfig | null => authConfig;
-
 export const getMsalInstance = (): PublicClientApplication | null => msalInstance;
 
 export const isSsoEnabled = (): boolean =>

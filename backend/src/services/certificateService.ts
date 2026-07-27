@@ -17,9 +17,17 @@ import { buildCertificateInfo, checkCertificateMetadata } from '../utils/certifi
 
 const certLogger = logger.child({ module: 'certificate-service' })
 
+/**
+ * @deprecated CertificateService is deprecated in multi-server mode.
+ * Certificate status is now included in the per-server status response from StatusController.
+ * This service is kept for backward compatibility but should not be used for new code.
+ */
 export class CertificateService {
   constructor(private readonly repository: CertificateRepository = certificateRepository) {}
 
+  /**
+   * @deprecated Use StatusController which returns certificate info per-server
+   */
   async checkCertificateValidity(): Promise<CertCheckResult> {
     const certPath = getConfiguredCertificatePath()
     if (!certPath) {
@@ -33,6 +41,9 @@ export class CertificateService {
     return result
   }
 
+  /**
+   * @deprecated Use StatusController which returns certificate info per-server
+   */
   async getConfiguredCertificateInfo(): Promise<CertificateResponse> {
     const certPath = getConfiguredCertificatePath()
     if (!certPath) {
@@ -55,10 +66,23 @@ export class CertificateService {
 export default new CertificateService()
 
 function getConfiguredCertificatePath(): string | null {
-  const clientConfig = configManager.getClientConfig()
-  if (clientConfig.mode !== 'mtls' || !clientConfig.security.clientCertPath) return null
+  // TODO: In multi-server mode, this should return certificate info for ALL mTLS targets,
+  // not just the first one. For now, this is a known limitation.
+  // Consider refactoring to return Map<targetName, certificatePath> or moving certificate
+  // status into the per-server discovery/status response.
 
-  return clientConfig.security.clientCertPath
+  const targets = configManager.getTargets()
+  const mtlsTarget = targets.find(t => t.mode === 'mtls')
+
+  if (!mtlsTarget || !mtlsTarget.security?.clientCertPath) return null
+
+  certLogger.warn('Certificate service only checks first mTLS target in multi-server mode', {
+    target: mtlsTarget.name,
+    totalTargets: targets.length,
+    mtlsTargets: targets.filter(t => t.mode === 'mtls').length
+  })
+
+  return mtlsTarget.security.clientCertPath
 }
 
 function logCertificateResult(result: CertCheckResult, warnDaysCritical: number): void {

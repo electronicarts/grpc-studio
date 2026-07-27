@@ -8,13 +8,8 @@
 export type ConfigRequest = undefined
 
 export interface PublicConfig {
-  client: {
-    mode: string
-    target: {
-      host: string
-      port: number
-    }
-  }
+  // Public config no longer exposes client details in multi-server mode
+  // Server information is available via the discovery endpoint
 }
 
 export interface ConfigResponse {

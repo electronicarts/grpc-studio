@@ -2,15 +2,14 @@
 
 import { createContext, useContext, ReactNode, useEffect, useRef } from 'react'
 import { GrpcService, GrpcMethod } from '../../../types/grpc'
-import {
-  useRequestModel,
-  useResponseModel,
-  useStreamModel,
-  useHistoryModel,
-  useMethodInvocation,
-} from '../hooks'
+import { useRequestModel } from '../hooks/useRequestModel'
+import { useResponseModel } from '../hooks/useResponseModel'
+import { useStreamModel } from '../hooks/useStreamModel'
+import { useHistoryModel } from '../hooks/useHistoryModel'
+import { useMethodInvocation } from '../hooks/useMethodInvocation'
 import { formLogger } from '../../../utils/debugLogger'
 import { canonicalizeProtoJson } from '../utils/payload'
+import { tabStateStore, type TabStateSnapshot } from '@/stores'
 import type {
   RequestModel,
   ResponseModel,
@@ -25,6 +24,7 @@ import type {
 // ---------------------------------------------------------------------------
 
 interface MethodExplorerContextValue {
+  selectedTarget: string
   selectedService: GrpcService
   selectedMethod: GrpcMethod
   request: RequestModel
@@ -49,6 +49,8 @@ export function useMethodExplorerContext(): MethodExplorerContextValue {
 // ---------------------------------------------------------------------------
 
 interface MethodExplorerProviderProps {
+  tabId: string
+  selectedTarget: string
   selectedService: GrpcService
   selectedMethod: GrpcMethod
   initialRequestBody?: Record<string, unknown> | null
@@ -56,17 +58,68 @@ interface MethodExplorerProviderProps {
 }
 
 export function MethodExplorerProvider({
-  selectedService, selectedMethod, initialRequestBody, children
+  tabId, selectedTarget, selectedService, selectedMethod, initialRequestBody, children
 }: MethodExplorerProviderProps) {
-  const request = useRequestModel(selectedMethod, initialRequestBody)
-  const response = useResponseModel()
-  const stream = useStreamModel()
-  const history = useHistoryModel(selectedService, selectedMethod)
+  // Rehydrate from the per-tab store when this tab was previously mounted, so
+  // switching away (which unmounts idle tabs) and back preserves its state.
+  const restoredRef = useRef<TabStateSnapshot | undefined>(tabStateStore.getSnapshot(tabId))
+  const restored = restoredRef.current
+
+  const request = useRequestModel(selectedTarget, selectedMethod, initialRequestBody, restored?.request)
+  const response = useResponseModel(restored?.response)
+  const stream = useStreamModel(restored?.stream)
+  const history = useHistoryModel(selectedTarget, selectedService, selectedMethod, restored?.historyVisible)
 
   const execution = useMethodInvocation(
-    selectedService, selectedMethod,
+    selectedTarget, selectedService, selectedMethod,
     request, response, stream, history.save
   )
+
+  // Persist a serializable snapshot to the store on every change so an unmount
+  // never loses data. (Refs like the live socket are intentionally excluded.)
+  useEffect(() => {
+    tabStateStore.setSnapshot(tabId, {
+      request: {
+        body: request.body,
+        formData: request.formData,
+        formKey: request.formKey,
+        isFormMode: request.isFormMode,
+        schema: request.schema,
+        validationError: request.validationError,
+      },
+      response: {
+        raw: response.raw,
+        data: response.data,
+        time: response.time,
+        size: response.size,
+        schema: response.schema,
+        isFormMode: response.isFormMode,
+        singleExpanded: response.singleExpanded,
+      },
+      stream: {
+        messages: stream.messages,
+        sentMessages: stream.sentMessages,
+        completed: stream.completed,
+      },
+      historyVisible: history.visible,
+    })
+  }, [
+    tabId,
+    request.body, request.formData, request.formKey, request.isFormMode, request.schema, request.validationError,
+    response.raw, response.data, response.time, response.size, response.schema, response.isFormMode, response.singleExpanded,
+    stream.messages, stream.sentMessages, stream.completed,
+    history.visible,
+  ])
+
+  // Report live work (in-flight unary or active stream) so Playground keeps
+  // this tab mounted even when it isn't the active tab.
+  useEffect(() => {
+    const isLive = execution.loading || stream.active
+    tabStateStore.setLiveWork(tabId, isLive)
+  }, [tabId, execution.loading, stream.active])
+
+  // On unmount, this tab is no longer doing live work from the tree's view.
+  useEffect(() => () => { tabStateStore.setLiveWork(tabId, false) }, [tabId])
 
   const prevServiceRef = useRef(selectedService.fullName)
   const prevMethodRef = useRef(selectedMethod.name)
@@ -109,7 +162,7 @@ export function MethodExplorerProvider({
   }
 
   const value: MethodExplorerContextValue = {
-    selectedService, selectedMethod,
+    selectedTarget, selectedService, selectedMethod,
     request, response, stream, history, execution,
     toggleHistory, loadFromHistory,
   }

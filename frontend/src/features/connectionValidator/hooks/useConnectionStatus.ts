@@ -1,20 +1,17 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import { useQuery } from '@tanstack/react-query'
-import type { ConnectionStatus } from '../types'
+import type { ServerConnectionStatus } from '../types'
 import { fetchConnectionStatus } from '../api/fetchConnectionStatus'
 
 const POLL_INTERVAL = 10_000
 
-const EMPTY: ConnectionStatus = {
-  connected: false,
-  targetServer: '',
-  servicesCount: 0,
-  error: null,
+const EMPTY: ServerConnectionStatus = {
+  servers: [],
   loading: true,
 }
 
-export function useConnectionStatus(): ConnectionStatus {
+export function useConnectionStatus(): ServerConnectionStatus {
   const { data, isPending, error } = useQuery({
     queryKey: ['connectionStatus'],
     queryFn: fetchConnectionStatus,
@@ -25,10 +22,7 @@ export function useConnectionStatus(): ConnectionStatus {
 
   if (error) {
     return {
-      connected: false,
-      targetServer: '',
-      servicesCount: 0,
-      error: error instanceof Error ? error.message : 'Status check failed',
+      servers: [],
       loading: false,
     }
   }

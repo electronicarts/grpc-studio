@@ -1,26 +1,27 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 /**
- * SchemaCache — Single source of truth for all protobuf data.
+ * SchemaCache — on-demand cache for protobuf message descriptors.
  *
- * Schemas are stored as DescMessage instances (from @bufbuild/protobuf).
- * Descriptors are fetched on demand and all transitive dependencies are
- * populated in one shot — no nested preloading loop needed.
+ * This is NOT the source of truth for the server list — that lives in React
+ * Query (see `useSchemas`). This cache only holds `DescMessage` instances,
+ * fetched lazily and scoped by target server, so the schema renderer can read
+ * them synchronously during render.
  */
 import type { DescMessage } from '@bufbuild/protobuf'
-import type { GrpcService } from '../../../types/grpc'
 import { schemaLogger } from '../../../utils/debugLogger'
 import { fetchDescriptorSet } from './descriptorSetFetcher'
-import { restoreServices, persistServices, clearPersistedServices } from './schemaPersistence'
 
 type Listener = () => void
+
+function scopedKey(target: string, messageType: string): string {
+  return `${target}:${messageType}`
+}
 
 class SchemaCache {
   private schemas = new Map<string, DescMessage>()
   private loadingPromises = new Map<string, Promise<DescMessage | null>>()
   private listeners = new Set<Listener>()
-  private _services: GrpcService[] = []
-  private _fetchedAt: Date | null = null
 
   // ── subscriptions ─────────────────────────────────────────────
 
@@ -33,43 +34,10 @@ class SchemaCache {
     for (const listener of this.listeners) listener()
   }
 
-  // ── services ──────────────────────────────────────────────────
-
-  getServices(): GrpcService[] {
-    return this._services
-  }
-
-  getFetchedAt(): Date | null {
-    return this._fetchedAt
-  }
-
-  restoreFromStorage(): boolean {
-    if (this._services.length > 0) return true
-    const restored = restoreServices()
-    if (!restored) return false
-    this._services = restored.services
-    this._fetchedAt = restored.fetchedAt
-    this.notify()
-    return true
-  }
-
-  setServices(services: GrpcService[], fetchedAt?: Date) {
-    this._services = services
-    this._fetchedAt = fetchedAt ?? new Date()
-    persistServices(this._services, this._fetchedAt)
-    this.notify()
-  }
-
-  replaceServices(services: GrpcService[], fetchedAt?: Date) {
-    this.schemas.clear()
-    this.loadingPromises.clear()
-    this.setServices(services, fetchedAt)
-  }
-
   // ── synchronous reads ─────────────────────────────────────────
 
-  getCachedSchema(messageType: string): DescMessage | null {
-    return this.schemas.get(messageType) ?? null
+  getCachedSchema(target: string, messageType: string): DescMessage | null {
+    return this.schemas.get(scopedKey(target, messageType)) ?? null
   }
 
   getSchemaMap(): Map<string, DescMessage> {
@@ -86,39 +54,48 @@ class SchemaCache {
 
   // ── async fetching ────────────────────────────────────────────
 
-  async getSchema(messageType: string): Promise<DescMessage | null> {
-    const cached = this.schemas.get(messageType)
+  async getSchema(target: string, messageType: string): Promise<DescMessage | null> {
+    const key = scopedKey(target, messageType)
+    const cached = this.schemas.get(key)
     if (cached) return cached
 
-    if (this.loadingPromises.has(messageType)) {
-      try { return await this.loadingPromises.get(messageType)! }
+    if (this.loadingPromises.has(key)) {
+      try { return await this.loadingPromises.get(key)! }
       catch { return null }
     }
 
-    const promise = fetchDescriptorSet(messageType, this.schemas)
+    const promise = fetchDescriptorSet(target, messageType, this.schemas)
       .then(desc => {
-        this.loadingPromises.delete(messageType)
+        this.loadingPromises.delete(key)
         if (desc) this.notify()
         return desc
       })
       .catch(error => {
-        this.loadingPromises.delete(messageType)
-        schemaLogger.error(`Failed to load schema for ${messageType}:`, error)
+        this.loadingPromises.delete(key)
+        schemaLogger.error(`Failed to load schema for ${target}:${messageType}:`, error)
         return null
       })
 
-    this.loadingPromises.set(messageType, promise)
+    this.loadingPromises.set(key, promise)
     return promise
   }
 
   // ── cleanup ───────────────────────────────────────────────────
 
-  clearCache() {
-    this.schemas.clear()
-    this.loadingPromises.clear()
-    this._services = []
-    this._fetchedAt = null
-    clearPersistedServices()
+  clearCache(target?: string) {
+    if (target) {
+      // Clear cached descriptors for a specific target only.
+      const prefix = `${target}:`
+      for (const key of this.schemas.keys()) {
+        if (key.startsWith(prefix)) this.schemas.delete(key)
+      }
+      for (const key of this.loadingPromises.keys()) {
+        if (key.startsWith(prefix)) this.loadingPromises.delete(key)
+      }
+    } else {
+      this.schemas.clear()
+      this.loadingPromises.clear()
+    }
     this.notify()
   }
 }

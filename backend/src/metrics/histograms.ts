@@ -9,7 +9,7 @@
  * - Keep bucket count reasonable (<20)
  */
 
-export const HISTOGRAM_BUCKETS = {
+const HISTOGRAM_BUCKETS = {
   // HTTP request duration (milliseconds → seconds)
   // Covers: 1ms to 5s
   http: [0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 5],

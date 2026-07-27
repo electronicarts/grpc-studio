@@ -5,10 +5,19 @@ module.exports = {
     'eslint:recommended',
     'plugin:@typescript-eslint/recommended',
     'plugin:react-hooks/recommended',
+    'plugin:tailwindcss/recommended',
   ],
   ignorePatterns: ['dist', '.eslintrc.cjs'],
   parser: '@typescript-eslint/parser',
-  plugins: ['react-refresh'],
+  plugins: ['react-refresh', 'tailwindcss'],
+  settings: {
+    tailwindcss: {
+      // Absolute path so the plugin resolves the config regardless of the cwd eslint
+      // runs from (tailwindcss is hoisted to the monorepo root in this workspace).
+      config: require('path').join(__dirname, 'tailwind.config.js'),
+      callees: ['cn', 'clsx', 'cva', 'classnames'],
+    },
+  },
   rules: {
     'react-refresh/only-export-components': [
       'warn',
@@ -42,6 +51,16 @@ module.exports = {
     }],
     '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
     '@typescript-eslint/no-explicit-any': 'warn',
+    // Catch utility classes that don't exist in the Tailwind theme (e.g. a typo'd
+    // `bg-gray-750`, which silently emits no CSS and broke dark-mode hover). This is
+    // the guardrail that would have caught that bug at lint time. The allowlist covers
+    // classes provided by the tailwindcss-animate plugin (shadcn animations), which the
+    // linter can't see from config alone.
+    'tailwindcss/no-custom-classname': ['error', {
+      whitelist: ['animate-in', 'fade-in', 'slide-in-from-top-2', 'slide-in-from-.+', 'fade-out', 'zoom-in-.+', 'zoom-out-.+'],
+    }],
+    // Contradicting classes (e.g. two conflicting bg-* on one element) are always a bug.
+    'tailwindcss/no-contradicting-classname': 'error',
   },
   overrides: [
     {

@@ -15,6 +15,10 @@ export interface InvokeStreamUserHeaders {
  * Response message: server-to-client stream events.
  */
 export interface InvokeStreamStartPayload {
+  /**
+   * Target server name (from config).
+   */
+  target: string
   service: string
   method: string
   methodKind: StreamingMethodKind

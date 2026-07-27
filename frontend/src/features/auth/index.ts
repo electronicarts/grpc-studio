@@ -4,23 +4,10 @@
  * Authentication Module Exports
  */
 
-export { 
-  AuthProvider, 
-  AuthenticatedTemplate,
-  UnauthenticatedTemplate
-} from './components/AuthProvider';
+export { AuthProvider } from './components/AuthProvider';
 
 export { useAuth } from './hooks/useAuth';
 export { useAutoLogin } from './hooks/useAutoLogin';
+export { useUserMenu } from './hooks/useUserMenu';
 
 export { initializeAuthFromYaml } from './api/authInitializer';
-
-export {
-  getMsalInstance, 
-  getAuthConfig,
-  isSsoEnabled,
-  getLoginRequest,
-  getTokenRequest
-} from './stores/authState';
-
-export type { AuthConfig, EntraIdConfig, UserInfo, AuthContextType, YamlAuthConfig } from './types';

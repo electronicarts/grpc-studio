@@ -37,9 +37,12 @@ import {
 
 vi.mock('../../schemaLoader/lib/schemaCache', () => ({
   schemaCache: {
-    getSchema: vi.fn((type: string) => Promise.resolve(testSchemaMap.get(type) ?? null)),
+    // Match the real signatures: getSchema(target, messageType) and
+    // getCachedSchema(target, messageType). These tests key purely on the
+    // message type (target is undefined here), so the target arg is ignored.
+    getSchema: vi.fn((_target: string, type: string) => Promise.resolve(testSchemaMap.get(type) ?? null)),
     getCacheSize: vi.fn(() => testSchemaMap.size),
-    getCachedSchema: vi.fn((type: string) => testSchemaMap.get(type) ?? null),
+    getCachedSchema: vi.fn((_target: string, type: string) => testSchemaMap.get(type) ?? null),
     getSchemaMap: vi.fn(() => new Map(testSchemaMap)),
     subscribe: vi.fn(() => () => {}),
     get allLoaded() { return true },
@@ -789,7 +792,9 @@ describe('ListField (scalar items) onChange', () => {
     const xButtons = screen.getAllByRole('button').filter(b => b.querySelector('svg'))
     // find the X buttons inside the list items (not expand/collapse)
     const removeButton = xButtons.find(b => b.closest('[class*="border-l-2"]'))
-    if (removeButton) await user.click(removeButton)
+    // Must exist — otherwise the removal below never happens and the test is moot.
+    expect(removeButton).toBeDefined()
+    await user.click(removeButton!)
 
     await waitFor(() => {
       const arr = latestCall(onChange).repeatedString as unknown[]

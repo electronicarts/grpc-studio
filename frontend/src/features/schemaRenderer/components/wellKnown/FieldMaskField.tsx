@@ -41,7 +41,7 @@ const FieldMaskField: React.FC<FieldMaskFieldProps> = ({ name, value, onChange }
     onChange(next.length > 0 ? next.join(',') : undefined)
   }
 
-  const typeMeta = <span className="text-xs text-gray-500">(google.protobuf.FieldMask)</span>
+  const typeMeta = <span className="text-xs text-muted-foreground">(google.protobuf.FieldMask)</span>
 
   return (
     <FormField label={name} labelMeta={typeMeta}>
@@ -52,7 +52,7 @@ const FieldMaskField: React.FC<FieldMaskFieldProps> = ({ name, value, onChange }
             {paths.map((path, i) => (
               <div
                 key={i}
-                className="flex items-center gap-1 px-2 py-0.5 bg-muted rounded-md border text-sm font-mono"
+                className="flex items-center gap-1 rounded-md border bg-muted px-2 py-0.5 font-mono text-sm"
               >
                 <span>{path}</span>
                 {!readOnly && (
@@ -63,14 +63,14 @@ const FieldMaskField: React.FC<FieldMaskFieldProps> = ({ name, value, onChange }
                     aria-label={`Remove path ${path}`}
                     data-testid={`fieldMask-remove-${i}`}
                   >
-                    <X className="w-3 h-3" />
+                    <X className="size-3" />
                   </button>
                 )}
               </div>
             ))}
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground italic">No paths</p>
+          <p className="text-sm italic text-muted-foreground">No paths</p>
         )}
 
         {/* Free-text add input */}

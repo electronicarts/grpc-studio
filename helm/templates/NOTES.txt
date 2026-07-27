@@ -29,9 +29,17 @@ For production access, see the helm/examples/ directory:
 
 {{- end }}
 
-Connection: {{ .Values.connection.mode }} → {{ .Values.connection.target.host }}:{{ .Values.connection.target.port }}
+Targets ({{ len .Values.connection.targets }}):
+{{- range .Values.connection.targets }}
+  - {{ .name }}: {{ .mode | default "plaintext" }} → {{ .host }}:{{ .port }}
+{{- end }}
 
-Deploy another instance for a different service:
-  helm install <release> oci://ghcr.io/electronicarts/helm-charts/grpc-studio \
-    --set connection.target.host=<host> \
-    --namespace <namespace> --create-namespace
+Switch between targets from the server selector in the UI.
+
+Add or change targets by editing connection.targets in your values, e.g.:
+  connection:
+    targets:
+      - name: PetStore
+        host: petstore.default.svc.cluster.local
+        port: 50051
+        mode: plaintext

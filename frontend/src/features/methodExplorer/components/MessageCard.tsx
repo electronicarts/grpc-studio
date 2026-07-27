@@ -8,6 +8,7 @@ import ProtoMessageRenderer from '../../schemaRenderer'
 import type { DescMessage } from '@bufbuild/protobuf'
 import { getMessagePreview } from '../utils/messagePreview'
 import { useCopyToClipboard } from '../../../utils/useCopyToClipboard'
+import { useMethodExplorerContext } from '../stores'
 
 interface MessageCardProps {
   msg: unknown
@@ -24,6 +25,7 @@ const MessageCard: React.FC<MessageCardProps> = ({
   msg, originalIndex, isExpanded, isLatest,
   schema, isFormMode, onToggle, colorScheme = 'purple',
 }) => {
+  const { selectedTarget } = useMethodExplorerContext()
   const { copied, copy } = useCopyToClipboard()
 
   const handleCopy = (e: React.MouseEvent) => {
@@ -33,49 +35,47 @@ const MessageCard: React.FC<MessageCardProps> = ({
 
   const accent = colorScheme === 'blue'
     ? {
-        border: 'border-l-blue-500 dark:border-l-blue-400',
-        badge: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
-        number: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
+        border: 'border-l-info',
+        number: 'bg-info/10 text-info',
       }
     : {
-        border: 'border-l-purple-500 dark:border-l-purple-400',
-        badge: 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300',
-        number: 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300',
+        border: 'border-l-brand',
+        number: 'bg-brand/10 text-brand',
       }
 
   return (
-  <Card 
-    className={`border-l-4 hover:shadow-md transition-shadow ${
-      isLatest 
-        ? 'border-l-green-500 dark:border-l-green-400 bg-green-50/30 dark:bg-green-950/20' 
+  <Card
+    className={`border-l-4 transition-shadow hover:shadow-md ${
+      isLatest
+        ? 'border-l-success bg-success/5'
         : accent.border
     }`}
   >
     <CardContent className="p-0">
       <div 
-        className="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+        className="flex cursor-pointer items-center justify-between p-3 transition-colors hover:bg-muted/50"
         onClick={onToggle}
       >
-        <div className="flex items-center gap-3 flex-1 min-w-0">
-          <div className={`flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full text-xs font-semibold ${
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          <div className={`flex size-6 flex-shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
             isLatest 
-              ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
+              ? 'bg-success/10 text-success'
               : accent.number
           }`}>
             {originalIndex}
           </div>
-          <div className="flex-1 min-w-0">
+          <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+              <span className="text-sm font-medium text-foreground">
                 #{originalIndex}
               </span>
               {isLatest && (
-                <span className="px-1.5 py-0.5 text-[10px] bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded font-medium">
+                <span className="rounded bg-success/10 px-1.5 py-0.5 text-[10px] font-medium text-success">
                   LATEST
                 </span>
               )}
             </div>
-            <div className="text-xs text-gray-600 dark:text-gray-400 font-mono truncate">
+            <div className="truncate font-mono text-xs text-muted-foreground">
               {getMessagePreview(msg)}
             </div>
           </div>
@@ -87,21 +87,22 @@ const MessageCard: React.FC<MessageCardProps> = ({
             className="h-6 px-2 text-xs"
             onClick={handleCopy}
           >
-            {copied ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
+            {copied ? <Check className="size-3 text-success" /> : <Copy className="size-3" />}
           </Button>
           {isExpanded ? (
-            <ChevronUp className="w-4 h-4 text-gray-500" />
+            <ChevronUp className="size-4 text-muted-foreground" />
           ) : (
-            <ChevronDown className="w-4 h-4 text-gray-500" />
+            <ChevronDown className="size-4 text-muted-foreground" />
           )}
         </div>
       </div>
 
       {isExpanded && (
-        <div className="px-3 pb-3 border-t border-gray-100 dark:border-gray-800">
+        <div className="border-t border-border px-3 pb-3">
           {isFormMode && schema ? (
             <div className="mt-2">
               <ProtoMessageRenderer
+                target={selectedTarget}
                 schema={schema}
                 data={msg as Record<string, unknown>}
                 onChange={() => {}}
@@ -112,7 +113,7 @@ const MessageCard: React.FC<MessageCardProps> = ({
               />
             </div>
           ) : (
-            <pre className="mt-2 p-3 bg-gray-50 dark:bg-gray-900 rounded text-xs overflow-auto max-h-80 font-mono text-gray-800 dark:text-gray-200">
+            <pre className="mt-2 max-h-80 overflow-auto rounded bg-muted p-3 font-mono text-xs text-foreground">
               {JSON.stringify(msg, null, 2)}
             </pre>
           )}
