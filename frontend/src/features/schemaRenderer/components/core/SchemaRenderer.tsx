@@ -76,9 +76,11 @@ const SchemaRenderer: React.FC<ProtoMessageRendererProps> = ({
       onSetOneOfSelection={setOneOfSelection}
     >
       <div className="space-y-4">
-        {/* Header with controls */}
-        <div className="flex items-center justify-between gap-2 border-b pb-2">
-          <div className="truncate text-sm text-muted-foreground">
+        {/* Header with controls. Wraps so the (non-shrinking) controls block drops
+            to a second line in narrow columns — e.g. the 30% streaming "Sent
+            Messages" panel — instead of overflowing and overlapping its neighbour. */}
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-2">
+          <div className="min-w-0 truncate text-sm text-muted-foreground">
             {schema.typeName}
           </div>
           

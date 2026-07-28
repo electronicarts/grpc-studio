@@ -83,12 +83,12 @@ const MethodExplorerContent: React.FC = React.memo(() => {
           onDismiss={() => execution.setError(null)}
         />
 
-        {/* Streaming panel: sent messages (left 30%) | responses (right 70%) — all streaming types.
+        {/* Streaming panel: sent messages (left 35%) | responses (right 65%) — all streaming types.
             The min-w-0 wrappers stop each panel's content from overflowing its grid track and
             bleeding into the neighbouring column (grid items default to min-width:auto). Without
             them, a non-scrollable panel's wide content escapes its column and overlaps the other. */}
         {!history.visible && showStreamPanel && (
-          <div className="grid grid-cols-[30%_70%] gap-4">
+          <div className="grid grid-cols-[35%_65%] gap-4">
             <div className="min-w-0">
               <StreamingMessageDisplay
                 label="Sent Messages"
