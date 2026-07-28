@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import { useState, useCallback } from 'react'
+import type { RequestMetadata } from '@grpc-studio/shared'
 import { GrpcService, GrpcMethod, ApiServer } from '../../../types/grpc'
 import { useSchemas } from '../../schemaLoader'
 import { useShareableLink } from './useShareableLink'
@@ -17,8 +18,12 @@ export function useServiceSelection(): ServiceSelectionResult {
   const [selectedService, setSelectedService] = useState<GrpcService | null>(null)
   const [selectedMethod, setSelectedMethod] = useState<GrpcMethod | null>(null)
   const [sharedRequestBody, setSharedRequestBody] = useState<Record<string, unknown> | null>(null)
+  const [sharedMetadata, setSharedMetadata] = useState<RequestMetadata | null>(null)
 
-  useShareableLink(servers, services, setSelectedService, setSelectedMethod, setSharedRequestBody, setSelectedTarget)
+  useShareableLink(
+    servers, services, setSelectedService, setSelectedMethod,
+    setSharedRequestBody, setSharedMetadata, setSelectedTarget,
+  )
 
   const selectService = useCallback((service: GrpcService, server: ApiServer) => {
     // Server is now passed directly from the UI, no need to search
@@ -26,6 +31,7 @@ export function useServiceSelection(): ServiceSelectionResult {
     setSelectedService(service)
     setSelectedMethod(null)
     setSharedRequestBody(null)
+    setSharedMetadata(null)
   }, [])
 
   const selectMethod = useCallback((method: GrpcMethod, service: GrpcService, server: ApiServer) => {
@@ -34,6 +40,7 @@ export function useServiceSelection(): ServiceSelectionResult {
     setSelectedMethod(method)
     setSelectedService(service)
     setSharedRequestBody(null)
+    setSharedMetadata(null)
   }, [])
 
   const clearSelection = useCallback(() => {
@@ -41,6 +48,7 @@ export function useServiceSelection(): ServiceSelectionResult {
     setSelectedService(null)
     setSelectedMethod(null)
     setSharedRequestBody(null)
+    setSharedMetadata(null)
   }, [])
 
   return {
@@ -50,6 +58,7 @@ export function useServiceSelection(): ServiceSelectionResult {
     selectedService,
     selectedMethod,
     sharedRequestBody,
+    sharedMetadata,
     selectService,
     selectMethod,
     clearSelection,

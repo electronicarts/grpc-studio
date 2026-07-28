@@ -1,6 +1,6 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-import { useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { GrpcService, GrpcMethod } from '../../../types/grpc'
 import { ApiClientError } from '../../../lib/http/apiClient'
 import { formLogger } from '../../../utils/debugLogger'
@@ -11,7 +11,8 @@ import { useStreamInvocationCallbacks } from './useStreamInvocationCallbacks'
 import { useUnaryInvocationRecorder } from './useUnaryInvocationRecorder'
 import { MethodKind } from '@grpc-studio/shared'
 import type { StreamingMethodKind } from '@grpc-studio/shared'
-import type { RequestModel, ResponseModel, StreamModel, ResponseStatus, MethodInvocation } from '../types'
+import type { RequestModel, ResponseModel, StreamModel, MetadataModel, ResponseStatus, MethodInvocation } from '../types'
+import type { RequestMetadata } from '@grpc-studio/shared'
 
 export function useMethodInvocation(
   selectedTarget: string,
@@ -20,10 +21,23 @@ export function useMethodInvocation(
   request: RequestModel,
   response: ResponseModel,
   stream: StreamModel,
-  saveToHistory: (obj: Record<string, unknown>, status?: ResponseStatus) => void
+  metadata: MetadataModel,
+  saveToHistory: (obj: Record<string, unknown>, status?: ResponseStatus, metadata?: RequestMetadata) => void
 ): MethodInvocation {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // The metadata sent with the in-flight call. Recorders/callbacks fire after
+  // the request completes, so we snapshot it at send time and attach it to the
+  // history entry (which may be saved on success, error, or cancellation).
+  const inFlightMetadataRef = useRef<RequestMetadata>({})
+
+  const saveToHistoryWithMetadata = useCallback(
+    (obj: Record<string, unknown>, status?: ResponseStatus) => {
+      saveToHistory(obj, status, inFlightMetadataRef.current)
+    },
+    [saveToHistory],
+  )
 
   function prepareRequest(): Payload {
     const input = request.isFormMode ? request.formData : JSON.parse(request.body)
@@ -35,7 +49,7 @@ export function useMethodInvocation(
     selectedMethod,
     response,
     stream,
-    saveToHistory,
+    saveToHistory: saveToHistoryWithMetadata,
   })
 
   const streamCallbacks = useStreamInvocationCallbacks({
@@ -44,7 +58,7 @@ export function useMethodInvocation(
     selectedMethod,
     response,
     stream,
-    saveToHistory,
+    saveToHistory: saveToHistoryWithMetadata,
     setLoading,
     setError,
   })
@@ -60,7 +74,7 @@ export function useMethodInvocation(
     response.clear()
   }
 
-  function startStreaming(prepared: Payload, methodKind: StreamingMethodKind): void {
+  function startStreaming(prepared: Payload, methodKind: StreamingMethodKind, requestMetadata: RequestMetadata): void {
     if (!selectedService || !selectedMethod) return
 
     formLogger.debug('Using WebSocket for streaming call')
@@ -72,6 +86,7 @@ export function useMethodInvocation(
       method: selectedMethod.name,
       methodKind,
       data: prepared.wire,
+      ...(Object.keys(requestMetadata).length > 0 ? { metadata: requestMetadata } : {}),
     })
   }
 
@@ -86,12 +101,15 @@ export function useMethodInvocation(
     setError(null)
     resetResponseState()
 
+    const requestMetadata = metadata.toMetadata()
+    inFlightMetadataRef.current = requestMetadata
+
     let prepared: Payload | null = null
     try {
       prepared = prepareRequest()
 
       if (isStreamingMethodKind(selectedMethod.kind)) {
-        startStreaming(prepared, selectedMethod.kind)
+        startStreaming(prepared, selectedMethod.kind, requestMetadata)
         return
       }
 
@@ -102,6 +120,7 @@ export function useMethodInvocation(
         method: selectedMethod.name,
         methodKind: selectedMethod.kind,
         data: prepared.wire,
+        ...(Object.keys(requestMetadata).length > 0 ? { metadata: requestMetadata } : {}),
       })
       recordUnarySuccess(result, prepared)
       setLoading(false)
@@ -153,7 +172,7 @@ export function useMethodInvocation(
     // Save cancelled stream to history
     const streamedRequest = stream.currentRequest()
     if (selectedService && selectedMethod && streamedRequest) {
-      saveToHistory(
+      saveToHistoryWithMetadata(
         streamedRequest,
         {
           ok: false,

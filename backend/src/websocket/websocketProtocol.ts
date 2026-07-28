@@ -4,6 +4,7 @@ import { WebSocket, type RawData } from 'ws'
 import {
   STREAMING_METHOD_KINDS,
   isJsonValue,
+  sanitizeRequestMetadata,
   type InvokeStreamClientMessage,
   type InvokeStreamResponse,
   type InvokeStreamStartPayload,
@@ -120,6 +121,12 @@ function parseStartPayload(payload: unknown): InvokeStreamStartPayload | null {
     const userHeaders = getUserHeadersFromStreamPayload(payload)
     if (!userHeaders) return null
     startPayload.userHeaders = userHeaders
+  }
+
+  if ('metadata' in payload) {
+    const sanitized = sanitizeRequestMetadata(payload.metadata)
+    if (!sanitized.ok) return null
+    startPayload.metadata = sanitized.metadata
   }
 
   return startPayload

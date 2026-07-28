@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 // Manages request history in localStorage
+import type { RequestMetadata } from '@grpc-studio/shared'
 import type { ResponseStatus, RequestHistoryItem } from '../types'
 import { safeGetJSON, safeSetJSON, safeRemove } from '../../../utils/storageHelpers'
 import { createLogger } from '../../../utils/debugLogger'
@@ -26,6 +27,7 @@ export function saveRequest(
   formData: Record<string, unknown>,
   label?: string,
   responseStatus?: ResponseStatus,
+  metadata?: RequestMetadata,
 ): void {
   historyLogger.debug('Saving request:', { target, serviceName, methodName })
   const key = getStorageKey(target, serviceName, methodName)
@@ -36,6 +38,7 @@ export function saveRequest(
     timestamp: Date.now(),
     requestBody,
     formData,
+    ...(metadata && Object.keys(metadata).length > 0 ? { metadata } : {}),
     label,
     responseStatus,
   }

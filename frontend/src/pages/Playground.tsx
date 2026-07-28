@@ -30,6 +30,7 @@ const Playground: React.FC = () => {
     selectedService,
     selectedMethod,
     sharedRequestBody,
+    sharedMetadata,
     selectService,
     selectMethod,
     clearSelection,
@@ -52,6 +53,7 @@ const Playground: React.FC = () => {
     selectedService,
     selectedMethod,
     sharedRequestBody,
+    sharedMetadata,
     onClearSelection: clearSelection,
   })
 

@@ -14,6 +14,7 @@ const ReceivedStreamingPanel: React.FC = () => {
       schema={response.schema}
       colorScheme="purple"
       active={stream.active}
+      scrollable={false}
       raw={response.raw || undefined}
       serviceName={selectedService?.name}
       methodName={selectedMethod?.name}

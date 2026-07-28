@@ -2,6 +2,7 @@
 
 import type { StreamingMethodKind } from './methodKind.js'
 import type { JsonValue } from './json.js'
+import type { RequestMetadata } from './metadata.js'
 
 export interface InvokeStreamUserHeaders {
   'X-User-Id'?: string
@@ -32,6 +33,11 @@ export interface InvokeStreamStartPayload {
    * so the start frame carries the same trusted user headers HTTP requests use.
    */
   userHeaders?: InvokeStreamUserHeaders
+  /**
+   * Optional user-supplied gRPC request metadata (custom headers) to send with
+   * the stream. Auth/identity headers take precedence over conflicting keys.
+   */
+  metadata?: RequestMetadata
 }
 
 export interface InvokeStreamPingRequest {

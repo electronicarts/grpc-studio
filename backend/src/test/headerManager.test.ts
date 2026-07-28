@@ -34,4 +34,37 @@ describe('HeaderManager', () => {
       'x-user-name': 'Ada',
     })
   })
+
+  it('merges user-supplied request metadata into outbound headers', async () => {
+    const manager = new HeaderManager({ getCurrentPlugin: () => null })
+
+    assert.deepEqual(
+      await manager.getOutboundHeaders(null, { 'x-request-id': 'abc123', 'x-tenant': 'acme' }),
+      { 'x-request-id': 'abc123', 'x-tenant': 'acme' },
+    )
+  })
+
+  it('lets auth and user headers win over conflicting request metadata', async () => {
+    const manager = new HeaderManager({
+      getCurrentPlugin: () => ({
+        getHeaders: async () => ({ authorization: 'Bearer real-token' }),
+      }),
+    })
+    const userContext: UserContext = {
+      userId: 'trusted-user',
+      userEmail: null,
+      userName: null,
+      authenticated: true,
+    }
+
+    const headers = await manager.getOutboundHeaders(userContext, {
+      authorization: 'Bearer spoofed',
+      'x-user-id': 'spoofed-user',
+      'x-custom': 'allowed',
+    })
+
+    assert.equal(headers['authorization'], 'Bearer real-token')
+    assert.equal(headers['x-user-id'], 'trusted-user')
+    assert.equal(headers['x-custom'], 'allowed')
+  })
 })

@@ -55,6 +55,45 @@ describe('WebSocket protocol', () => {
     })
   })
 
+  it('parses and sanitizes request metadata on start messages', () => {
+    const result = parseClientMessage(Buffer.from(JSON.stringify({
+      type: 'start',
+      payload: {
+        target: 'test-target',
+        service: 'test.Service',
+        method: 'List',
+        methodKind: MethodKind.SERVER_STREAMING,
+        metadata: {
+          'X-Request-Id': 'req-1',
+          'x-tenant': 'acme',
+        },
+      },
+    })), 1024)
+
+    assert.equal(result.ok, true)
+    assert.deepEqual(result.ok ? (result.message as InvokeStreamStartRequest).payload.metadata : null, {
+      'x-request-id': 'req-1',
+      'x-tenant': 'acme',
+    })
+  })
+
+  it('rejects invalid request metadata on start messages', () => {
+    const result = parseClientMessage(Buffer.from(JSON.stringify({
+      type: 'start',
+      payload: {
+        target: 'test-target',
+        service: 'test.Service',
+        method: 'List',
+        methodKind: MethodKind.SERVER_STREAMING,
+        metadata: {
+          'bad key': 'value',
+        },
+      },
+    })), 1024)
+
+    assert.equal(result.ok, false)
+  })
+
   it('rejects unsupported user headers on start messages', () => {
     const result = parseClientMessage(Buffer.from(JSON.stringify({
       type: 'start',

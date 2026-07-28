@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import { GrpcService, GrpcMethod, ApiServer } from '../../../types/grpc'
+import type { RequestMetadata } from '@grpc-studio/shared'
 
 // ---------------------------------------------------------------------------
 // Component props
@@ -48,6 +49,7 @@ export interface ServiceSelectionResult {
   selectedService: GrpcService | null
   selectedMethod: GrpcMethod | null
   sharedRequestBody: Record<string, unknown> | null
+  sharedMetadata: RequestMetadata | null
   selectService: (service: GrpcService, server: ApiServer) => void
   selectMethod: (method: GrpcMethod, service: GrpcService, server: ApiServer) => void
   clearSelection: () => void

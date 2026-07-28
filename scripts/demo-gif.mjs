@@ -69,9 +69,9 @@ if (!fs.existsSync(input)) {
 console.log(`demo-gif: converting ${input}`)
 console.log(`demo-gif: -> ${OUT}`)
 
-// Two-pass palette for a clean GIF at 10fps / 1000px wide. Lower WIDTH/FPS if
+// Two-pass palette for a clean GIF at 10fps / 1280px wide. Lower WIDTH/FPS if
 // you need a smaller file.
-const WIDTH = 1000
+const WIDTH = 1280
 const FPS = 10
 const filters =
   `fps=${FPS},scale=${WIDTH}:-1:flags=lanczos,split[s0][s1];` +

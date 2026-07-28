@@ -44,6 +44,7 @@ const UnaryMessageDisplay: React.FC = () => {
             hasSchema={hasSchema}
             onTabChange={setActiveTab}
             showSchemaTab
+            showMetadataTab={false}
           />
           <ResponseActions raw={response.raw} serviceName={selectedService?.name} methodName={selectedMethod?.name} />
         </div>

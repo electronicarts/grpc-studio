@@ -2,6 +2,7 @@
 
 import { MethodKind } from './methodKind.js'
 import type { JsonValue } from './json.js'
+import type { RequestMetadata } from './metadata.js'
 
 /**
  * POST /api/grpc/invoke
@@ -21,6 +22,11 @@ export interface InvokeUnaryRequest {
    * The backend encodes this JSON object to protobuf binary before making the gRPC call.
    */
   data?: JsonValue
+  /**
+   * Optional user-supplied gRPC request metadata (custom headers) to send with
+   * the call. Auth/identity headers take precedence over conflicting keys.
+   */
+  metadata?: RequestMetadata
 }
 
 export interface InvokeUnarySuccessResponse {

@@ -27,8 +27,8 @@ const shot = (name: string) => path.join(DEMO_DIR, name)
 // Setting an explicit size matching the viewport keeps the recording crisp.
 // Grant clipboard access so the Share ("Copy shareable link") flow works.
 test.use({
-  viewport: { width: 1440, height: 900 },
-  video: { mode: 'on', size: { width: 1440, height: 900 } },
+  viewport: { width: 1920, height: 1080 },
+  video: { mode: 'on', size: { width: 1920, height: 1080 } },
   permissions: ['clipboard-read', 'clipboard-write'],
 })
 
@@ -138,6 +138,41 @@ async function execute(page: Page) {
   await page.waitForTimeout(1200)
 }
 
+/** Open the request Metadata tab (custom gRPC headers editor). */
+async function openMetadataTab(page: Page) {
+  const tab = page.getByRole('button', { name: /^Metadata$/i }).first()
+  if (await tab.count()) {
+    await tab.click({ timeout: 5_000 }).catch(() => {})
+    await page.waitForTimeout(300)
+  }
+}
+
+/**
+ * Add one metadata header row and fill it. Rows share placeholders
+ * (`header-name` / `value`), so the freshly added row is targeted via `.last()`.
+ * Types slowly so the keystrokes read in the recording.
+ */
+async function addMetadata(page: Page, key: string, value: string) {
+  const add = page.getByRole('button', { name: /^Add$/i }).first()
+  if (!(await add.count())) return
+  await add.click({ timeout: 5_000 }).catch(() => {})
+  await page.waitForTimeout(300)
+
+  const typeSlow = async (input: ReturnType<Page['getByPlaceholder']>, text: string) => {
+    if (!(await input.count())) return
+    await input.click({ timeout: 5_000 }).catch(() => {})
+    for (const ch of text) {
+      await page.keyboard.type(ch)
+      await page.waitForTimeout(55)
+    }
+  }
+
+  await typeSlow(page.getByPlaceholder(/header-name/i).last(), key)
+  await page.waitForTimeout(200)
+  await typeSlow(page.getByPlaceholder(/^value$/i).last(), value)
+  await page.waitForTimeout(500)
+}
+
 test('demo: server selector (PetStore + BookStore)', async ({ page }) => {
   await waitForApp(page)
   // Open the server selector so both example targets are visible.
@@ -197,6 +232,15 @@ test('demo: share action copied', async ({ page }) => {
     await page.waitForTimeout(300)
   }
   await page.screenshot({ path: shot('08-share-action-copied.png') })
+})
+
+test('demo: request metadata (custom headers)', async ({ page }) => {
+  await waitForApp(page)
+  await openMethod(page, /PetStoreService/i, /GetPet/i)
+  await openMetadataTab(page)
+  await addMetadata(page, 'x-request-id', 'demo-123')
+  await addMetadata(page, 'x-tenant', 'acme')
+  await page.screenshot({ path: shot('13-request-metadata.png') })
 })
 
 test('demo: request history', async ({ page }) => {
@@ -283,9 +327,10 @@ async function typeJson(page: Page, json: string) {
  *   2. Search — filter services & methods
  *   3. Tabs — open several methods, duplicate one
  *   4. Form / JSON / Schema — the three request views
- *   5. All streaming modes — server & bidirectional
- *   6. Request history
- *   7. Shareable URLs
+ *   5. Custom metadata — attach gRPC headers to a request
+ *   6. All streaming modes — server & bidirectional
+ *   7. Request history
+ *   8. Shareable URLs
  */
 test('demo: walkthrough video', async ({ page }) => {
   test.setTimeout(220_000)
@@ -340,7 +385,15 @@ test('demo: walkthrough video', async ({ page }) => {
     await page.mouse.wheel(0, -350)
   }
 
-  // 5. Streaming modes.
+  // 5. Custom request metadata — add a couple of gRPC headers on the Metadata tab.
+  await chapter(page, 'Custom Metadata', 'Attach gRPC headers to any request')
+  await openMethod(page, /PetStoreService/i, /GetPet/i)
+  await openMetadataTab(page)
+  await addMetadata(page, 'x-request-id', 'demo-123')
+  await addMetadata(page, 'x-tenant', 'acme')
+  await page.waitForTimeout(1200)
+
+  // 6. Streaming modes.
   await chapter(page, 'Streaming', 'Server & bidirectional streaming, live')
   // Server streaming — start, let events arrive, flip Form <-> JSON.
   await openMethod(page, /PetStoreService/i, /WatchPets/i)
@@ -362,7 +415,7 @@ test('demo: walkthrough video', async ({ page }) => {
     await page.waitForTimeout(1300)
   }
 
-  // 6. Request history — run a couple of unary calls, then open the history panel.
+  // 7. Request history — run a couple of unary calls, then open the history panel.
   await chapter(page, 'Request History', 'Every call is saved per method — replay any of them')
   await openMethod(page, /PetStoreService/i, /GetPet/i)
   await typeJson(page, '{"id": "pet-001"}')
@@ -381,7 +434,7 @@ test('demo: walkthrough video', async ({ page }) => {
     }
   }
 
-  // 7. Shareable URLs — click Share, which copies a deep link to the clipboard.
+  // 8. Shareable URLs — click Share, which copies a deep link to the clipboard.
   await chapter(page, 'Shareable URLs', 'Copy a deep link to any request')
   const share = page.getByRole('button', { name: /^share$/i }).first()
   if (await share.count()) {

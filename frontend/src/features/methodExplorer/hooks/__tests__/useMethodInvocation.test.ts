@@ -5,7 +5,7 @@ import { renderHook, act } from '@testing-library/react'
 import { useMethodInvocation } from '../useMethodInvocation'
 import { MethodKind } from '@grpc-studio/shared'
 import type { GrpcService, GrpcMethod } from '../../../../types/grpc'
-import type { RequestModel, ResponseModel, StreamModel } from '../../types'
+import type { RequestModel, ResponseModel, StreamModel, MetadataModel } from '../../types'
 
 // Mock the API and WebSocket dependencies
 vi.mock('../../api', () => ({
@@ -78,6 +78,17 @@ describe('useMethodInvocation - cancelStream', () => {
     clear: vi.fn(),
   })
 
+  const createMockMetadata = (): MetadataModel => ({
+    rows: [],
+    activeCount: 0,
+    addRow: vi.fn(),
+    updateRow: vi.fn(),
+    removeRow: vi.fn(),
+    setRows: vi.fn(),
+    toMetadata: vi.fn(() => ({})),
+    reset: vi.fn(),
+  })
+
   const createMockStream = (currentRequestValue: unknown = null): StreamModel => {
     const currentRequestFn = vi.fn(() => currentRequestValue)
     const durationMsFn = vi.fn(() => 1500)
@@ -117,6 +128,7 @@ describe('useMethodInvocation - cancelStream', () => {
         createMockRequest(),
         createMockResponse(),
         mockStream,
+        createMockMetadata(),
         saveToHistory
       )
     )
@@ -132,7 +144,8 @@ describe('useMethodInvocation - cancelStream', () => {
         ok: false,
         message: 'Cancelled by user',
         responseTimeMs: 1500,
-      }
+      },
+      {}
     )
   })
 
@@ -148,6 +161,7 @@ describe('useMethodInvocation - cancelStream', () => {
         createMockRequest(),
         createMockResponse(),
         mockStream,
+        createMockMetadata(),
         saveToHistory
       )
     )
@@ -172,6 +186,7 @@ describe('useMethodInvocation - cancelStream', () => {
         createMockRequest(),
         createMockResponse(),
         mockStream,
+        createMockMetadata(),
         saveToHistory
       )
     )
@@ -197,6 +212,7 @@ describe('useMethodInvocation - cancelStream', () => {
         createMockRequest(),
         createMockResponse(),
         mockStream,
+        createMockMetadata(),
         saveToHistory
       )
     )
@@ -209,7 +225,8 @@ describe('useMethodInvocation - cancelStream', () => {
       expect.any(Object),
       expect.objectContaining({
         responseTimeMs: 3500,
-      })
+      }),
+      {}
     )
   })
 
@@ -230,6 +247,7 @@ describe('useMethodInvocation - cancelStream', () => {
         createMockRequest(),
         createMockResponse(),
         mockStream,
+        createMockMetadata(),
         saveToHistory
       )
     )
@@ -240,7 +258,8 @@ describe('useMethodInvocation - cancelStream', () => {
 
     expect(saveToHistory).toHaveBeenCalledWith(
       complexRequest,
-      expect.any(Object)
+      expect.any(Object),
+      {}
     )
   })
 
@@ -257,6 +276,7 @@ describe('useMethodInvocation - cancelStream', () => {
         createMockRequest(),
         createMockResponse(),
         mockStream,
+        createMockMetadata(),
         saveToHistory
       )
     )

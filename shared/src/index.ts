@@ -69,6 +69,15 @@ export type {
 } from './api/invocation.js'
 
 export type {
+  RequestMetadata,
+  RequestMetadataValidationResult,
+} from './api/metadata.js'
+
+export {
+  sanitizeRequestMetadata,
+} from './api/metadata.js'
+
+export type {
   ConfigRequest,
   PublicConfig,
   ConfigResponse,

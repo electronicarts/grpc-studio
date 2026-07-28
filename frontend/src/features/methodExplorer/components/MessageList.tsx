@@ -17,7 +17,7 @@ interface MessageListProps {
   /**
    * When set, the scroll area opens at a generous default height and the user can
    * drag its bottom edge to any height (native vertical resize) instead of being
-   * capped at a fixed `maxHeight`.
+   * capped at a fixed `maxHeight`. Ignored when `scrollable` is false.
    */
   resizable?: boolean
   /**
@@ -25,6 +25,11 @@ interface MessageListProps {
    * restored across sessions. Only used when `resizable` is set.
    */
   storageKey?: string
+  /**
+   * When false, the list has no height cap and no inner scrollbar — it grows to
+   * fit its content and the page scrolls instead (matching the unary response).
+   */
+  scrollable?: boolean
 }
 
 /**
@@ -41,6 +46,7 @@ const MessageList: React.FC<MessageListProps> = ({
   showExpandAll = false,
   resizable = false,
   storageKey = 'grpc-studio-message-list-height',
+  scrollable = true,
 }) => {
   const { ref: resizeRef, style: resizeStyle } = usePersistentHeight(storageKey, '32rem')
   const [expandedMessages, setExpandedMessages] = useState<Set<number>>(new Set([0]))
@@ -76,13 +82,18 @@ const MessageList: React.FC<MessageListProps> = ({
     setExpandAll(v => !v)
   }
 
+  // Non-scrollable lists grow to fit and let the page scroll (like the unary
+  // response) — no cap, no resize handle, no inner scrollbar.
   // Resizable lists open tall and can be dragged to any height (persisted via the
   // inline style from usePersistentHeight); fixed lists keep their compact cap.
   // `resize-y` needs an explicit height (supplied by resizeStyle) as the drag's
   // starting point, bounded by a floor and a viewport-relative ceiling.
-  const containerClass = resizable
-    ? 'max-h-[85vh] min-h-40 resize-y'
-    : maxHeight
+  const containerClass = !scrollable
+    ? ''
+    : resizable
+      ? 'max-h-[85vh] min-h-40 resize-y overflow-y-auto'
+      : `${maxHeight} overflow-y-auto`
+  const useResize = scrollable && resizable
 
   return (
     <div className="space-y-2">
@@ -99,9 +110,9 @@ const MessageList: React.FC<MessageListProps> = ({
       )}
 
       <div
-        ref={resizable ? resizeRef : undefined}
-        style={resizable ? resizeStyle : undefined}
-        className={`space-y-2 ${containerClass} overflow-y-auto pr-2`}
+        ref={useResize ? resizeRef : undefined}
+        style={useResize ? resizeStyle : undefined}
+        className={`space-y-2 ${containerClass} pr-2`}
       >
         {reversedMessages.map((msg, displayIdx) => {
           const originalIndex = messages.length - displayIdx
