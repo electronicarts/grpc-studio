@@ -83,18 +83,25 @@ const MethodExplorerContent: React.FC = React.memo(() => {
           onDismiss={() => execution.setError(null)}
         />
 
-        {/* Streaming panel: sent messages (left 30%) | responses (right 70%) — all streaming types */}
+        {/* Streaming panel: sent messages (left 30%) | responses (right 70%) — all streaming types.
+            The min-w-0 wrappers stop each panel's content from overflowing its grid track and
+            bleeding into the neighbouring column (grid items default to min-width:auto). Without
+            them, a non-scrollable panel's wide content escapes its column and overlaps the other. */}
         {!history.visible && showStreamPanel && (
           <div className="grid grid-cols-[30%_70%] gap-4">
-            <StreamingMessageDisplay
-              label="Sent Messages"
-              messages={stream.sentMessages}
-              schema={request.schema}
-              colorScheme="blue"
-              scrollable={false}
-              schemaNode={<ProtoViewer selectedTarget={selectedTarget} selectedService={selectedService} selectedMethod={selectedMethod} inline />}
-            />
-            {isBidirectional ? <BidirectionalPanel /> : <ResponseDisplay />}
+            <div className="min-w-0">
+              <StreamingMessageDisplay
+                label="Sent Messages"
+                messages={stream.sentMessages}
+                schema={request.schema}
+                colorScheme="blue"
+                scrollable={false}
+                schemaNode={<ProtoViewer selectedTarget={selectedTarget} selectedService={selectedService} selectedMethod={selectedMethod} inline />}
+              />
+            </div>
+            <div className="min-w-0">
+              {isBidirectional ? <BidirectionalPanel /> : <ResponseDisplay />}
+            </div>
           </div>
         )}
 
