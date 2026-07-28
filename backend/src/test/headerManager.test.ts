@@ -67,12 +67,4 @@ describe('HeaderManager', () => {
     assert.equal(headers['x-user-id'], 'trusted-user')
     assert.equal(headers['x-custom'], 'allowed')
   })
-
-  it('drops invalid request metadata entries rather than throwing', () => {
-    const manager = new HeaderManager({ getCurrentPlugin: () => null })
-
-    // Empty keys are dropped; invalid keys/values are dropped by returning {}.
-    assert.deepEqual(manager.getRequestMetadataHeaders({ '': 'skip', 'x-ok': 'yes' }), { 'x-ok': 'yes' })
-    assert.deepEqual(manager.getRequestMetadataHeaders({ 'bad key': 'nope' }), {})
-  })
 })

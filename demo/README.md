@@ -10,9 +10,10 @@ A single continuous tour, split into labeled chapters:
 2. **Searchable services & methods** — filter the tree as you type
 3. **Tabs** — open several methods side by side, duplicate one
 4. **Form, JSON & Schema** — edit requests three ways, kept in sync
-5. **Streaming** — server and bidirectional streaming, live
-6. **Request history** — replay past calls per method
-7. **Shareable URLs** — copy a deep link to any request
+5. **Custom metadata** — attach gRPC headers to any request
+6. **Streaming** — server and bidirectional streaming, live
+7. **Request history** — replay past calls per method
+8. **Shareable URLs** — copy a deep link to any request
 
 The MP4 is small enough to embed; the GIF is the fallback for renderers that don't play video.
 
@@ -45,6 +46,7 @@ npm run demo:mp4       # convert the recording to grpc-studio-light-mode.mp4  (n
 | Unary response schema output | ![Unary response schema output](07-unary-response-schema.png) |
 | Share action copied state | ![Share action copied state](08-share-action-copied.png) |
 | Per-method request history | ![Per-method request history](09-request-history.png) |
+| Custom request metadata (gRPC headers) | ![Custom request metadata](13-request-metadata.png) |
 | Server streaming | ![Server streaming WatchPets](10-server-streaming-watchpets.png) |
 | Client streaming | ![Client streaming BulkCreatePets](11-client-streaming-bulk-create.png) |
 | Bidirectional streaming | ![Bidirectional streaming MonitorHealth](12-bidi-streaming-monitor-health.png) |
