@@ -24,6 +24,13 @@ interface StreamingMessageDisplayProps {
   methodName?: string
   /** Node to render when the Schema tab is active. If omitted, the Schema tab is hidden. */
   schemaNode?: React.ReactNode
+  /**
+   * When false, the message list grows to fit its content and the page scrolls,
+   * instead of getting its own resizable inner scrollbar. Both the sent and
+   * received streaming panels set this so they match the unary response's
+   * scroll behavior.
+   */
+  scrollable?: boolean
 }
 
 const countBadgeClass = {
@@ -43,6 +50,7 @@ const StreamingMessageDisplay: React.FC<StreamingMessageDisplayProps> = ({
   serviceName,
   methodName,
   schemaNode,
+  scrollable = true,
 }) => {
   const [tab, setTab] = useState<ViewTab>(schema ? 'form' : 'json')
   const effectiveTab = tab === 'form' && !schema ? 'json' : tab
@@ -103,6 +111,7 @@ const StreamingMessageDisplay: React.FC<StreamingMessageDisplayProps> = ({
           colorScheme={colorScheme}
           showExpandAll={messages.length > 1}
           resizable
+          scrollable={scrollable}
           storageKey="grpc-studio-stream-messages-height"
         />
       ) : showStatusBadge ? (

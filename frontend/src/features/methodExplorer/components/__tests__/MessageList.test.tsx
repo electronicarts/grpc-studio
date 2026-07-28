@@ -17,6 +17,13 @@ function scrollContainer(container: HTMLElement): HTMLElement {
   return el as HTMLElement
 }
 
+// The message container is the inner div holding the cards (space-y-2 pr-2).
+function messageContainer(container: HTMLElement): HTMLElement {
+  const el = container.querySelector('.pr-2')
+  if (!el) throw new Error('message container not found')
+  return el as HTMLElement
+}
+
 describe('MessageList height', () => {
   it('applies the fixed maxHeight when not resizable', () => {
     const { container } = render(
@@ -41,5 +48,18 @@ describe('MessageList height', () => {
     expect(el.className).not.toContain('max-h-80')
     // Default starting height is applied via inline style (the persisted source).
     expect(el.style.height).toBe('32rem')
+  })
+
+  it('grows to fit with no scrollbar or resize when scrollable is false', () => {
+    const { container } = render(
+      <MessageList messages={[{ a: 1 }]} resizable scrollable={false} />
+    )
+    const el = messageContainer(container)
+    // No inner scroll, no cap, no drag handle — the page scrolls instead.
+    expect(el.className).not.toContain('overflow-y-auto')
+    expect(el.className).not.toContain('resize-y')
+    expect(el.className).not.toContain('max-h-')
+    // No persisted inline height is applied either.
+    expect(el.style.height).toBe('')
   })
 })

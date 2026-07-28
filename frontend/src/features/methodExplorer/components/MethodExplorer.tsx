@@ -91,6 +91,7 @@ const MethodExplorerContent: React.FC = React.memo(() => {
               messages={stream.sentMessages}
               schema={request.schema}
               colorScheme="blue"
+              scrollable={false}
               schemaNode={<ProtoViewer selectedTarget={selectedTarget} selectedService={selectedService} selectedMethod={selectedMethod} inline />}
             />
             {isBidirectional ? <BidirectionalPanel /> : <ResponseDisplay />}
