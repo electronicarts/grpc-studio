@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { GrpcService, GrpcMethod } from '../../../types/grpc'
 import { getHistory, saveRequest, deleteHistoryItem, clearHistory } from '../utils/requestHistory'
 import { createLogger } from '../../../utils/debugLogger'
+import type { RequestMetadata } from '@grpc-studio/shared'
 import type { RequestHistoryItem, ResponseStatus, HistoryModel } from '../types'
 
 const historyLogger = createLogger('History')
@@ -23,13 +24,13 @@ export function useHistoryModel(
     }
   }, [target, service, method])
 
-  const save = useCallback((requestObj: Record<string, unknown>, status?: ResponseStatus) => {
+  const save = useCallback((requestObj: Record<string, unknown>, status?: ResponseStatus, metadata?: RequestMetadata) => {
     historyLogger.debug('save() called', { target, service: service?.name, method: method?.name })
     if (!service || !method) {
       historyLogger.warn('save() aborted - no service or method')
       return
     }
-    saveRequest(target, service.name ?? service.fullName, method.name, requestObj, requestObj, undefined, status)
+    saveRequest(target, service.name ?? service.fullName, method.name, requestObj, requestObj, undefined, status, metadata)
     setItems(getHistory(target, service.name ?? service.fullName, method.name))
   }, [target, service, method])
 

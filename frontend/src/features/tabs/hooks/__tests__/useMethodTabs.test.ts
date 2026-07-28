@@ -39,6 +39,7 @@ const baseProps = {
   selectedService: service,
   selectedMethod: method,
   sharedRequestBody: null,
+  sharedMetadata: null,
 }
 
 const otherProps = {
@@ -46,6 +47,7 @@ const otherProps = {
   selectedService: service,
   selectedMethod: otherMethod,
   sharedRequestBody: null,
+  sharedMetadata: null,
 }
 
 describe('useMethodTabs', () => {

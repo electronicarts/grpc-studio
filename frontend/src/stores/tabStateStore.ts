@@ -24,6 +24,7 @@
  * resurrects stale data.
  */
 import type { DescMessage } from '@bufbuild/protobuf'
+import type { MetadataRow } from '@/features/methodExplorer/types'
 
 export interface TabRequestSnapshot {
   body: string
@@ -32,6 +33,7 @@ export interface TabRequestSnapshot {
   isFormMode: boolean
   schema: DescMessage | null
   validationError: string | null
+  metadataRows: MetadataRow[]
 }
 
 export interface TabResponseSnapshot {

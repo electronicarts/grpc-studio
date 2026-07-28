@@ -6,13 +6,14 @@ import { Button } from '@/components/ui/button'
 import ProtoMessageRenderer from '../../schemaRenderer'
 import ProtoViewer from './ProtoViewer'
 import HistoryPanel from './HistoryPanel'
+import MetadataEditor from './MetadataEditor'
 import ViewTabs, { type ViewTab } from './ViewTabs'
 import { useMethodExplorerContext } from '../stores'
 import { useMethodKind } from '../hooks/useMethodKind'
 import { usePersistentHeight } from '@/hooks/usePersistentHeight'
 
 const RequestInput: React.FC = () => {
-  const { selectedTarget, selectedService, selectedMethod, request, response, stream, execution, history, toggleHistory, loadFromHistory } = useMethodExplorerContext()
+  const { selectedTarget, selectedService, selectedMethod, request, response, stream, metadata, execution, history, toggleHistory, loadFromHistory } = useMethodExplorerContext()
   const [activeTab, setActiveTab] = useState<ViewTab>(request.isFormMode ? 'form' : 'json')
   const jsonInput = usePersistentHeight<HTMLTextAreaElement>('grpc-studio-request-json-height', '10rem')
 
@@ -36,6 +37,7 @@ const RequestInput: React.FC = () => {
   const handleReset = () => {
     if (streamCompleted) stream.reset()
     request.reset()
+    metadata.reset()
     response.clear()
     execution.setError(null)
     history.setVisible(false)
@@ -61,7 +63,7 @@ const RequestInput: React.FC = () => {
             </Button>
           ) : (
             <>
-              <ViewTabs activeTab={activeTab} onTabChange={handleTabChange} />
+              <ViewTabs activeTab={activeTab} onTabChange={handleTabChange} metadataCount={metadata.activeCount} />
               {!stream.active && (
                 <Button
                   variant="outline"
@@ -133,6 +135,10 @@ const RequestInput: React.FC = () => {
               selectedMethod={selectedMethod}
               inline
             />
+          )}
+
+          {activeTab === 'metadata' && (
+            <MetadataEditor metadata={metadata} disabled={stream.active} />
           )}
         </>
       )}

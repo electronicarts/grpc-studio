@@ -32,6 +32,7 @@ export const TabPanel: React.FC<TabPanelProps> = ({ tab, isActive }) => {
         selectedMethod={tab.method}
         selectedService={tab.service}
         initialRequestBody={tab.requestBody}
+        initialMetadata={tab.metadata}
       />
     </div>
   )

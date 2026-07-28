@@ -62,10 +62,15 @@ vi.mock('../../methodExplorer/hooks/useGrpcWebSocket', () => ({
   }),
 }))
 
-// Surfaces the request body the mounted tab's provider is holding.
-function BodyProbe() {
-  const { request } = useMethodExplorerContext()
-  return <div data-testid="probe-body">{request.body}</div>
+// Surfaces the request body and metadata the mounted tab's provider is holding.
+function Probe() {
+  const { request, metadata } = useMethodExplorerContext()
+  return (
+    <>
+      <div data-testid="probe-body">{request.body}</div>
+      <div data-testid="probe-metadata">{JSON.stringify(metadata.toMetadata())}</div>
+    </>
+  )
 }
 
 // Minimal stand-in for Playground's tab wiring. Mirrors TabPanel's mount rule
@@ -73,11 +78,11 @@ function BodyProbe() {
 // restored request body is observable.
 function MiniApp() {
   const {
-    selectedTarget, selectedService, selectedMethod, sharedRequestBody, clearSelection,
+    selectedTarget, selectedService, selectedMethod, sharedRequestBody, sharedMetadata, clearSelection,
   } = useServiceSelection()
 
   const { tabs, activeTabId } = useMethodTabs({
-    selectedTarget, selectedService, selectedMethod, sharedRequestBody,
+    selectedTarget, selectedService, selectedMethod, sharedRequestBody, sharedMetadata,
     onClearSelection: clearSelection,
   })
 
@@ -91,8 +96,9 @@ function MiniApp() {
             selectedService={tab.service}
             selectedMethod={tab.method}
             initialRequestBody={tab.requestBody}
+            initialMetadata={tab.metadata}
           >
-            <BodyProbe />
+            <Probe />
           </MethodExplorerProvider>
         </div>
       ))}
@@ -124,5 +130,19 @@ describe('share restore (integration)', () => {
     const probe = await screen.findByTestId('probe-body')
     // …and it carries the shared request body.
     expect(JSON.parse(probe.textContent || '{}')).toEqual(sharedBody)
+  })
+
+  it('restores shared request metadata into the opened tab', async () => {
+    const sharedBody = { id: '7' }
+    const sharedMetadata = { 'x-request-id': 'req-1', 'x-tenant': 'acme' }
+    const url = buildShareableUrl(service.fullName, method.name, sharedBody, sharedMetadata)
+    window.location.hash = new URL(url).hash
+
+    await act(async () => {
+      render(<MiniApp />)
+    })
+
+    const probe = await screen.findByTestId('probe-metadata')
+    expect(JSON.parse(probe.textContent || '{}')).toEqual(sharedMetadata)
   })
 })

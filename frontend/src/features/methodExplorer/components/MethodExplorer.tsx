@@ -2,6 +2,7 @@
 
 import React from 'react'
 import type { GrpcService, GrpcMethod } from '@/types/grpc'
+import type { RequestMetadata } from '@grpc-studio/shared'
 import { buildShareableUrl } from '@/utils/shareableLink'
 
 // Context
@@ -26,6 +27,7 @@ interface MethodExplorerProps {
   selectedService: GrpcService | null
   selectedMethod: GrpcMethod | null
   initialRequestBody?: Record<string, unknown> | null
+  initialMetadata?: RequestMetadata | null
 }
 
 // Inner component that uses context - memoized to prevent excessive re-renders
@@ -36,19 +38,21 @@ const MethodExplorerContent: React.FC = React.memo(() => {
     selectedMethod,
     request,
     stream,
+    metadata,
     execution,
     history,
   } = useMethodExplorerContext()
 
-  // Share current request as a link
+  // Share current request as a link, carrying its custom metadata headers.
   const handleShare = (): string => {
+    const sharedMetadata = metadata.toMetadata()
     try {
       const body = request.isFormMode
         ? request.formData
         : JSON.parse(request.body || '{}')
-      return buildShareableUrl(selectedService.fullName, selectedMethod.name, body)
+      return buildShareableUrl(selectedService.fullName, selectedMethod.name, body, sharedMetadata)
     } catch {
-      return buildShareableUrl(selectedService.fullName, selectedMethod.name, {})
+      return buildShareableUrl(selectedService.fullName, selectedMethod.name, {}, sharedMetadata)
     }
   }
 
@@ -103,7 +107,7 @@ const MethodExplorerContent: React.FC = React.memo(() => {
 MethodExplorerContent.displayName = 'MethodExplorerContent'
 
 // Main component with Provider wrapper
-const MethodExplorer: React.FC<MethodExplorerProps> = ({ tabId, selectedTarget, selectedService, selectedMethod, initialRequestBody }) => {
+const MethodExplorer: React.FC<MethodExplorerProps> = ({ tabId, selectedTarget, selectedService, selectedMethod, initialRequestBody, initialMetadata }) => {
   // Empty state (before provider, for performance)
   if (!selectedMethod || !selectedService) {
     return (
@@ -124,6 +128,7 @@ const MethodExplorer: React.FC<MethodExplorerProps> = ({ tabId, selectedTarget, 
       selectedService={selectedService}
       selectedMethod={selectedMethod}
       initialRequestBody={initialRequestBody}
+      initialMetadata={initialMetadata}
     >
       <MethodExplorerContent />
     </MethodExplorerProvider>

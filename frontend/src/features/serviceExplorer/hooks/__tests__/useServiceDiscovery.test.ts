@@ -62,6 +62,7 @@ describe('useServiceSelection', () => {
     expect(result.current.selectedService).toBeNull()
     expect(result.current.selectedMethod).toBeNull()
     expect(result.current.sharedRequestBody).toBeNull()
+    expect(result.current.sharedMetadata).toBeNull()
   })
 
   it('selectService sets service and clears method', () => {

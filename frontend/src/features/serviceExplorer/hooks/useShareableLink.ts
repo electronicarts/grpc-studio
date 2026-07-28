@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import { useEffect, useRef } from 'react'
+import type { RequestMetadata } from '@grpc-studio/shared'
 import { GrpcService, GrpcMethod, ApiServer } from '../../../types/grpc'
 import { parseShareableUrl, clearShareFragment, SharedRequestState } from '../../../utils/shareableLink'
 
@@ -18,6 +19,7 @@ export function useShareableLink(
   setSelectedService: (s: GrpcService) => void,
   setSelectedMethod: (m: GrpcMethod) => void,
   setSharedRequestBody: (body: Record<string, unknown> | null) => void,
+  setSharedMetadata: (metadata: RequestMetadata | null) => void,
   setSelectedTarget: (target: string) => void,
 ): ShareableLinkResult {
   const pendingShare = useRef<SharedRequestState | null>(parseShareableUrl())
@@ -42,9 +44,10 @@ export function useShareableLink(
     setSelectedService(service)
     setSelectedMethod(method)
     setSharedRequestBody(share.r)
+    setSharedMetadata(share.md ?? null)
     pendingShare.current = null
     clearShareFragment()
-  }, [servers, services, setSelectedService, setSelectedMethod, setSharedRequestBody, setSelectedTarget])
+  }, [servers, services, setSelectedService, setSelectedMethod, setSharedRequestBody, setSharedMetadata, setSelectedTarget])
 
   return { sharedRequestBody: null }
 }

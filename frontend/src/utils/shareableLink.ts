@@ -3,15 +3,18 @@
 /**
  * Shareable link utilities for gRPC Studio.
  *
- * Encodes the current request state (service, method, request body)
- * into a URL-safe base64 hash fragment. Recipients can open the link
- * and the request is restored automatically.
+ * Encodes the current request state (service, method, request body, and
+ * request metadata) into a URL-safe base64 hash fragment. Recipients can
+ * open the link and the request is restored automatically.
  *
- * Format: #share=<base64url(JSON({s, m, r}))>
- *   s = service fullName
- *   m = method name
- *   r = request body (object)
+ * Format: #share=<base64url(JSON({s, m, r, md?}))>
+ *   s  = service fullName
+ *   m  = method name
+ *   r  = request body (object)
+ *   md = request metadata (optional; map of string keys to string values)
  */
+
+import { sanitizeRequestMetadata, type RequestMetadata } from '@grpc-studio/shared'
 
 export interface SharedRequestState {
   /** Service fullName, e.g. "package.ServiceName" */
@@ -20,6 +23,8 @@ export interface SharedRequestState {
   m: string
   /** Request body (parsed object) */
   r: Record<string, unknown>
+  /** Request metadata (custom gRPC headers), omitted when empty */
+  md?: RequestMetadata
 }
 
 const SHARE_PREFIX = 'share='
@@ -30,12 +35,14 @@ const SHARE_PREFIX = 'share='
 export function buildShareableUrl(
   serviceFullName: string,
   methodName: string,
-  requestBody: Record<string, unknown>
+  requestBody: Record<string, unknown>,
+  metadata?: RequestMetadata | null
 ): string {
   const payload: SharedRequestState = {
     s: serviceFullName,
     m: methodName,
     r: requestBody,
+    ...(metadata && Object.keys(metadata).length > 0 ? { md: metadata } : {}),
   }
   const json = JSON.stringify(payload)
   const encoded = btoa(unescape(encodeURIComponent(json)))
@@ -71,6 +78,15 @@ export function parseShareableUrl(): SharedRequestState | null {
       payload.r === null
     ) {
       return null
+    }
+
+    // Sanitize any shared metadata the same way the backend would, dropping it
+    // entirely if it is malformed so a bad fragment can't break restoration.
+    if (payload.md !== undefined) {
+      const sanitized = sanitizeRequestMetadata(payload.md)
+      payload.md = sanitized.ok && Object.keys(sanitized.metadata).length > 0
+        ? sanitized.metadata
+        : undefined
     }
 
     return payload

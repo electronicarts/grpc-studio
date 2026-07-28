@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import type { RawData, WebSocket } from 'ws'
-import { MethodKind, type InvokeStreamClientMessage, type InvokeStreamStartPayload, type JsonValue } from '@grpc-studio/shared'
+import { MethodKind, type InvokeStreamClientMessage, type InvokeStreamStartPayload, type JsonValue, type RequestMetadata } from '@grpc-studio/shared'
 import configManager from '../config/configManager.js'
 import * as userContextMiddleware from '../middlewares/userContextMiddleware.js'
 import defaultGrpcMethodInvokerService, { type GrpcMethodInvokerService } from '../services/grpcMethodInvokerService.js'
@@ -27,6 +27,7 @@ interface StreamBase {
   readonly service: string
   readonly method: string
   readonly generation: number
+  readonly metadata?: RequestMetadata
   handle: StreamHandle | null
 }
 
@@ -197,7 +198,8 @@ export class WebSocketConnection {
           stream.service,
           stream.method,
           stream.request,
-          callbacks
+          callbacks,
+          stream.metadata
         )
 
       case MethodKind.CLIENT_STREAMING:
@@ -206,7 +208,8 @@ export class WebSocketConnection {
           stream.service,
           stream.method,
           stream.requests,
-          callbacks
+          callbacks,
+          stream.metadata
         )
 
       case MethodKind.BIDI_STREAMING:
@@ -215,7 +218,8 @@ export class WebSocketConnection {
           stream.service,
           stream.method,
           stream.requests,
-          callbacks
+          callbacks,
+          stream.metadata
         )
     }
   }
@@ -298,6 +302,7 @@ function createActiveStream(payload: InvokeStreamStartPayload, generation: numbe
       method: payload.method,
       kind: MethodKind.SERVER_STREAMING,
       generation,
+      metadata: payload.metadata,
       request: payload.data,
       handle: null,
     }
@@ -314,6 +319,7 @@ function createActiveStream(payload: InvokeStreamStartPayload, generation: numbe
     method: payload.method,
     kind: payload.methodKind,
     generation,
+    metadata: payload.metadata,
     requests,
     handle: null,
   }

@@ -14,6 +14,7 @@ export function useMethodTabs({
   selectedService,
   selectedMethod,
   sharedRequestBody,
+  sharedMetadata,
   onClearSelection,
 }: UseMethodTabsProps): UseMethodTabsReturn {
   const [tabs, setTabs] = useState<MethodTab[]>(() => safeGetJSON<MethodTab[]>(TABS_STORAGE_KEY) ?? [])
@@ -71,10 +72,11 @@ export function useMethodTabs({
       method: selection.method,
       label: selection.method.name,
       requestBody: sharedRequestBody || undefined,
+      metadata: sharedMetadata || undefined,
     }
     setTabs(prev => [...prev, newTab])
     setActiveTabId(tabId)
-  }, [selection, sharedRequestBody, activeTabId, tabs])
+  }, [selection, sharedRequestBody, sharedMetadata, activeTabId, tabs])
 
   // Open another copy of an existing tab, so the same method can live in multiple tabs.
   const duplicateTab = useCallback((sourceTabId: string) => {

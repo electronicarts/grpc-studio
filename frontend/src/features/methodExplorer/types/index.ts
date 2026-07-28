@@ -1,6 +1,33 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import type { DescMessage } from '@bufbuild/protobuf'
+import type { RequestMetadata } from '@grpc-studio/shared'
+
+// ---------------------------------------------------------------------------
+// Request metadata (custom gRPC headers)
+// ---------------------------------------------------------------------------
+
+/** A single editable metadata (header) entry in the request editor. */
+export interface MetadataRow {
+  id: string
+  key: string
+  value: string
+  enabled: boolean
+}
+
+export interface MetadataModel {
+  rows: MetadataRow[]
+  /** Number of enabled, non-empty rows that will be sent. */
+  activeCount: number
+
+  addRow(): void
+  updateRow(id: string, patch: Partial<Pick<MetadataRow, 'key' | 'value' | 'enabled'>>): void
+  removeRow(id: string): void
+  setRows(rows: MetadataRow[]): void
+  /** Build the wire metadata map from the current rows. */
+  toMetadata(): RequestMetadata
+  reset(): void
+}
 
 // ---------------------------------------------------------------------------
 // Request
@@ -85,6 +112,7 @@ export interface RequestHistoryItem {
   timestamp: number
   requestBody: Record<string, unknown>
   formData: Record<string, unknown>
+  metadata?: RequestMetadata
   label?: string
   responseStatus?: ResponseStatus
 }
@@ -94,7 +122,7 @@ export interface HistoryModel {
   visible: boolean
 
   setVisible(v: boolean): void
-  save(obj: Record<string, unknown>, status?: ResponseStatus): void
+  save(obj: Record<string, unknown>, status?: ResponseStatus, metadata?: RequestMetadata): void
   parse(item: RequestHistoryItem): { json: string; data: Record<string, unknown> }
   remove(id: string): void
   clearAll(): void

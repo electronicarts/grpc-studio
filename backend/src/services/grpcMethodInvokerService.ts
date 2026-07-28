@@ -1,6 +1,6 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-import type { JsonValue } from '@grpc-studio/shared'
+import type { JsonValue, RequestMetadata } from '@grpc-studio/shared'
 import type {
   DescMethod,
   DescMethodBiDiStreaming,
@@ -90,7 +90,7 @@ export class GrpcMethodInvokerService {
     throw new Error('Unexpected error in retry logic')
   }
 
-  async invokeUnary(target: string, serviceName: string, methodName: string, request: JsonValue | undefined): Promise<UnaryResult> {
+  async invokeUnary(target: string, serviceName: string, methodName: string, request: JsonValue | undefined, metadata?: RequestMetadata): Promise<UnaryResult> {
     return instrumentUnaryCall(serviceName, methodName, async () => {
       try {
         const data = await this.withConnectionRetry(
@@ -100,7 +100,7 @@ export class GrpcMethodInvokerService {
             const fileDescriptorSet = await this.schemaRepository.getAllFileDescriptorSet(target)
             const method = await this.resolveMethod(target, serviceName, methodName)
             assertUnaryMethod(method)
-            const headers = await headerManager.getOutboundHeaders(userContextMiddleware.getCurrentUserContext())
+            const headers = await headerManager.getOutboundHeaders(userContextMiddleware.getCurrentUserContext(), metadata)
             const transport = multiClientManager.getConnectTransport(target, forceRecreate)
             const connectInvoker = new ConnectInvoker({
               getTransport: () => transport
@@ -127,7 +127,8 @@ export class GrpcMethodInvokerService {
     serviceName: string,
     methodName: string,
     request: JsonValue | undefined,
-    callbacks: StreamCallbacks
+    callbacks: StreamCallbacks,
+    metadata?: RequestMetadata
   ): Promise<StreamHandle> {
     return instrumentStreamCall(serviceName, methodName, 'server_streaming', callbacks, async (wrappedCallbacks) => {
       try {
@@ -137,7 +138,7 @@ export class GrpcMethodInvokerService {
             const fileDescriptorSet = await this.schemaRepository.getAllFileDescriptorSet(target)
             const method = await this.resolveMethod(target, serviceName, methodName)
             assertServerStreamingMethod(method)
-            const headers = await headerManager.getOutboundHeaders(userContextMiddleware.getCurrentUserContext())
+            const headers = await headerManager.getOutboundHeaders(userContextMiddleware.getCurrentUserContext(), metadata)
             const transport = multiClientManager.getConnectTransport(target, forceRecreate)
             const connectInvoker = new ConnectInvoker({
               getTransport: () => transport
@@ -158,7 +159,8 @@ export class GrpcMethodInvokerService {
     serviceName: string,
     methodName: string,
     requests: RequestStream,
-    callbacks: StreamCallbacks
+    callbacks: StreamCallbacks,
+    metadata?: RequestMetadata
   ): Promise<StreamHandle> {
     return instrumentStreamCall(serviceName, methodName, 'client_streaming', callbacks, async (wrappedCallbacks) => {
       try {
@@ -168,7 +170,7 @@ export class GrpcMethodInvokerService {
             const fileDescriptorSet = await this.schemaRepository.getAllFileDescriptorSet(target)
             const method = await this.resolveMethod(target, serviceName, methodName)
             assertClientStreamingMethod(method)
-            const headers = await headerManager.getOutboundHeaders(userContextMiddleware.getCurrentUserContext())
+            const headers = await headerManager.getOutboundHeaders(userContextMiddleware.getCurrentUserContext(), metadata)
             const transport = multiClientManager.getConnectTransport(target, forceRecreate)
             const connectInvoker = new ConnectInvoker({
               getTransport: () => transport
@@ -189,7 +191,8 @@ export class GrpcMethodInvokerService {
     serviceName: string,
     methodName: string,
     requests: RequestStream,
-    callbacks: StreamCallbacks
+    callbacks: StreamCallbacks,
+    metadata?: RequestMetadata
   ): Promise<StreamHandle> {
     return instrumentStreamCall(serviceName, methodName, 'bidi_streaming', callbacks, async (wrappedCallbacks) => {
       try {
@@ -199,7 +202,7 @@ export class GrpcMethodInvokerService {
             const fileDescriptorSet = await this.schemaRepository.getAllFileDescriptorSet(target)
             const method = await this.resolveMethod(target, serviceName, methodName)
             assertBidiStreamingMethod(method)
-            const headers = await headerManager.getOutboundHeaders(userContextMiddleware.getCurrentUserContext())
+            const headers = await headerManager.getOutboundHeaders(userContextMiddleware.getCurrentUserContext(), metadata)
             const transport = multiClientManager.getConnectTransport(target, forceRecreate)
             const connectInvoker = new ConnectInvoker({
               getTransport: () => transport

@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import type { GrpcMethod, GrpcService } from '@/types/grpc'
+import type { RequestMetadata } from '@grpc-studio/shared'
 
 export interface MethodTab {
   id: string
@@ -9,6 +10,7 @@ export interface MethodTab {
   method: GrpcMethod
   label: string
   requestBody?: Record<string, unknown>
+  metadata?: RequestMetadata
 }
 
 export interface MethodTabsProps {
@@ -25,6 +27,7 @@ export interface UseMethodTabsProps {
   selectedService: GrpcService | null
   selectedMethod: GrpcMethod | null
   sharedRequestBody: Record<string, unknown> | null
+  sharedMetadata: RequestMetadata | null
   onClearSelection?: () => void
 }
 

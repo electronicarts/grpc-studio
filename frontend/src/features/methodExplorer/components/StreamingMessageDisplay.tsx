@@ -86,7 +86,7 @@ const StreamingMessageDisplay: React.FC<StreamingMessageDisplayProps> = ({
         </div>
         {/* Row 2: view tabs + actions */}
         <div className="flex items-center justify-end gap-2">
-          <ViewTabs activeTab={effectiveTab} onTabChange={setTab} showSchemaTab={!!schemaNode} />
+          <ViewTabs activeTab={effectiveTab} onTabChange={setTab} showSchemaTab={!!schemaNode} showMetadataTab={false} />
           {raw && (
             <ResponseActions raw={raw} serviceName={serviceName} methodName={methodName} />
           )}
