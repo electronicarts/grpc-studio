@@ -27,8 +27,8 @@ const shot = (name: string) => path.join(DEMO_DIR, name)
 // Setting an explicit size matching the viewport keeps the recording crisp.
 // Grant clipboard access so the Share ("Copy shareable link") flow works.
 test.use({
-  viewport: { width: 1440, height: 900 },
-  video: { mode: 'on', size: { width: 1440, height: 900 } },
+  viewport: { width: 1920, height: 1080 },
+  video: { mode: 'on', size: { width: 1920, height: 1080 } },
   permissions: ['clipboard-read', 'clipboard-write'],
 })
 
