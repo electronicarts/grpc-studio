@@ -101,6 +101,26 @@ message Edition {
 }
 
 // ---------------------------------------------------------------------------
+// Recursive / cyclic message types
+//
+// The schema graph below contains cycles: Book → Book (direct), Book →
+// repeated Book, and Book → BookLineage → Book (indirect). BookLineage is
+// also recursive through its own type. Any renderer that walks the descriptor
+// eagerly will recurse forever here, so these fields exercise cycle detection
+// in both request forms (CreateBook takes a Book) and response views (GetBook
+// returns a Book).
+// ---------------------------------------------------------------------------
+
+message BookLineage {
+  string catalog_id = 1;
+  // Indirect cycle: BookLineage → Book → BookLineage
+  Book predecessor = 2;
+  // Self-recursive: BookLineage → BookLineage
+  repeated BookLineage branches = 3;
+  int32 generation = 4;
+}
+
+// ---------------------------------------------------------------------------
 // Main Book message — exercises every proto3 feature
 // ---------------------------------------------------------------------------
 
@@ -147,6 +167,15 @@ message Book {
 
   // Any — extensible typed payload (e.g. for event-specific data)
   google.protobuf.Any extra_info = 22;
+
+  // Direct self-reference — Book contains a Book
+  Book prequel = 23;
+
+  // Repeated self-reference — Book contains many Books
+  repeated Book sequels = 24;
+
+  // Indirect self-reference — Book → BookLineage → Book
+  BookLineage lineage = 25;
 }
 
 // ---------------------------------------------------------------------------
@@ -210,6 +239,14 @@ message BulkCreateBooksResponse {
   repeated string errors = 3;
 }
 
+// Recursive messages
+
+message GetBookSeriesRequest {
+  string id = 1;
+  // How many prequel/sequel levels to populate (default 3, max 10).
+  int32 depth = 2;
+}
+
 message StockCheckRequest {
   string book_id = 1;
   repeated string warehouses = 2;
@@ -234,6 +271,9 @@ service BookStoreService {
   rpc DeleteBook(DeleteBookRequest) returns (google.protobuf.Empty);
   rpc ListBooks(ListBooksRequest) returns (ListBooksResponse);
   rpc SearchBooks(SearchBooksRequest) returns (ListBooksResponse);
+
+  // Recursive payloads — response nests Book inside Book several levels deep
+  rpc GetBookSeries(GetBookSeriesRequest) returns (Book);
 
   // Server streaming — live catalog event feed
   rpc WatchBooks(WatchBooksRequest) returns (stream BookEvent);

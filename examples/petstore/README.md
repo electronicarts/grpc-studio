@@ -9,6 +9,9 @@ The PetStore service exercises every proto3 feature gRPC Studio supports:
 | Feature | Where |
 |---------|-------|
 | Deep nesting (3 levels) | `Pet` → `Owner` → `Address` → `Coordinates` |
+| Recursive (direct) | `Pet.parent` — a `Pet` inside a `Pet` |
+| Recursive (repeated) | `Pet.offspring` — `repeated Pet` |
+| Recursive (indirect) | `Pet.lineage` → `PetLineage.ancestor` → `Pet`, plus `PetLineage.branches` |
 | Enums | `Species`, `Status` |
 | Repeated scalar | `nicknames` |
 | Repeated message | `vaccinations`, `medical_history` |
@@ -55,9 +58,14 @@ The server starts with 3 pre-loaded pets:
 
 | ID | Name | Species | Status | Highlights |
 |----|------|---------|--------|------------|
-| pet-001 | Luna | Dog (Golden Retriever) | Available | Full owner, vaccinations, medical history, map tags, struct metadata |
-| pet-002 | Mochi | Cat (Scottish Fold) | Pending | Collar with GPS (oneOf), dietary restrictions in metadata |
+| pet-001 | Luna | Dog (Golden Retriever) | Available | Full owner, vaccinations, medical history, map tags, struct metadata, **recursive relatives** |
+| pet-002 | Mochi | Cat (Scottish Fold) | Pending | Collar with GPS (oneOf), dietary restrictions in metadata, empty lineage |
 | pet-003 | Kiwi | Bird (Cockatiel) | Available | Tag number (oneOf), no owner, minimal records |
+
+Luna carries all three cycle shapes: a `parent` (Nova), two `offspring` (Scout,
+Willow — Scout in turn has its own `offspring`, so the payload is three `Pet`
+levels deep), and a `lineage` chain with recursive `branches`. The relatives are
+reachable only through those fields; they are not separate `ListPets` records.
 
 ## RPCs to Try
 
@@ -65,6 +73,9 @@ The server starts with 3 pre-loaded pets:
 - **GetPet** — `{ "id": "pet-001" }` to see Luna with all nested types
 - **CreatePet** — create a new pet with any combination of fields
 - **SearchPets** — text search with `query`, filter by `species` array, `max_age_months`, `max_weight_kg`
+- **GetPetFamily** — `{ "id": "pet-001", "depth": 4 }` returns a `Pet` whose
+  `parent`, `offspring` and `lineage` nest to the requested depth. Use this to
+  stress a renderer against a cyclic schema; `depth` is capped at 10
 - **WatchPets** — server stream that emits random pet events every 2 seconds
 - **BulkCreatePets** — send multiple pets as a client stream
 - **MonitorHealth** — send `{ "pet_id": "pet-001", "vital_signs": ["heart_rate", "temperature"] }` and get vitals back

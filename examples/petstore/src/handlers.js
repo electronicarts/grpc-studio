@@ -132,6 +132,77 @@ function SearchPets(call, callback) {
 }
 
 // ---------------------------------------------------------------------------
+// Recursive payload — Pet nested inside Pet
+//
+// Builds a family tree `depth` levels deep using the self-referencing fields
+// (parent / offspring / lineage). Useful for exercising renderers against
+// cyclic schemas: the descriptor cycle is infinite, but the payload is not.
+// ---------------------------------------------------------------------------
+
+const MAX_FAMILY_DEPTH = 10;
+const DEFAULT_FAMILY_DEPTH = 3;
+
+// Strip self-referencing fields so a seeded pet can be used as a tree node
+// without dragging its own (already-populated) relatives along.
+function withoutRelatives(pet) {
+  const { parent: _parent, offspring: _offspring, lineage: _lineage, ...rest } = pet;
+  return rest;
+}
+
+function buildFamily(pet, depth, generation) {
+  const node = withoutRelatives(pet);
+  if (depth <= 0) return node;
+
+  const ancestor = buildFamily(pet, depth - 1, generation + 1);
+
+  return {
+    ...node,
+    // Direct self-reference
+    parent: {
+      ...ancestor,
+      id: `${pet.id}-gen${generation + 1}`,
+      name: `${pet.name} Sr.${'I'.repeat(generation)}`,
+    },
+    // Repeated self-reference
+    offspring: [
+      {
+        ...buildFamily(pet, depth - 1, generation + 1),
+        id: `${pet.id}-kit${generation + 1}a`,
+        name: `${pet.name} Jr.${'I'.repeat(generation)}`,
+      },
+      {
+        ...withoutRelatives(pet),
+        id: `${pet.id}-kit${generation + 1}b`,
+        name: `${pet.name} the Younger`,
+      },
+    ],
+    // Indirect self-reference — Pet → PetLineage → Pet
+    lineage: {
+      registry_id: `reg-${pet.id}-${generation}`,
+      generation,
+      ancestor,
+      branches: [
+        {
+          registry_id: `reg-${pet.id}-${generation}-a`,
+          generation: generation + 1,
+          branches: [],
+        },
+      ],
+    },
+  };
+}
+
+function GetPetFamily(call, callback) {
+  const pet = store.get(call.request.id);
+  if (!pet) return notFound(call, callback, call.request.id);
+
+  const requested = call.request.depth || DEFAULT_FAMILY_DEPTH;
+  const depth = Math.min(Math.max(requested, 0), MAX_FAMILY_DEPTH);
+
+  callback(null, buildFamily(pet, depth, 1));
+}
+
+// ---------------------------------------------------------------------------
 // Server streaming — live pet event feed
 // ---------------------------------------------------------------------------
 
@@ -259,6 +330,7 @@ module.exports = {
   DeletePet,
   ListPets,
   SearchPets,
+  GetPetFamily,
   WatchPets,
   BulkCreatePets,
   MonitorHealth,

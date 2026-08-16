@@ -221,6 +221,114 @@ function seed() {
     },
   };
 
+  // -------------------------------------------------------------------------
+  // Self-referencing relatives (Pet → Pet)
+  //
+  // Attached after construction so the seed literals stay readable. Luna gets
+  // a parent, offspring and a lineage chain, which makes plain GetPet /
+  // ListPets responses contain a Pet nested inside a Pet — the shape that
+  // trips up renderers walking a cyclic schema.
+  // -------------------------------------------------------------------------
+
+  const nova = {
+    id: 'pet-001-parent',
+    name: 'Nova',
+    species: 'SPECIES_DOG',
+    breed: 'Golden Retriever',
+    status: 'STATUS_ADOPTED',
+    owner: luna.owner,
+    age_months: 96,
+    weight_kg: 31.2,
+    is_neutered: true,
+    created_at: timestamp('2017-04-12T09:00:00Z'),
+    updated_at: now(),
+    description: { value: "Luna's mother, retired show dog" },
+    identification: { microchip_id: 'MC-1122334455' },
+    nicknames: ['Nova Star'],
+    tags: { role: 'dam', temperament: 'calm' },
+  };
+
+  const scout = {
+    id: 'pet-001-pup-001',
+    name: 'Scout',
+    species: 'SPECIES_DOG',
+    breed: 'Golden Retriever',
+    status: 'STATUS_AVAILABLE',
+    age_months: 4,
+    weight_kg: 8.1,
+    is_neutered: false,
+    created_at: timestamp('2025-02-20T09:00:00Z'),
+    updated_at: now(),
+    description: { value: 'Luna\'s puppy, boundless energy' },
+    identification: { tag_number: 1201 },
+    nicknames: ['Scooter'],
+    tags: { role: 'puppy', litter: 'spring-2025' },
+    // Third level of nesting: Luna → Scout → Pip
+    offspring: [
+      {
+        id: 'pet-001-pup-001-a',
+        name: 'Pip',
+        species: 'SPECIES_DOG',
+        breed: 'Golden Retriever',
+        status: 'STATUS_PENDING',
+        age_months: 1,
+        weight_kg: 2.4,
+        created_at: timestamp('2025-06-01T09:00:00Z'),
+        updated_at: now(),
+        nicknames: ['Pipsqueak'],
+      },
+    ],
+  };
+
+  const willow = {
+    id: 'pet-001-pup-002',
+    name: 'Willow',
+    species: 'SPECIES_DOG',
+    breed: 'Golden Retriever',
+    status: 'STATUS_ADOPTED',
+    age_months: 4,
+    weight_kg: 7.6,
+    is_neutered: false,
+    created_at: timestamp('2025-02-20T09:15:00Z'),
+    updated_at: now(),
+    identification: { tag_number: 1202 },
+    tags: { role: 'puppy', litter: 'spring-2025' },
+  };
+
+  // Direct self-reference
+  luna.parent = nova;
+  // Repeated self-reference
+  luna.offspring = [scout, willow];
+  // Indirect self-reference: Pet → PetLineage → Pet, with a recursive branch
+  luna.lineage = {
+    registry_id: 'AKC-LUNA-001',
+    generation: 1,
+    ancestor: nova,
+    branches: [
+      {
+        registry_id: 'AKC-LUNA-001-A',
+        generation: 2,
+        ancestor: scout,
+        branches: [
+          {
+            registry_id: 'AKC-LUNA-001-A-1',
+            generation: 3,
+            branches: [],
+          },
+        ],
+      },
+    ],
+  };
+
+  // Mochi carries only the indirect cycle, so the two shapes can be compared.
+  mochi.lineage = {
+    registry_id: 'TICA-MOCHI-002',
+    generation: 1,
+    branches: [],
+  };
+
+  // Relatives are reachable through luna's self-referencing fields only — they
+  // are deliberately not top-level entries, so ListPets stays at 3 records.
   pets.set(luna.id, luna);
   pets.set(mochi.id, mochi);
   pets.set(kiwi.id, kiwi);

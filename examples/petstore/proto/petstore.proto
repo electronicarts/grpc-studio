@@ -100,6 +100,26 @@ message MedicalRecord {
 }
 
 // ---------------------------------------------------------------------------
+// Recursive / cyclic message types
+//
+// The schema graph below contains cycles: Pet → Pet (direct), Pet → repeated
+// Pet, and Pet → PetLineage → Pet (indirect). PetLineage is also recursive
+// through its own type. Any renderer that walks the descriptor eagerly will
+// recurse forever here, so these fields exercise cycle detection in both
+// request forms (CreatePet takes a Pet) and response views (GetPet returns
+// a Pet).
+// ---------------------------------------------------------------------------
+
+message PetLineage {
+  string registry_id = 1;
+  // Indirect cycle: PetLineage → Pet → PetLineage
+  Pet ancestor = 2;
+  // Self-recursive: PetLineage → PetLineage
+  repeated PetLineage branches = 3;
+  int32 generation = 4;
+}
+
+// ---------------------------------------------------------------------------
 // Main Pet message — exercises every proto3 feature
 // ---------------------------------------------------------------------------
 
@@ -146,6 +166,15 @@ message Pet {
 
   // Any — extensible typed payload (e.g. for event-specific data)
   google.protobuf.Any extra_info = 22;
+
+  // Direct self-reference — Pet contains a Pet
+  Pet parent = 23;
+
+  // Repeated self-reference — Pet contains many Pets
+  repeated Pet offspring = 24;
+
+  // Indirect self-reference — Pet → PetLineage → Pet
+  PetLineage lineage = 25;
 }
 
 // ---------------------------------------------------------------------------
@@ -209,6 +238,14 @@ message BulkCreatePetsResponse {
   repeated string errors = 3;
 }
 
+// Recursive messages
+
+message GetPetFamilyRequest {
+  string id = 1;
+  // How many ancestor/descendant levels to populate (default 3, max 10).
+  int32 depth = 2;
+}
+
 message HealthCheckRequest {
   string pet_id = 1;
   repeated string vital_signs = 2;
@@ -233,6 +270,9 @@ service PetStoreService {
   rpc DeletePet(DeletePetRequest) returns (google.protobuf.Empty);
   rpc ListPets(ListPetsRequest) returns (ListPetsResponse);
   rpc SearchPets(SearchPetsRequest) returns (ListPetsResponse);
+
+  // Recursive payloads — response nests Pet inside Pet several levels deep
+  rpc GetPetFamily(GetPetFamilyRequest) returns (Pet);
 
   // Server streaming — live pet event feed
   rpc WatchPets(WatchPetsRequest) returns (stream PetEvent);
