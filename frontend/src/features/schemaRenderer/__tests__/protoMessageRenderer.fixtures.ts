@@ -308,6 +308,50 @@ const fdSet = create(FileDescriptorSetSchema, {
             messageField('float_val', 3, '.google.protobuf.FloatValue'),
           ],
         },
+        // Cyclic schema graph, mirroring examples/petstore Pet:
+        //   Recursive.parent   → Recursive          (direct)
+        //   Recursive.children → repeated Recursive (repeated)
+        //   Recursive.byName   → map<string, Recursive> (map)
+        //   Recursive.lineage  → Lineage.ancestor → Recursive (indirect)
+        //   Lineage.branches   → repeated Lineage   (self-recursive)
+        // Any schema walker without cycle detection recurses forever here.
+        {
+          name: 'Recursive',
+          nestedType: [
+            {
+              name: 'ByNameEntry',
+              options: { mapEntry: true },
+              field: [
+                field({ name: 'key', number: 1, type: T.STRING }),
+                messageField('value', 2, '.test.Recursive'),
+              ],
+            },
+          ],
+          field: [
+            field({ name: 'name', number: 1, type: T.STRING }),
+            messageField('parent', 2, '.test.Recursive'),
+            messageField('children', 3, '.test.Recursive', { label: L.REPEATED }),
+            messageField('byName', 4, '.test.Recursive.ByNameEntry', { label: L.REPEATED }),
+            messageField('lineage', 5, '.test.Lineage'),
+          ],
+        },
+        {
+          name: 'Lineage',
+          field: [
+            field({ name: 'registryId', number: 1, type: T.STRING }),
+            messageField('ancestor', 2, '.test.Recursive'),
+            messageField('branches', 3, '.test.Lineage', { label: L.REPEATED }),
+          ],
+        },
+        {
+          name: 'RecursiveOneof',
+          oneofDecl: [{ name: 'relative' }],
+          field: [
+            field({ name: 'label', number: 1, type: T.STRING }),
+            field({ name: 'plain', number: 2, type: T.STRING, oneofIndex: 0 }),
+            messageField('self', 3, '.test.RecursiveOneof', { oneofIndex: 0 }),
+          ],
+        },
         {
           name: 'Comprehensive',
           oneofDecl: [{ name: 'choice' }],
@@ -347,6 +391,9 @@ export const repeatedWithOneofSchema = schema('test.RepeatedWithOneof')
 export const mapWithOneofSchema = schema('test.MapWithOneof')
 export const deeplyNestedSchema = schema('test.DeeplyNested')
 export const comprehensiveSchema = schema('test.Comprehensive')
+export const recursiveSchema = schema('test.Recursive')
+export const lineageSchema = schema('test.Lineage')
+export const recursiveOneofSchema = schema('test.RecursiveOneof')
 
 export const schemaCache = new Map<string, DescMessage>([
   wrapperMessageSchema,
@@ -362,6 +409,9 @@ export const schemaCache = new Map<string, DescMessage>([
   mapWithOneofSchema,
   deeplyNestedSchema,
   comprehensiveSchema,
+  recursiveSchema,
+  lineageSchema,
+  recursiveOneofSchema,
   schema('google.protobuf.Timestamp'),
   schema('google.protobuf.Struct'),
   schema('google.protobuf.Value'),
@@ -403,5 +453,28 @@ export const testData = {
     status: 'STATUS_ACTIVE',
     stringOption: 'chosen',
     tags: { env: 'test' },
+  },
+  // A finite payload for the infinite `test.Recursive` schema graph: a message
+  // nested inside itself through every recursive field kind.
+  recursive: {
+    name: 'root',
+    parent: {
+      name: 'grandparent',
+      parent: { name: 'great-grandparent' },
+    },
+    children: [
+      { name: 'child-a', children: [{ name: 'grandchild' }] },
+      { name: 'child-b' },
+    ],
+    byName: {
+      'entry-a': { name: 'mapped-a', parent: { name: 'mapped-a-parent' } },
+    },
+    lineage: {
+      registryId: 'REG-1',
+      ancestor: { name: 'lineage-ancestor', parent: { name: 'deep-ancestor' } },
+      branches: [
+        { registryId: 'REG-1-A', branches: [{ registryId: 'REG-1-A-1' }] },
+      ],
+    },
   },
 }

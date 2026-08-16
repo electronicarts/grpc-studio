@@ -4,25 +4,32 @@ import type { DescField, DescMessage, DescOneof } from '@bufbuild/protobuf'
 import { isEmpty } from './scalarTypeUtils'
 import { valueMatchesSearch } from './searchUtils'
 import { getFieldValue as getFieldValueUtil } from './fieldOperations'
+import { canDescendInto } from './descriptorTraversal'
 import { fieldNestedMessage, fieldTypeName } from '../../../utils/descUtils'
 
+/**
+ * Does anything inside `schema` match `query`?
+ *
+ * The schema graph may be cyclic (a message containing itself), so descent is
+ * gated by `canDescendInto` — see that function for the rule.
+ */
 function hasMatchingChildren(
   schema: DescMessage,
   query: string,
   fieldValue?: unknown,
+  parentTypes: readonly string[] = [],
 ): boolean {
   if (!query) return true
+
+  const ancestorTypes = [...parentTypes, schema.typeName]
 
   for (const field of schema.fields) {
     const fv = getFieldValueUtil(fieldValue as Record<string, unknown> | null | undefined, field.name)
     if (fieldMatchesField(field, fv, query)) return true
 
-    if (field.fieldKind === 'message') {
-      if (hasMatchingChildren(field.message, query, fv)) return true
-    } else if (field.fieldKind === 'list' && field.listKind === 'message') {
-      if (hasMatchingChildren(field.message, query, fv)) return true
-    } else if (field.fieldKind === 'map' && field.mapKind === 'message') {
-      if (hasMatchingChildren(field.message, query, fv)) return true
+    const nested = fieldNestedMessage(field)
+    if (nested && canDescendInto(nested, fv != null, ancestorTypes)) {
+      if (hasMatchingChildren(nested, query, fv, ancestorTypes)) return true
     }
   }
 
