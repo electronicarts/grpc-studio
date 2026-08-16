@@ -16,24 +16,31 @@ import { fieldNestedMessage, fieldTypeName } from '../../../utils/descUtils'
 function hasMatchingChildren(
   schema: DescMessage,
   query: string,
-  fieldValue?: unknown,
-  parentTypes: readonly string[] = [],
+  fieldValue: unknown,
+  parentTypes: readonly string[],
 ): boolean {
   if (!query) return true
 
   const ancestorTypes = [...parentTypes, schema.typeName]
+  const messageValue = fieldValue as Record<string, unknown> | null | undefined
 
-  for (const field of schema.fields) {
-    const fv = getFieldValueUtil(fieldValue as Record<string, unknown> | null | undefined, field.name)
-    if (fieldMatchesField(field, fv, query)) return true
+  return schema.fields.some(field =>
+    fieldOrChildrenMatch(field, getFieldValueUtil(messageValue, field.name), query, ancestorTypes),
+  )
+}
 
-    const nested = fieldNestedMessage(field)
-    if (nested && canDescendInto(nested, fv != null, ancestorTypes)) {
-      if (hasMatchingChildren(nested, query, fv, ancestorTypes)) return true
-    }
-  }
+/** Does `field` itself match `query`, or anything reachable beneath it? */
+function fieldOrChildrenMatch(
+  field: DescField,
+  fieldValue: unknown,
+  query: string,
+  ancestorTypes: readonly string[] = [],
+): boolean {
+  if (fieldMatchesField(field, fieldValue, query)) return true
 
-  return false
+  const nested = fieldNestedMessage(field)
+  if (!nested || !canDescendInto(nested, fieldValue != null, ancestorTypes)) return false
+  return hasMatchingChildren(nested, query, fieldValue, ancestorTypes)
 }
 
 function fieldMatchesField(field: DescField, fieldValue: unknown, query: string): boolean {
@@ -57,14 +64,11 @@ export function filterFields(
   const { searchQuery, hideEmptyFields, isRoot } = options
   const regularFields = schema.fields.filter(f => f.oneof === undefined)
 
+  const matches = (f: DescField) =>
+    fieldOrChildrenMatch(f, getFieldValueUtil(value, f.name), searchQuery)
+
   let filteredRegular = isRoot && searchQuery
-    ? regularFields.filter(f => {
-        const fv = getFieldValueUtil(value, f.name)
-        if (fieldMatchesField(f, fv, searchQuery)) return true
-        const nested = fieldNestedMessage(f)
-        if (nested && hasMatchingChildren(nested, searchQuery, fv)) return true
-        return false
-      })
+    ? regularFields.filter(matches)
     : regularFields
 
   if (hideEmptyFields) {
@@ -74,13 +78,7 @@ export function filterFields(
   let filteredOneOf = isRoot && searchQuery
     ? schema.oneofs.filter((oneof) => {
         if (oneof.name.toLowerCase().includes(searchQuery.toLowerCase())) return true
-        return oneof.fields.some(f => {
-          const fv = getFieldValueUtil(value, f.name)
-          if (fieldMatchesField(f as unknown as DescField, fv, searchQuery)) return true
-          const nested = fieldNestedMessage(f as unknown as DescField)
-          if (nested && hasMatchingChildren(nested, searchQuery, fv)) return true
-          return false
-        })
+        return oneof.fields.some(f => matches(f as unknown as DescField))
       })
     : schema.oneofs
 

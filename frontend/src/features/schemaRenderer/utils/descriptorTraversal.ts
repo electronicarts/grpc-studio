@@ -40,36 +40,71 @@ export function canDescendInto(
   return hasData || !ancestorTypes.includes(nested.typeName)
 }
 
+/**
+ * One place a nested message lives under a field: a plain message field, an
+ * item of a repeated field, or a map entry's value.
+ */
+export interface NestedMessageSlot {
+  schema: DescMessage
+  value: unknown
+  path: string
+  /**
+   * True for per-element slots (list items `items[0]`, map entries `m[key]`),
+   * false for the field itself. Element slots exist only where data does, so
+   * callers that record paths know which ones the data introduced.
+   */
+  isElement: boolean
+}
+
+/**
+ * Enumerate the nested-message slots under `field` — the single place that
+ * knows how message / repeated-message / map-of-message fields differ.
+ *
+ * With data, repeated and map fields yield one element slot per item or key.
+ * Without it they yield a single slot for the field itself, so schema-only
+ * walks (an empty request form) still reach the nested type.
+ */
+export function nestedMessageSlots(
+  field: DescField,
+  fieldValue: unknown,
+  fieldPath: string,
+): NestedMessageSlot[] {
+  const schema = fieldNestedMessage(field)
+  if (!schema) return []
+
+  if (field.fieldKind === 'list' && Array.isArray(fieldValue)) {
+    return fieldValue.map((item, index) => ({
+      schema,
+      value: item,
+      path: `${fieldPath}[${index}]`,
+      isElement: true,
+    }))
+  }
+
+  if (field.fieldKind === 'map' && isRecord(fieldValue)) {
+    return Object.entries(fieldValue).map(([key, value]) => ({
+      schema,
+      value,
+      path: `${fieldPath}[${key}]`,
+      isElement: true,
+    }))
+  }
+
+  const value = field.fieldKind === 'message' ? fieldValue : undefined
+  return [{ schema, value, path: fieldPath, isElement: false }]
+}
+
+/**
+ * Visit every nested message *value* under `field` — slots with no data are
+ * skipped, so this walks the payload rather than the schema.
+ */
 export function forEachNestedMessageValue(
   field: DescField,
   fieldValue: unknown,
   fieldPath: string,
   visit: (schema: DescMessage, value: Record<string, unknown>, path: string) => void,
 ): void {
-  const nestedMessage = fieldNestedMessage(field)
-  if (!nestedMessage) return
-
-  if (field.fieldKind === 'map') {
-    if (field.mapKind !== 'message' || !isRecord(fieldValue)) return
-    Object.entries(fieldValue).forEach(([mapKey, mapValue]) => {
-      if (isRecord(mapValue)) {
-        visit(nestedMessage, mapValue, `${fieldPath}[${mapKey}]`)
-      }
-    })
-    return
-  }
-
-  if (field.fieldKind === 'list') {
-    if (field.listKind !== 'message' || !Array.isArray(fieldValue)) return
-    fieldValue.forEach((item, index) => {
-      if (isRecord(item)) {
-        visit(nestedMessage, item, `${fieldPath}[${index}]`)
-      }
-    })
-    return
-  }
-
-  if (field.fieldKind === 'message' && isRecord(fieldValue)) {
-    visit(nestedMessage, fieldValue, fieldPath)
+  for (const slot of nestedMessageSlots(field, fieldValue, fieldPath)) {
+    if (isRecord(slot.value)) visit(slot.schema, slot.value, slot.path)
   }
 }
