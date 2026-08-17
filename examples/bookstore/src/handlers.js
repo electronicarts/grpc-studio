@@ -135,6 +135,77 @@ function SearchBooks(call, callback) {
 }
 
 // ---------------------------------------------------------------------------
+// Recursive payload — Book nested inside Book
+//
+// Builds a series chain `depth` levels deep using the self-referencing fields
+// (prequel / sequels / lineage). Useful for exercising renderers against
+// cyclic schemas: the descriptor cycle is infinite, but the payload is not.
+// ---------------------------------------------------------------------------
+
+const MAX_SERIES_DEPTH = 10;
+const DEFAULT_SERIES_DEPTH = 3;
+
+// Strip self-referencing fields so a seeded book can be used as a chain node
+// without dragging its own (already-populated) relatives along.
+function withoutRelatives(book) {
+  const { prequel: _prequel, sequels: _sequels, lineage: _lineage, ...rest } = book;
+  return rest;
+}
+
+function buildSeries(book, depth, generation) {
+  const node = withoutRelatives(book);
+  if (depth <= 0) return node;
+
+  const predecessor = buildSeries(book, depth - 1, generation + 1);
+
+  return {
+    ...node,
+    // Direct self-reference
+    prequel: {
+      ...predecessor,
+      id: `${book.id}-prequel${generation}`,
+      title: `${book.title}: Book ${generation}`,
+    },
+    // Repeated self-reference
+    sequels: [
+      {
+        ...buildSeries(book, depth - 1, generation + 1),
+        id: `${book.id}-sequel${generation}a`,
+        title: `${book.title}: Book ${generation + 1}`,
+      },
+      {
+        ...withoutRelatives(book),
+        id: `${book.id}-sequel${generation}b`,
+        title: `${book.title}: Companion Volume`,
+      },
+    ],
+    // Indirect self-reference — Book → BookLineage → Book
+    lineage: {
+      catalog_id: `cat-${book.id}-${generation}`,
+      generation,
+      predecessor,
+      branches: [
+        {
+          catalog_id: `cat-${book.id}-${generation}-a`,
+          generation: generation + 1,
+          branches: [],
+        },
+      ],
+    },
+  };
+}
+
+function GetBookSeries(call, callback) {
+  const book = store.get(call.request.id);
+  if (!book) return notFound(call, callback, call.request.id);
+
+  const requested = call.request.depth || DEFAULT_SERIES_DEPTH;
+  const depth = Math.min(Math.max(requested, 0), MAX_SERIES_DEPTH);
+
+  callback(null, buildSeries(book, depth, 1));
+}
+
+// ---------------------------------------------------------------------------
 // Server streaming — live catalog event feed
 // ---------------------------------------------------------------------------
 
@@ -258,6 +329,7 @@ module.exports = {
   DeleteBook,
   ListBooks,
   SearchBooks,
+  GetBookSeries,
   WatchBooks,
   BulkCreateBooks,
   CheckStock,

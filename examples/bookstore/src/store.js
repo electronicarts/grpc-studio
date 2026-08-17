@@ -25,49 +25,49 @@ function timestamp(iso) {
 // ---------------------------------------------------------------------------
 
 function seed() {
-  const dune = {
+  const philosophersStone = {
     id: 'book-001',
-    title: 'Dune',
-    genre: 'GENRE_SCIENCE',
-    author: 'Frank Herbert',
+    title: "Harry Potter and the Philosopher's Stone",
+    genre: 'GENRE_FANTASY',
+    author: 'J.K. Rowling',
     availability: 'AVAILABILITY_IN_STOCK',
     publisher: {
       id: 'pub-001',
-      name: 'Chilton Books',
+      name: 'Bloomsbury Publishing',
       email: 'contact@example.com',
-      phone: '+1-555-0101',
+      phone: '+44-555-0101',
       address: {
-        street: '401 Walnut Street',
-        city: 'Philadelphia',
-        state: 'PA',
-        zip_code: '19106',
-        country: 'US',
-        coordinates: { latitude: 39.9496, longitude: -75.1503 },
+        street: '50 Bedford Square',
+        city: 'London',
+        state: '',
+        zip_code: 'WC1B 3DP',
+        country: 'UK',
+        coordinates: { latitude: 51.5194, longitude: -0.127 },
       },
-      founded_at: timestamp('1922-01-15T10:30:00Z'),
+      founded_at: timestamp('1986-09-01T10:30:00Z'),
     },
-    page_count: 412,
-    weight_kg: 0.68,
+    page_count: 223,
+    weight_kg: 0.42,
     is_hardcover: true,
     cover_thumbnail: Buffer.from('R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==', 'base64'),
     created_at: timestamp('2024-03-01T08:00:00Z'),
     updated_at: now(),
-    synopsis: { value: 'Epic tale of politics, religion, and ecology on the desert planet Arrakis' },
+    synopsis: { value: 'An orphan discovers he is a wizard and begins his first year at Hogwarts' },
     edition_number: { value: 1 },
-    catalog_entry: { isbn_13: '978-0441013593' },
-    alternate_titles: ['Dune Chronicles Book 1'],
+    catalog_entry: { isbn_13: '978-0747532699' },
+    alternate_titles: ["Harry Potter and the Sorcerer's Stone"],
     reviews: [
       {
         reviewer: 'Sarah Chen',
         rating: 5,
-        comment: 'A masterpiece of world-building',
+        comment: 'The book that got a whole generation reading',
         posted_at: timestamp('2024-06-15T09:00:00Z'),
         verified_purchase: { value: true },
       },
       {
         reviewer: 'James Park',
         rating: 4,
-        comment: 'Dense but rewarding',
+        comment: 'Charming, though it is really a setup for the later books',
         posted_at: timestamp('2024-06-18T09:30:00Z'),
         verified_purchase: { value: true },
       },
@@ -77,38 +77,38 @@ function seed() {
         id: 'ed-001',
         format: 'Hardcover',
         language: 'en',
-        published_at: timestamp('1965-08-01T00:00:00Z'),
-        time_in_print: { seconds: 1861920000, nanos: 0 }, // ~59 years
-        price_usd: { value: 29.99 },
+        published_at: timestamp('1997-06-26T00:00:00Z'),
+        time_in_print: { seconds: 851472000, nanos: 0 }, // ~27 years
+        price_usd: { value: 24.99 },
         signed_copy: false,
       },
     ],
     tags: {
-      series: 'Dune',
-      award: 'Hugo',
-      theme: 'ecology',
-      'reading-level': 'adult',
+      series: 'Harry Potter',
+      award: 'Smarties',
+      theme: 'magic',
+      'reading-level': 'middle-grade',
     },
     editions_by_format: {
       'Hardcover': {
         id: 'ed-001',
         format: 'Hardcover',
         language: 'en',
-        published_at: timestamp('1965-08-01T00:00:00Z'),
+        published_at: timestamp('1997-06-26T00:00:00Z'),
         time_in_print: { seconds: 0, nanos: 0 },
-        price_usd: { value: 29.99 },
+        price_usd: { value: 24.99 },
         signed_copy: false,
       },
     },
     metadata: {
       fields: {
-        list_price: { numberValue: 29.99 },
-        shelf_section: { stringValue: 'Science Fiction' },
+        list_price: { numberValue: 24.99 },
+        shelf_section: { stringValue: "Children's Fantasy" },
         awards: {
           listValue: {
             values: [
-              { stringValue: 'Hugo Award' },
-              { stringValue: 'Nebula Award' },
+              { stringValue: 'Nestlé Smarties Book Prize' },
+              { stringValue: 'British Book Award' },
             ],
           },
         },
@@ -219,7 +219,116 @@ function seed() {
     },
   };
 
-  books.set(dune.id, dune);
+  // -------------------------------------------------------------------------
+  // Self-referencing relatives (Book → Book)
+  //
+  // Attached after construction so the seed literals stay readable. The
+  // Philosopher's Stone gets a prequel, sequels and a lineage chain, which
+  // makes plain GetBook / ListBooks responses contain a Book nested inside a
+  // Book — the shape that trips up renderers walking a cyclic schema.
+  // -------------------------------------------------------------------------
+
+  const fantasticBeasts = {
+    id: 'book-001-prequel',
+    title: 'Fantastic Beasts and Where to Find Them',
+    genre: 'GENRE_FANTASY',
+    author: 'Newt Scamander',
+    availability: 'AVAILABILITY_IN_STOCK',
+    publisher: philosophersStone.publisher,
+    page_count: 128,
+    weight_kg: 0.19,
+    is_hardcover: true,
+    created_at: timestamp('2001-03-12T08:00:00Z'),
+    updated_at: now(),
+    synopsis: { value: 'The Hogwarts textbook on magical creatures, written decades before Harry arrived' },
+    catalog_entry: { isbn_13: '978-1408803011' },
+    alternate_titles: ['Hogwarts Library: Fantastic Beasts'],
+    tags: { series: 'Hogwarts Library', position: 'prequel' },
+  };
+
+  const chamberOfSecrets = {
+    id: 'book-001-sequel-001',
+    title: 'Harry Potter and the Chamber of Secrets',
+    genre: 'GENRE_FANTASY',
+    author: 'J.K. Rowling',
+    availability: 'AVAILABILITY_IN_STOCK',
+    publisher: philosophersStone.publisher,
+    page_count: 251,
+    weight_kg: 0.45,
+    is_hardcover: false,
+    created_at: timestamp('1998-07-02T08:00:00Z'),
+    updated_at: now(),
+    synopsis: { value: 'A hidden chamber opens and students are petrified in Harry\'s second year' },
+    catalog_entry: { series: { series_name: 'Harry Potter', volume: 2, is_final_volume: false } },
+    tags: { series: 'Harry Potter', position: 'sequel' },
+    // Third level of nesting: Philosopher's Stone → Chamber of Secrets → Azkaban
+    sequels: [
+      {
+        id: 'book-001-sequel-001-a',
+        title: 'Harry Potter and the Prisoner of Azkaban',
+        genre: 'GENRE_FANTASY',
+        author: 'J.K. Rowling',
+        availability: 'AVAILABILITY_IN_STOCK',
+        page_count: 317,
+        weight_kg: 0.52,
+        created_at: timestamp('1999-07-08T08:00:00Z'),
+        updated_at: now(),
+        catalog_entry: { series: { series_name: 'Harry Potter', volume: 3, is_final_volume: false } },
+      },
+    ],
+  };
+
+  const gobletOfFire = {
+    id: 'book-001-sequel-002',
+    title: 'Harry Potter and the Goblet of Fire',
+    genre: 'GENRE_FANTASY',
+    author: 'J.K. Rowling',
+    availability: 'AVAILABILITY_OUT_OF_STOCK',
+    page_count: 636,
+    weight_kg: 0.94,
+    is_hardcover: false,
+    created_at: timestamp('2000-07-08T08:00:00Z'),
+    updated_at: now(),
+    catalog_entry: { series: { series_name: 'Harry Potter', volume: 4, is_final_volume: false } },
+    tags: { series: 'Harry Potter', position: 'sequel' },
+  };
+
+  // Direct self-reference
+  philosophersStone.prequel = fantasticBeasts;
+  // Repeated self-reference
+  philosophersStone.sequels = [chamberOfSecrets, gobletOfFire];
+  // Indirect self-reference: Book → BookLineage → Book, with a recursive branch
+  philosophersStone.lineage = {
+    catalog_id: 'CAT-HP-001',
+    generation: 1,
+    predecessor: fantasticBeasts,
+    branches: [
+      {
+        catalog_id: 'CAT-HP-001-A',
+        generation: 2,
+        predecessor: chamberOfSecrets,
+        branches: [
+          {
+            catalog_id: 'CAT-HP-001-A-1',
+            generation: 3,
+            branches: [],
+          },
+        ],
+      },
+    ],
+  };
+
+  // The Hobbit carries only the indirect cycle, so the two shapes can be compared.
+  hobbit.lineage = {
+    catalog_id: 'CAT-HOBBIT-002',
+    generation: 1,
+    branches: [],
+  };
+
+  // Related volumes are reachable through the Philosopher's Stone
+  // self-referencing fields only — they are deliberately not top-level
+  // entries, so ListBooks stays at 3 records.
+  books.set(philosophersStone.id, philosophersStone);
   books.set(hobbit.id, hobbit);
   books.set(goodnight.id, goodnight);
 }
