@@ -3,3 +3,4 @@
 export { default as ServiceExplorer } from './components/ServiceExplorer'
 export { useServiceSelection } from './hooks/useServiceDiscovery'
 
+export type { PendingShare } from './types'

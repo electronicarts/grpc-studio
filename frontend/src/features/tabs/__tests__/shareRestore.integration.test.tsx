@@ -78,11 +78,12 @@ function Probe() {
 // restored request body is observable.
 function MiniApp() {
   const {
-    selectedTarget, selectedService, selectedMethod, sharedRequestBody, sharedMetadata, clearSelection,
+    selectedTarget, selectedService, selectedMethod, pendingShare, consumeShare, clearSelection,
   } = useServiceSelection()
 
   const { tabs, activeTabId } = useMethodTabs({
-    selectedTarget, selectedService, selectedMethod, sharedRequestBody, sharedMetadata,
+    selectedTarget, selectedService, selectedMethod, pendingShare,
+    onShareConsumed: consumeShare,
     onClearSelection: clearSelection,
   })
 
@@ -110,6 +111,7 @@ describe('share restore (integration)', () => {
   beforeEach(() => {
     tabStateStore.clearAll()
     localStorage.clear()
+    sessionStorage.clear()
   })
 
   afterEach(() => {
@@ -130,6 +132,29 @@ describe('share restore (integration)', () => {
     const probe = await screen.findByTestId('probe-body')
     // …and it carries the shared request body.
     expect(JSON.parse(probe.textContent || '{}')).toEqual(sharedBody)
+  })
+
+  it('applies the shared body even when a tab for the method is already persisted (e.g. by another browser tab)', async () => {
+    // Another browser tab already has this method open and has persisted it.
+    const existingId = `${server.name}::${service.fullName}::${method.name}`
+    localStorage.setItem('grpc-studio-tabs', JSON.stringify([
+      { id: existingId, target: server.name, service, method, label: method.name },
+    ]))
+    localStorage.setItem('grpc-studio-active-tab', JSON.stringify(existingId))
+
+    const sharedBody = { id: '99' }
+    window.location.hash = new URL(buildShareableUrl(service.fullName, method.name, sharedBody)).hash
+
+    await act(async () => {
+      render(<MiniApp />)
+    })
+
+    // The share opens its own tab alongside the persisted one…
+    const probes = await screen.findAllByTestId('probe-body')
+    expect(probes).toHaveLength(2)
+    // …and that new (active) tab carries the shared body.
+    const active = probes.find(p => !p.closest('.hidden'))
+    expect(JSON.parse(active?.textContent || '{}')).toEqual(sharedBody)
   })
 
   it('restores shared request metadata into the opened tab', async () => {

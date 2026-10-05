@@ -39,6 +39,19 @@ export interface MethodItemProps {
 export type StreamingType = 'Unary' | 'Server Stream' | 'Client Stream' | 'Bidirectional Stream'
 
 // ---------------------------------------------------------------------------
+// Share link
+// ---------------------------------------------------------------------------
+
+/** A share link resolved against the discovered services: the method to open and its request. */
+export interface PendingShare {
+  target: string
+  service: GrpcService
+  method: GrpcMethod
+  requestBody: Record<string, unknown>
+  metadata: RequestMetadata | null
+}
+
+// ---------------------------------------------------------------------------
 // Selection hook
 // ---------------------------------------------------------------------------
 
@@ -48,8 +61,10 @@ export interface ServiceSelectionResult {
   selectedTarget: string | null
   selectedService: GrpcService | null
   selectedMethod: GrpcMethod | null
-  sharedRequestBody: Record<string, unknown> | null
-  sharedMetadata: RequestMetadata | null
+  /** A share link restored from the URL, waiting to be opened; null otherwise. */
+  pendingShare: PendingShare | null
+  /** Mark `pendingShare` as handled once it has been opened. */
+  consumeShare: () => void
   selectService: (service: GrpcService, server: ApiServer) => void
   selectMethod: (method: GrpcMethod, service: GrpcService, server: ApiServer) => void
   clearSelection: () => void

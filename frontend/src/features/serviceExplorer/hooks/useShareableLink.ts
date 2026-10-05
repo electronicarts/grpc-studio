@@ -1,27 +1,23 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import { useEffect, useRef } from 'react'
-import type { RequestMetadata } from '@grpc-studio/shared'
-import { GrpcService, GrpcMethod, ApiServer } from '../../../types/grpc'
+import { GrpcService, ApiServer } from '../../../types/grpc'
 import { parseShareableUrl, clearShareFragment, SharedRequestState } from '../../../utils/shareableLink'
+import type { PendingShare } from '../types'
 
 // ---------------------------------------------------------------------------
 // Restore shareable link state once services are available
 // ---------------------------------------------------------------------------
 
-interface ShareableLinkResult {
-  sharedRequestBody: Record<string, unknown> | null
-}
-
+/**
+ * Reads the share fragment from the URL on mount and, once the shared
+ * service/method has been discovered, hands it to `onRestore` exactly once.
+ */
 export function useShareableLink(
   servers: ApiServer[],
   services: GrpcService[],
-  setSelectedService: (s: GrpcService) => void,
-  setSelectedMethod: (m: GrpcMethod) => void,
-  setSharedRequestBody: (body: Record<string, unknown> | null) => void,
-  setSharedMetadata: (metadata: RequestMetadata | null) => void,
-  setSelectedTarget: (target: string) => void,
-): ShareableLinkResult {
+  onRestore: (share: PendingShare) => void,
+): void {
   const pendingShare = useRef<SharedRequestState | null>(parseShareableUrl())
 
   useEffect(() => {
@@ -36,18 +32,10 @@ export function useShareableLink(
 
     // Infer the target by finding which server has this service
     const server = servers.find(srv => srv.services.some(svc => svc.fullName === service.fullName))
-
     if (!server) return
 
-    // Set target first so tab system has all required data
-    setSelectedTarget(server.name)
-    setSelectedService(service)
-    setSelectedMethod(method)
-    setSharedRequestBody(share.r)
-    setSharedMetadata(share.md ?? null)
+    onRestore({ target: server.name, service, method, requestBody: share.r, metadata: share.md ?? null })
     pendingShare.current = null
     clearShareFragment()
-  }, [servers, services, setSelectedService, setSelectedMethod, setSharedRequestBody, setSharedMetadata, setSelectedTarget])
-
-  return { sharedRequestBody: null }
+  }, [servers, services, onRestore])
 }

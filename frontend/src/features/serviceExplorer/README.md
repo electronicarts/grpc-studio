@@ -17,7 +17,8 @@ import { ServiceExplorer, useServiceSelection } from '@/features/serviceExplorer
   services,
   selectedService,
   selectedMethod,
-  sharedRequestBody,
+  pendingShare,    // share link restored from the URL, until consumed
+  consumeShare,
   selectService,
   selectMethod,
   clearSelection,
@@ -29,7 +30,8 @@ import { ServiceExplorer, useServiceSelection } from '@/features/serviceExplorer
 - uses `fullName` as the stable service identity
 - displays `name` when present, otherwise the short name from `fullName`
 - sorts services and methods alphabetically
-- restores shared links after discovery finishes
+- restores shared links after discovery finishes: selects the shared method and
+  exposes it as `pendingShare` until the consumer (the tab system) calls `consumeShare()`
 - exposes selected service/method to `MethodExplorer`
 
 ## Files

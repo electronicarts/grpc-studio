@@ -4,6 +4,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 import { useServiceSelection } from '../useServiceDiscovery'
 import { useSchemas } from '../../../schemaLoader'
+import { useShareableLink } from '../useShareableLink'
 import type { GrpcService, GrpcMethod, ApiServer } from '../../../../types/grpc'
 import { MethodKind } from '@grpc-studio/shared'
 
@@ -61,8 +62,7 @@ describe('useServiceSelection', () => {
     const { result } = renderHook(() => useServiceSelection())
     expect(result.current.selectedService).toBeNull()
     expect(result.current.selectedMethod).toBeNull()
-    expect(result.current.sharedRequestBody).toBeNull()
-    expect(result.current.sharedMetadata).toBeNull()
+    expect(result.current.pendingShare).toBeNull()
   })
 
   it('selectService sets service and clears method', () => {
@@ -87,10 +87,22 @@ describe('useServiceSelection', () => {
     expect(result.current.selectedMethod).toBeNull()
   })
 
-  it('selectService clears sharedRequestBody', () => {
+  it('a restored share selects its method and stays pending until consumed', () => {
     const { result } = renderHook(() => useServiceSelection())
-    act(() => { result.current.selectService(mockService, mockServer1) })
-    expect(result.current.sharedRequestBody).toBeNull()
+    const onRestore = vi.mocked(useShareableLink).mock.lastCall![2]
+    const share = {
+      target: 'Server1', service: mockService, method: mockMethod,
+      requestBody: { id: '1' }, metadata: null,
+    }
+
+    act(() => { onRestore(share) })
+    expect(result.current.selectedTarget).toBe('Server1')
+    expect(result.current.selectedMethod).toBe(mockMethod)
+    expect(result.current.pendingShare).toBe(share)
+
+    act(() => { result.current.consumeShare() })
+    expect(result.current.pendingShare).toBeNull()
+    expect(result.current.selectedMethod).toBe(mockMethod)
   })
 
   it('returns services from the schema source', () => {

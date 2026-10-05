@@ -1,8 +1,20 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-export function safeGetJSON<T>(key: string): T | null {
+/**
+ * Which Web Storage area to use. `local` is shared by every browser tab of the
+ * origin; `session` is private to one browser tab and survives reloads.
+ */
+export type StorageArea = 'local' | 'session'
+
+// Resolved lazily (inside callers' try blocks): touching `window.localStorage`
+// itself can throw when storage is disabled.
+function storageFor(area: StorageArea): Storage {
+  return area === 'session' ? sessionStorage : localStorage
+}
+
+export function safeGetJSON<T>(key: string, area: StorageArea = 'local'): T | null {
   try {
-    const raw = localStorage.getItem(key)
+    const raw = storageFor(area).getItem(key)
     if (!raw) return null
     return JSON.parse(raw) as T
   } catch {
@@ -15,13 +27,13 @@ export interface StorageResult {
   error?: string;
 }
 
-export function safeSetJSON<T>(key: string, value: T): StorageResult {
+export function safeSetJSON<T>(key: string, value: T, area: StorageArea = 'local'): StorageResult {
   try {
-    localStorage.setItem(key, JSON.stringify(value))
+    storageFor(area).setItem(key, JSON.stringify(value))
     return { success: true }
   } catch (error) {
     if (error instanceof DOMException && error.name === 'QuotaExceededError') {
-      localStorage.removeItem(key)
+      try { storageFor(area).removeItem(key) } catch { /* best-effort */ }
       return {
         success: false,
         error: 'Storage quota exceeded. Consider clearing old history.'

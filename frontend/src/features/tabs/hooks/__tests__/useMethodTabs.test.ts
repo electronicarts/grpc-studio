@@ -38,22 +38,60 @@ const baseProps = {
   selectedTarget: 'Server1',
   selectedService: service,
   selectedMethod: method,
-  sharedRequestBody: null,
-  sharedMetadata: null,
+  pendingShare: null,
+  onShareConsumed: () => {},
 }
 
 const otherProps = {
   selectedTarget: 'Server1',
   selectedService: service,
   selectedMethod: otherMethod,
-  sharedRequestBody: null,
-  sharedMetadata: null,
+  pendingShare: null,
+  onShareConsumed: () => {},
 }
 
 describe('useMethodTabs', () => {
   beforeEach(() => {
     localStorage.clear()
+    sessionStorage.clear()
     tabStateStore.clearAll()
+  })
+
+  describe('persistence across browser tabs', () => {
+    const noSelection = { ...baseProps, selectedTarget: null, selectedService: null, selectedMethod: null }
+
+    it("restores this browser tab's own tabs on reload, ignoring other windows' writes", () => {
+      const { unmount } = renderHook(() => useMethodTabs(baseProps))
+      unmount()
+      // Another window of the app saves a different set afterwards.
+      localStorage.setItem('grpc-studio-tabs', JSON.stringify([]))
+
+      const { result } = renderHook(() => useMethodTabs(noSelection))
+
+      expect(result.current.tabs.map(t => t.id)).toEqual(['Server1::com.example.UserService::GetUser'])
+      expect(result.current.activeTabId).toBe('Server1::com.example.UserService::GetUser')
+    })
+
+    it('restores closed-all state on reload rather than reseeding from other windows', () => {
+      const { result: first, unmount } = renderHook(() => useMethodTabs(noSelection))
+      act(() => first.current.closeAllTabs())
+      unmount()
+      localStorage.setItem('grpc-studio-tabs', JSON.stringify([{ id: 'other', target: 'Server1', service, method, label: 'x' }]))
+
+      const { result } = renderHook(() => useMethodTabs(noSelection))
+
+      expect(result.current.tabs).toEqual([])
+    })
+
+    it('seeds a new browser tab from the most recently saved tabs', () => {
+      const { unmount } = renderHook(() => useMethodTabs(baseProps))
+      unmount()
+      sessionStorage.clear() // a fresh browser tab has no session state
+
+      const { result } = renderHook(() => useMethodTabs(noSelection))
+
+      expect(result.current.tabs.map(t => t.id)).toEqual(['Server1::com.example.UserService::GetUser'])
+    })
   })
 
   it('opens one tab for a selected method', () => {
