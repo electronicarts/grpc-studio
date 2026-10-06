@@ -29,8 +29,8 @@ const Playground: React.FC = () => {
     selectedTarget,
     selectedService,
     selectedMethod,
-    sharedRequestBody,
-    sharedMetadata,
+    pendingShare,
+    consumeShare,
     selectService,
     selectMethod,
     clearSelection,
@@ -52,8 +52,8 @@ const Playground: React.FC = () => {
     selectedTarget,
     selectedService,
     selectedMethod,
-    sharedRequestBody,
-    sharedMetadata,
+    pendingShare,
+    onShareConsumed: consumeShare,
     onClearSelection: clearSelection,
   })
 

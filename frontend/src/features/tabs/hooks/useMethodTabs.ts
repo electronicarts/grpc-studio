@@ -1,24 +1,22 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
-import { safeGetJSON, safeSetJSON } from '@/utils/storageHelpers'
 import type { MethodTab, UseMethodTabsProps, UseMethodTabsReturn } from '../types'
 import { makeTabId, matchesSelection, nextDuplicateId, type TabSelection } from '../utils/tabIdentity'
+import { restoreTabs, persistTabs, persistActiveTab } from '../lib/tabPersistence'
 import { tabStateStore } from '@/stores'
-
-const TABS_STORAGE_KEY = 'grpc-studio-tabs'
-const ACTIVE_TAB_STORAGE_KEY = 'grpc-studio-active-tab'
 
 export function useMethodTabs({
   selectedTarget,
   selectedService,
   selectedMethod,
-  sharedRequestBody,
-  sharedMetadata,
+  pendingShare,
+  onShareConsumed,
   onClearSelection,
 }: UseMethodTabsProps): UseMethodTabsReturn {
-  const [tabs, setTabs] = useState<MethodTab[]>(() => safeGetJSON<MethodTab[]>(TABS_STORAGE_KEY) ?? [])
-  const [activeTabId, setActiveTabId] = useState<string | null>(() => safeGetJSON<string>(ACTIVE_TAB_STORAGE_KEY))
+  const [initial] = useState(restoreTabs)
+  const [tabs, setTabs] = useState<MethodTab[]>(initial.tabs)
+  const [activeTabId, setActiveTabId] = useState<string | null>(initial.activeTabId)
 
   // The current sidebar selection, when a full method is selected.
   // Memoized on the identity-defining fields so effect/callback deps stay stable.
@@ -37,19 +35,19 @@ export function useMethodTabs({
     onClearSelectionRef.current = onClearSelection
   }, [onClearSelection])
 
-  // Persist tabs / active tab to localStorage
   useEffect(() => {
-    safeSetJSON(TABS_STORAGE_KEY, tabs)
+    persistTabs(tabs)
   }, [tabs])
 
   useEffect(() => {
-    safeSetJSON(ACTIVE_TAB_STORAGE_KEY, activeTabId)
+    persistActiveTab(activeTabId)
   }, [activeTabId])
 
   // When a method is selected from the sidebar, open it in a new tab or switch to existing.
   // A tab's identity includes its target, so the same method on two servers is distinct.
   useEffect(() => {
-    if (!selection) return
+    // A pending share opens its own tab (below); don't also open/switch for it here.
+    if (!selection || pendingShare) return
 
     // Already viewing a tab for this selection (a canonical tab OR a duplicate) —
     // leave it alone so duplicates don't get their focus stolen back.
@@ -71,12 +69,32 @@ export function useMethodTabs({
       service: selection.service,
       method: selection.method,
       label: selection.method.name,
-      requestBody: sharedRequestBody || undefined,
-      metadata: sharedMetadata || undefined,
     }
     setTabs(prev => [...prev, newTab])
     setActiveTabId(tabId)
-  }, [selection, sharedRequestBody, sharedMetadata, activeTabId, tabs])
+  }, [selection, pendingShare, activeTabId, tabs])
+
+  // A share link always opens a new tab carrying the shared request, even when a
+  // tab for that method already exists (e.g. restored from a previous session) —
+  // reusing it would drop the shared body and metadata.
+  useEffect(() => {
+    if (!pendingShare) return
+
+    const newTab: MethodTab = {
+      id: makeTabId(pendingShare.target, pendingShare.service, pendingShare.method),
+      target: pendingShare.target,
+      service: pendingShare.service,
+      method: pendingShare.method,
+      label: pendingShare.method.name,
+      requestBody: pendingShare.requestBody,
+      metadata: pendingShare.metadata ?? undefined,
+    }
+    if (tabs.some(t => t.id === newTab.id)) newTab.id = nextDuplicateId(newTab, tabs)
+
+    setTabs(prev => [...prev, newTab])
+    setActiveTabId(newTab.id)
+    onShareConsumed()
+  }, [pendingShare, onShareConsumed, tabs])
 
   // Open another copy of an existing tab, so the same method can live in multiple tabs.
   const duplicateTab = useCallback((sourceTabId: string) => {

@@ -2,6 +2,7 @@
 
 import type { GrpcMethod, GrpcService } from '@/types/grpc'
 import type { RequestMetadata } from '@grpc-studio/shared'
+import type { PendingShare } from '@/features/serviceExplorer'
 
 export interface MethodTab {
   id: string
@@ -26,8 +27,10 @@ export interface UseMethodTabsProps {
   selectedTarget: string | null
   selectedService: GrpcService | null
   selectedMethod: GrpcMethod | null
-  sharedRequestBody: Record<string, unknown> | null
-  sharedMetadata: RequestMetadata | null
+  /** A restored share link waiting to be opened as a tab, if any. */
+  pendingShare: PendingShare | null
+  /** Called once `pendingShare` has been opened, so it isn't opened again. */
+  onShareConsumed: () => void
   onClearSelection?: () => void
 }
 
