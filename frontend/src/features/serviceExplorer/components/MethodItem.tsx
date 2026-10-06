@@ -4,16 +4,17 @@ import React from 'react'
 import StreamingBadge from './StreamingBadge'
 import { getStreamingType } from '../utils/streamingType'
 import type { MethodItemProps } from '../types'
+import { SelectableButton } from '@/components/ui/selectableButton'
 
 const MethodItem: React.FC<MethodItemProps> = ({ method, service, server, isSelected, onSelect }) => {
   return (
-    <button
+    <SelectableButton
+      onActivate={() => onSelect(method, service, server)}
       className={`w-full rounded-lg p-3 text-left transition-all duration-200 ${
         isSelected
           ? 'bg-info text-white shadow-lg shadow-info/25'
           : 'text-foreground/90 hover:bg-accent'
       }`}
-      onClick={() => onSelect(method, service, server)}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex min-w-0 flex-1 items-start space-x-2">
@@ -24,7 +25,7 @@ const MethodItem: React.FC<MethodItemProps> = ({ method, service, server, isSele
           <StreamingBadge type={getStreamingType(method)} />
         </div>
       </div>
-    </button>
+    </SelectableButton>
   )
 }
 
