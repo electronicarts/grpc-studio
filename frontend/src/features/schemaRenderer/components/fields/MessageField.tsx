@@ -29,13 +29,19 @@ const MessageField: React.FC<MessageFieldProps> = ({ field, value, onChange, pat
     return wktComponent
   }
 
+  // Clearing the last populated child field unsets the message rather than leaving `{}` behind.
+  // Oneof members keep `{}` because an empty message still records which case is selected.
+  const handleNestedChange = (next: Record<string, unknown>) => {
+    onChange(Object.keys(next).length === 0 && !field.oneof ? undefined : next)
+  }
+
   // Not a WKT - render as regular nested message
   return (
     <MessageFieldFrame name={field.name} typeName={typeName} path={path}>
       <MessageRenderer
         schema={field.message}
         value={(value || {}) as Record<string, unknown>}
-        onChange={onChange}
+        onChange={handleNestedChange}
         basePath={path}
       />
     </MessageFieldFrame>

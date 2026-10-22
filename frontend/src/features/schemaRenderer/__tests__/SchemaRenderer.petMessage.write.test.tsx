@@ -506,6 +506,70 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
       })
     })
 
+    it('removes nested message when its last field is cleared, not left as {}', async () => {
+      const user = userEvent.setup()
+      const onChange = vi.fn()
+
+      const initialData = {
+        name: 'Max',
+        owner: {
+          name: 'Alice',
+        },
+      }
+
+      render(
+        <SchemaRenderer
+          schema={schema}
+          data={initialData}
+          onChange={onChange}
+          readOnly={false}
+        />
+      )
+
+      await user.click(screen.getByRole('button', { name: /expand/i }))
+
+      await user.clear(screen.getByDisplayValue('Alice'))
+
+      await waitFor(() => {
+        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
+        expect('owner' in latestCall).toBe(false)
+        expect(latestCall.name).toBe('Max')
+      })
+    })
+
+    it('removes empty ancestors when a deeply nested last field is cleared', async () => {
+      const user = userEvent.setup()
+      const onChange = vi.fn()
+
+      const initialData = {
+        name: 'Max',
+        owner: {
+          address: {
+            city: 'San Francisco',
+          },
+        },
+      }
+
+      render(
+        <SchemaRenderer
+          schema={schema}
+          data={initialData}
+          onChange={onChange}
+          readOnly={false}
+        />
+      )
+
+      await user.click(screen.getByRole('button', { name: /expand/i }))
+
+      await user.clear(screen.getByDisplayValue('San Francisco'))
+
+      await waitFor(() => {
+        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
+        expect('owner' in latestCall).toBe(false)
+        expect(latestCall.name).toBe('Max')
+      })
+    })
+
     it('handles boolean toggle correctly (false vs deleted)', async () => {
       const user = userEvent.setup()
       const onChange = vi.fn()
@@ -780,10 +844,9 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
       await waitFor(() => {
         const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
 
-        // Owner object should still exist but fields cleared
-        expect(latestCall.owner).toBeDefined()
-        expect('name' in (latestCall.owner || {})).toBe(false)
-        expect('email' in (latestCall.owner || {})).toBe(false)
+        // Owner should be removed entirely, not left behind as {}
+        expect('owner' in latestCall).toBe(false)
+        expect(latestCall.name).toBe('Max')
       })
     })
   })
