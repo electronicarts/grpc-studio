@@ -156,7 +156,7 @@ export function MethodExplorerProvider({
   const loadFromHistory = (item: RequestHistoryItem) => {
     try {
       const { data } = history.parse(item)
-      const canonical = canonicalizeProtoJson(data, request.schema)
+      const canonical = canonicalizeProtoJson(data, request.schema, { keepPresentFields: true })
 
       request.setFormData(canonical)
       request.setBody(JSON.stringify(canonical, null, 2))

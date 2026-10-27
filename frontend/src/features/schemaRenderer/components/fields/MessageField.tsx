@@ -5,43 +5,40 @@ import type { DescField } from '@bufbuild/protobuf'
 import { renderWellKnownType } from '../shared/WellKnownTypeRenderer'
 import MessageRenderer from '../core/MessageRenderer'
 import MessageFieldFrame from '../shared/MessageFieldFrame'
+import type { FieldPresence } from '../shared/fieldPresence'
 
 interface MessageFieldProps {
   field: DescField & { fieldKind: 'message' }
   value: unknown
   onChange: (value: unknown) => void
   path: string
+  presence?: FieldPresence
 }
 
-const MessageField: React.FC<MessageFieldProps> = ({ field, value, onChange, path }) => {
+const MessageField: React.FC<MessageFieldProps> = ({ field, value, onChange, path, presence }) => {
   const typeName = field.message.typeName
 
   // Try rendering as a well-known type with a specialized component
   const wktComponent = renderWellKnownType({
-    typeName,
+    message: field.message,
     fieldName: field.name,
     value,
     onChange,
-    path
+    path,
+    presence,
   })
 
   if (wktComponent) {
     return wktComponent
   }
 
-  // Clearing the last populated child field unsets the message rather than leaving `{}` behind.
-  // Oneof members keep `{}` because an empty message still records which case is selected.
-  const handleNestedChange = (next: Record<string, unknown>) => {
-    onChange(Object.keys(next).length === 0 && !field.oneof ? undefined : next)
-  }
-
   // Not a WKT - render as regular nested message
   return (
-    <MessageFieldFrame name={field.name} typeName={typeName} path={path}>
+    <MessageFieldFrame name={field.name} typeName={typeName} path={path} presence={presence}>
       <MessageRenderer
         schema={field.message}
         value={(value || {}) as Record<string, unknown>}
-        onChange={handleNestedChange}
+        onChange={onChange}
         basePath={path}
       />
     </MessageFieldFrame>

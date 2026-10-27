@@ -20,7 +20,6 @@ const DurationField: React.FC<DurationFieldProps> = ({ name, value, onChange }) 
   const displayValue = typeof value === 'string' ? value : ''
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (readOnly) return
     onChange(e.target.value || undefined)
   }
 

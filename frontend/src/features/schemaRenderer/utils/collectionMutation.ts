@@ -26,3 +26,12 @@ export function removeObjectEntry<T>(
   delete next[key]
   return next
 }
+
+/** Renames a key in place, keeping the entry's position among the other entries. */
+export function renameObjectEntry<T>(
+  object: Record<string, T>,
+  from: string,
+  to: string,
+): Record<string, T> {
+  return Object.fromEntries(Object.entries(object).map(([key, value]) => [key === from ? to : key, value]))
+}

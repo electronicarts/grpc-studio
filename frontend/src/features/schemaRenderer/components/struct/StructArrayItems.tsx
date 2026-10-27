@@ -1,9 +1,8 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-import { Plus } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
 import { removeArrayItem, replaceArrayItem } from '../../utils/collectionMutation'
+import AddButton from '../shared/AddButton'
 import { StructValue } from './StructValue'
 
 interface StructArrayItemsProps {
@@ -39,16 +38,7 @@ export function StructArrayItems({ value, onChange }: StructArrayItemsProps) {
       )}
 
       {!readOnly && (
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => onChange([...value, ''])}
-          data-testid="structField-addItemButton"
-        >
-          <Plus className="mr-1 size-3" />
-          Add item
-        </Button>
+        <AddButton noun="item" onClick={() => onChange([...value, ''])} testId="structField-addItemButton" />
       )}
     </div>
   )

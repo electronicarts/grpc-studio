@@ -1,9 +1,7 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import React from 'react'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Plus, X } from 'lucide-react'
 import type { DescField } from '@bufbuild/protobuf'
 import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
 import { removeArrayItem, replaceArrayItem } from '../../utils/collectionMutation'
@@ -13,15 +11,19 @@ import ScalarField from './ScalarField'
 import EnumField from './EnumField'
 import MessageRenderer from '../core/MessageRenderer'
 import MessageFieldFrame from '../shared/MessageFieldFrame'
+import type { FieldPresence } from '../shared/fieldPresence'
+import AddButton from '../shared/AddButton'
+import RemoveButton from '../shared/RemoveButton'
 
 interface ListFieldProps {
   field: DescField & { fieldKind: 'list' }
   value: unknown[]
   onChange: (value: unknown[]) => void
   path: string
+  presence?: FieldPresence
 }
 
-const ListField: React.FC<ListFieldProps> = ({ field, value, onChange, path }) => {
+const ListField: React.FC<ListFieldProps> = ({ field, value, onChange, path, presence }) => {
   const { readOnly, searchQuery } = useProtoMessageRendererContext()
 
   const allItems = Array.isArray(value) ? value : []
@@ -47,6 +49,7 @@ const ListField: React.FC<ListFieldProps> = ({ field, value, onChange, path }) =
       name={field.name}
       typeName={`repeated ${elementType}`}
       path={path}
+      presence={presence}
       bodyClassName="ml-6 space-y-3"
       meta={(
         <Badge variant="secondary" className="ml-auto">
@@ -84,14 +87,7 @@ const ListField: React.FC<ListFieldProps> = ({ field, value, onChange, path }) =
             ) : null}
           </div>
           {!readOnly && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => onChange(removeArrayItem(allItems, index))}
-            >
-              <X className="size-4" />
-            </Button>
+            <RemoveButton label={`item ${index + 1}`} onClick={() => onChange(removeArrayItem(allItems, index))} />
           )}
         </div>
       ))}
@@ -103,17 +99,13 @@ const ListField: React.FC<ListFieldProps> = ({ field, value, onChange, path }) =
       )}
 
       {!readOnly && (
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
+        <AddButton
+          noun={field.name}
           onClick={() => {
             const newItem = field.listKind === 'scalar' || field.listKind === 'enum' ? '' : {}
             onChange([...allItems, newItem])
           }}
-        >
-          <Plus className="mr-1 size-4" /> Add {field.name}
-        </Button>
+        />
       )}
     </MessageFieldFrame>
   )

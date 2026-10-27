@@ -30,8 +30,9 @@ export function useRequestModel(
   // the schema-load effect without widening its deps.
   const restoredOnMountRef = useRef(restored != null)
 
+  // The JSON view holds exactly the fields ticked in the form, so the two always agree key for key.
   const canonicalizeRequestData = useCallback((data: Record<string, unknown>) => {
-    return canonicalizeProtoJson(data, schema, { target: selectedTarget })
+    return canonicalizeProtoJson(data, schema, { target: selectedTarget, keepPresentFields: true })
   }, [schema, selectedTarget])
 
   const firstSchemaLoadRef = useRef(true)

@@ -39,8 +39,6 @@ const OneOfField: React.FC<OneOfFieldProps> = ({ oneof, value, onChange, basePat
   }
 
   const handleSelectionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    if (readOnly) return
-
     const fieldName = e.target.value
     setOneOfSelection(selectionKey, fieldName)
     const newValue = { ...value }

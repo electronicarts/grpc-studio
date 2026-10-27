@@ -106,8 +106,8 @@ const SchemaRenderer: React.FC<ProtoMessageRendererProps> = ({
                 )}
               </div>
               
-              {/* Expand/Collapse buttons */}
-              {hasExpandableSections && (
+              {/* Expand/Collapse buttons. Only read-only views collapse; editing shows every sent field. */}
+              {readOnly && hasExpandableSections && (
                 <div className="flex gap-1">
                   <Button
                     type="button"

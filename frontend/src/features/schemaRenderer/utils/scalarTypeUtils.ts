@@ -46,6 +46,15 @@ export function parseValue(value: string, scalar: ScalarType): unknown {
 }
 
 /**
+ * The value a scalar field takes when set without user input, in form-data representation.
+ */
+export function scalarZeroValue(scalar: ScalarType): unknown {
+  if (isNumeric(scalar)) return 0
+  if (scalar === ScalarType.BOOL) return false
+  return ''
+}
+
+/**
  * Check if a value is effectively empty
  * (null, undefined, empty string, empty object, empty array).
  */

@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import { describe, expect, it, vi } from 'vitest'
-import { toWireFormat as rawToWireFormat } from '../payload'
+import { canonicalizeProtoJson, toWireFormat as rawToWireFormat, toWireJson } from '../payload'
 import {
   schemaCache as testSchemaMap,
 } from '../../../schemaRenderer/__tests__/protoMessageRenderer.fixtures'
@@ -236,5 +236,57 @@ describe('Any with empty WKT fields', () => {
     expect((payload.wire.payload as Record<string, unknown>)['@type'])
       .toBe('type.googleapis.com/google.protobuf.StringValue')
     expect((payload.wire.payload as Record<string, unknown>)['value']).toBe('hello')
+  })
+})
+
+describe('canonicalizeProtoJson with keepPresentFields', () => {
+  const canonical = (data: Record<string, unknown>, typeName: string) =>
+    canonicalizeProtoJson(data, testSchemaMap.get(typeName) ?? null, { target: TEST_TARGET, keepPresentFields: true })
+
+  it('keeps fields given at their default value and adds no others', () => {
+    expect(canonical({ int32Field: 0, boolField: false, stringField: '' }, 'test.AllScalars'))
+      .toEqual({ int32Field: 0, boolField: false, stringField: '' })
+  })
+
+  it('keeps an empty nested message and only the nested fields that were given', () => {
+    expect(canonical({ child: {} }, 'test.DeeplyNested')).toEqual({ child: {} })
+    expect(canonical({ name: '', child: { name: '' } }, 'test.DeeplyNested')).toEqual({ name: '', child: { name: '' } })
+  })
+
+  it('narrows each message in a list, including oneof members at their default value', () => {
+    expect(canonical({ items: [{ label: '' }, { intValue: 0 }] }, 'test.RepeatedWithOneof'))
+      .toEqual({ items: [{ label: '' }, { intValue: 0 }] })
+  })
+
+  it('narrows each message value in a map', () => {
+    expect(canonical({ entries: { a: { label: '' }, b: {} } }, 'test.MapWithOneof'))
+      .toEqual({ entries: { a: { label: '' }, b: {} } })
+  })
+
+  it('narrows the content of an Any holding a regular message', () => {
+    const payload = { '@type': 'type.googleapis.com/test.AllScalars', stringField: '' }
+    expect(canonical({ payload }, 'test.AnyMessage')).toEqual({ payload })
+  })
+
+  it('treats a field given by its JSON name as present, and writes it with its proto name', () => {
+    expect(canonical({ maxCount: 0 }, 'test.OptionalFields')).toEqual({ max_count: 0 })
+  })
+
+  it('normalizes values like the wire format does', () => {
+    expect(canonical({ status: 1 }, 'test.EnumMessage')).toEqual({ status: 'STATUS_ACTIVE' })
+  })
+})
+
+describe('toWireJson', () => {
+  const schema = testSchemaMap.get('test.AllScalars') ?? null
+
+  it('drops plain proto3 fields at their default value', () => {
+    expect(toWireJson({ stringField: 'hi', int32Field: 0, boolField: false }, schema, TEST_TARGET))
+      .toEqual({ stringField: 'hi' })
+  })
+
+  it('returns null without a schema, or for data that is not a valid message', () => {
+    expect(toWireJson({ stringField: 'hi' }, null, TEST_TARGET)).toBeNull()
+    expect(toWireJson({ int32Field: 'not a number' }, schema, TEST_TARGET)).toBeNull()
   })
 })

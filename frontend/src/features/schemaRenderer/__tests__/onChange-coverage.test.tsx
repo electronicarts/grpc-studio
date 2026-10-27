@@ -108,17 +108,18 @@ describe('EnumField onChange', () => {
     })
   })
 
-  it('emits undefined (field deleted) when the blank option is selected', async () => {
+  it('emits undefined (field deleted) when its checkbox is unticked', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
     render(
       <SchemaRenderer schema={enumSchema} data={{ status: 'STATUS_ACTIVE' }} onChange={onChange} readOnly={false} />
     )
 
-    await user.selectOptions(screen.getByRole('combobox'), '')
+    // A set enum has no blank option; it is unset through its checkbox
+    expect(screen.queryByRole('option', { name: 'Select status' })).not.toBeInTheDocument()
+    await user.click(screen.getByRole('checkbox', { name: 'Send status' }))
 
     await waitFor(() => {
-      // e.target.value = '' → `'' || undefined` = undefined → setFieldValue deletes key
       expect('status' in latestCall(onChange)).toBe(false)
     })
   })
@@ -279,8 +280,8 @@ describe('FieldMaskField onChange', () => {
     const onChange = vi.fn()
     render(<SchemaRenderer schema={fieldMaskMessageSchema} data={{}} onChange={onChange} readOnly={false} />)
 
-    await user.type(screen.getByPlaceholderText(/lowerCamelCase path/i), 'user.displayName')
     await user.click(screen.getByTestId('fieldMask-addButton'))
+    await user.keyboard('user.displayName{Enter}')
 
     await waitFor(() => {
       expect(latestCall(onChange).mask).toBe('user.displayName')
@@ -295,15 +296,15 @@ describe('FieldMaskField onChange', () => {
       <SchemaRenderer schema={fieldMaskMessageSchema} data={{ mask: 'name' }} onChange={onChange} readOnly={false} />
     )
 
-    await user.type(screen.getByPlaceholderText(/lowerCamelCase path/i), 'email')
     await user.click(screen.getByTestId('fieldMask-addButton'))
+    await user.keyboard('email{Enter}')
 
     await waitFor(() => {
       expect(latestCall(onChange).mask).toBe('name,email')
     })
   })
 
-  it('emits undefined (field deleted) when the last path chip is removed', async () => {
+  it('emits undefined (field deleted) when the last path is removed', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
     render(
@@ -317,7 +318,7 @@ describe('FieldMaskField onChange', () => {
     })
   })
 
-  it('removes only the clicked path chip, preserving others', async () => {
+  it('removes only the clicked path, preserving others', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
     render(
@@ -331,7 +332,7 @@ describe('FieldMaskField onChange', () => {
     })
   })
 
-  it('ignores duplicate paths — does not add the same path twice', async () => {
+  it('rejects duplicate paths with an inline error instead of adding them twice', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
     render(
@@ -339,10 +340,10 @@ describe('FieldMaskField onChange', () => {
     )
 
     const countBefore = onChange.mock.calls.length
-    await user.type(screen.getByPlaceholderText(/lowerCamelCase path/i), 'name')
     await user.click(screen.getByTestId('fieldMask-addButton'))
+    await user.keyboard('name{Enter}')
 
-    await new Promise(r => setTimeout(r, 30))
+    expect(screen.getByText('Already exists')).toBeInTheDocument()
     expect(onChange.mock.calls.length).toBe(countBefore)
   })
 
@@ -351,8 +352,8 @@ describe('FieldMaskField onChange', () => {
     const onChange = vi.fn()
     render(<SchemaRenderer schema={fieldMaskMessageSchema} data={{}} onChange={onChange} readOnly={false} />)
 
-    await user.type(screen.getByPlaceholderText(/lowerCamelCase path/i), 'foo.barBaz')
     await user.click(screen.getByTestId('fieldMask-addButton'))
+    await user.keyboard('foo.barBaz{Enter}')
 
     await waitFor(() => {
       for (const [call] of onChange.mock.calls as [Record<string, unknown>][]) {
@@ -717,7 +718,7 @@ describe('ListField (scalar items) onChange', () => {
     const onChange = vi.fn()
     render(<SchemaRenderer schema={repeatedFieldsSchema} data={{}} onChange={onChange} readOnly={false} />)
 
-    await user.click(screen.getByRole('button', { name: /expand/i }))
+    await user.click(screen.getByRole('checkbox', { name: 'Send repeatedString' }))
     await user.click(screen.getByRole('button', { name: /Add repeatedString/i }))
 
     await waitFor(() => {
@@ -740,7 +741,6 @@ describe('ListField (scalar items) onChange', () => {
       />
     )
 
-    await user.click(screen.getByRole('button', { name: /expand/i }))
     const betaInput = screen.getByDisplayValue('beta')
     await user.clear(betaInput)
     await user.type(betaInput, 'BETA')
@@ -765,7 +765,6 @@ describe('ListField (scalar items) onChange', () => {
       />
     )
 
-    await user.click(screen.getByRole('button', { name: /expand/i }))
     await user.clear(screen.getByDisplayValue('beta'))
 
     await waitFor(() => {
@@ -788,7 +787,6 @@ describe('ListField (scalar items) onChange', () => {
       />
     )
 
-    await user.click(screen.getByRole('button', { name: /expand/i }))
     const xButtons = screen.getAllByRole('button').filter(b => b.querySelector('svg'))
     // find the X buttons inside the list items (not expand/collapse)
     const removeButton = xButtons.find(b => b.closest('[class*="border-l-2"]'))
@@ -812,12 +810,14 @@ describe('MapField (scalar values) onChange', () => {
   it('adding an entry emits the map with the new key/value pair', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
-    render(<SchemaRenderer schema={mapFieldsSchema} data={{}} onChange={onChange} readOnly={false} />)
+    render(<SchemaRenderer schema={mapFieldsSchema} data={{ stringToString: {} }} onChange={onChange} readOnly={false} />)
 
-    await user.click(screen.getByRole('button', { name: /expand/i }))
-    await user.type(screen.getByPlaceholderText('Key'), 'color')
-    await user.type(screen.getByPlaceholderText('Value'), 'red')
     await user.click(screen.getByTestId('mapField-addEntryButton'))
+    // The new key input is focused; tabbing out commits it and lands in the value input
+    await user.keyboard('color')
+    await user.tab()
+    expect(screen.getByPlaceholderText('Value')).toHaveFocus()
+    await user.keyboard('red')
 
     await waitFor(() => {
       const map = latestCall(onChange).stringToString as Record<string, string>
@@ -825,18 +825,84 @@ describe('MapField (scalar values) onChange', () => {
     })
   })
 
-  it('adding an entry with no value gives an empty-string value (not undefined)', async () => {
+  it('keeps a value typed before the key, and adds it once the key is committed', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
-    render(<SchemaRenderer schema={mapFieldsSchema} data={{}} onChange={onChange} readOnly={false} />)
+    render(<SchemaRenderer schema={mapFieldsSchema} data={{ stringToString: {} }} onChange={onChange} readOnly={false} />)
 
-    await user.click(screen.getByRole('button', { name: /expand/i }))
-    await user.type(screen.getByPlaceholderText('Key'), 'size')
     await user.click(screen.getByTestId('mapField-addEntryButton'))
+    await user.type(screen.getByPlaceholderText('Value'), 'red')
+
+    // Without a key the entry can't be sent, and says so instead of disappearing
+    expect(onChange).not.toHaveBeenCalled()
+    expect(screen.getByText('Required')).toBeInTheDocument()
+
+    await user.type(screen.getByPlaceholderText('Key'), 'color{Enter}')
+
+    await waitFor(() => {
+      expect(latestCall(onChange).stringToString).toEqual({ color: 'red' })
+    })
+    expect(screen.queryByText('Required')).not.toBeInTheDocument()
+  })
+
+  it('renames a key in place, keeping its value and position', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(
+      <SchemaRenderer
+        schema={mapFieldsSchema}
+        data={{ stringToString: { a: '1', b: '2' } }}
+        onChange={onChange}
+        readOnly={false}
+      />
+    )
+
+    const keyInput = screen.getByDisplayValue('a')
+    await user.clear(keyInput)
+    await user.type(keyInput, 'z{Enter}')
 
     await waitFor(() => {
       const map = latestCall(onChange).stringToString as Record<string, string>
-      // KeyInputAdder passes '' when value input is blank
+      expect(Object.entries(map)).toEqual([['z', '1'], ['b', '2']])
+    })
+  })
+
+  it('rejects renaming a key to one that already exists', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(
+      <SchemaRenderer
+        schema={mapFieldsSchema}
+        data={{ stringToString: { a: '1', b: '2' } }}
+        onChange={onChange}
+        readOnly={false}
+      />
+    )
+
+    const keyInput = screen.getByDisplayValue('a')
+    await user.clear(keyInput)
+    await user.type(keyInput, 'b{Enter}')
+
+    expect(screen.getByText('Already exists')).toBeInTheDocument()
+    expect(onChange).not.toHaveBeenCalled()
+
+    // Escape abandons the edit
+    await user.keyboard('{Escape}')
+    expect(keyInput).toHaveValue('a')
+    expect(screen.queryByText('Already exists')).not.toBeInTheDocument()
+  })
+
+  it('adding an entry with no value gives an empty-string value (not undefined)', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(<SchemaRenderer schema={mapFieldsSchema} data={{ stringToString: {} }} onChange={onChange} readOnly={false} />)
+
+    await user.click(screen.getByTestId('mapField-addEntryButton'))
+    await user.keyboard('size{Enter}')
+
+    await waitFor(() => {
+      const map = latestCall(onChange).stringToString as Record<string, string>
+      // A new scalar entry starts with ''
       expect(map.size).toBe('')
     })
   })
@@ -853,7 +919,6 @@ describe('MapField (scalar values) onChange', () => {
       />
     )
 
-    await user.click(screen.getByRole('button', { name: /expand/i }))
     const colorInput = screen.getByDisplayValue('blue')
     await user.clear(colorInput)
     await user.type(colorInput, 'red')
@@ -877,7 +942,6 @@ describe('MapField (scalar values) onChange', () => {
       />
     )
 
-    await user.click(screen.getByRole('button', { name: /expand/i }))
     await user.clear(screen.getByDisplayValue('blue'))
 
     await waitFor(() => {
@@ -899,7 +963,6 @@ describe('MapField (scalar values) onChange', () => {
       />
     )
 
-    await user.click(screen.getByRole('button', { name: /expand/i }))
     const removeButtons = screen.getAllByRole('button').filter(
       b => b.closest('[class*="border-l-2"]') && b.querySelector('svg')
     )
@@ -914,10 +977,10 @@ describe('MapField (scalar values) onChange', () => {
 })
 
 // ---------------------------------------------------------------------------
-// StructFieldAdder — adding fields to a Struct
+// StructObjectFields — adding fields to a Struct
 // ---------------------------------------------------------------------------
 
-describe('StructFieldAdder onChange', () => {
+describe('StructObjectFields onChange', () => {
   it('adding a new field emits the struct with the key initialised to empty string', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
@@ -925,9 +988,8 @@ describe('StructFieldAdder onChange', () => {
       <SchemaRenderer schema={structMessageSchema} data={{ metadata: {} }} onChange={onChange} readOnly={false} />
     )
 
-    await user.click(screen.getByRole('button', { name: /expand/i }))
-    await user.type(screen.getByPlaceholderText('Field name'), 'priority')
     await user.click(screen.getByTestId('structField-addButton'))
+    await user.keyboard('priority{Enter}')
 
     await waitFor(() => {
       const struct = latestCall(onChange).metadata as Record<string, unknown>
@@ -936,7 +998,7 @@ describe('StructFieldAdder onChange', () => {
     })
   })
 
-  it('adding a duplicate key is a no-op — onChange is not called again', async () => {
+  it('adding a duplicate key shows an inline error and does not call onChange', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
     render(
@@ -948,17 +1010,15 @@ describe('StructFieldAdder onChange', () => {
       />
     )
 
-    await user.click(screen.getByRole('button', { name: /expand/i }))
 
     // Wait for initial render to stabilise
     await waitFor(() => expect(screen.getByTestId('structField-addButton')).toBeInTheDocument())
     const countBefore = onChange.mock.calls.length
 
-    await user.type(screen.getByPlaceholderText('Field name'), 'priority')
     await user.click(screen.getByTestId('structField-addButton'))
+    await user.keyboard('priority{Enter}')
 
-    // Give React a tick to process
-    await new Promise(r => setTimeout(r, 50))
+    expect(screen.getByText('Already exists')).toBeInTheDocument()
     expect(onChange.mock.calls.length).toBe(countBefore)
   })
 })
@@ -980,7 +1040,6 @@ describe('StructArrayItems onChange', () => {
       />
     )
 
-    await user.click(screen.getByRole('button', { name: /expand/i }))
     await user.click(screen.getByTestId('structField-addItemButton'))
 
     await waitFor(() => {
@@ -1003,7 +1062,6 @@ describe('StructArrayItems onChange', () => {
       />
     )
 
-    await user.click(screen.getByRole('button', { name: /expand/i }))
     // Two remove buttons: [0] = outer (remove 'items' key), [1] = inner (remove items[0])
     const removeButtons = screen.getAllByTestId('structField-removeButton')
     await user.click(removeButtons[1]) // inner — removes the array item
@@ -1027,7 +1085,6 @@ describe('StructArrayItems onChange', () => {
       />
     )
 
-    await user.click(screen.getByRole('button', { name: /expand/i }))
     const originalInput = screen.getByDisplayValue('original')
     await user.clear(originalInput)
     await user.type(originalInput, 'updated')
@@ -1057,7 +1114,6 @@ describe('StructObjectFields (existing field) onChange', () => {
       />
     )
 
-    await user.click(screen.getByRole('button', { name: /expand/i }))
     const labelInput = screen.getByDisplayValue('old-label')
     await user.clear(labelInput)
     await user.type(labelInput, 'new-label')
@@ -1081,7 +1137,6 @@ describe('StructObjectFields (existing field) onChange', () => {
       />
     )
 
-    await user.click(screen.getByRole('button', { name: /expand/i }))
 
     // Verify kind is number before editing
     const kindSelect = screen.getByTestId('structField-kindSelect')
@@ -1112,15 +1167,13 @@ describe('StructObjectFields (existing field) onChange', () => {
       />
     )
 
-    await user.click(screen.getByRole('button', { name: /expand/i }))
 
     // Verify kind is bool
     const kindSelect = screen.getByTestId('structField-kindSelect')
     expect((kindSelect as HTMLSelectElement).value).toBe('bool')
 
-    // Toggle the bool — bool_value renders as a checkbox via ScalarField
-    const checkbox = screen.getByRole('checkbox')
-    await user.click(checkbox)
+    // Flip the bool — bool_value renders as a true/false select via ScalarField
+    await user.selectOptions(screen.getByRole('combobox', { name: 'bool_value' }), 'false')
 
     await waitFor(() => {
       const struct = latestCall(onChange).metadata as Record<string, unknown>
@@ -1155,7 +1208,6 @@ describe('StructValue kind selector onChange', () => {
         readOnly={false}
       />
     )
-    await user.click(screen.getByRole('button', { name: /expand/i }))
     return { user, onChange, kindSelect: screen.getByTestId('structField-kindSelect') }
   }
 
@@ -1261,7 +1313,7 @@ describe('ListField (message items) onChange', () => {
     const onChange = vi.fn()
     render(<SchemaRenderer schema={repeatedWithOneofSchema} data={{}} onChange={onChange} readOnly={false} />)
 
-    await user.click(screen.getByRole('button', { name: /expand/i }))
+    await user.click(screen.getByRole('checkbox', { name: 'Send items' }))
     await user.click(screen.getByRole('button', { name: /Add items/i }))
 
     await waitFor(() => {
@@ -1283,7 +1335,6 @@ describe('ListField (message items) onChange', () => {
       />
     )
 
-    await user.click(screen.getByRole('button', { name: /expand/i }))
     const firstInput = screen.getByDisplayValue('first')
     await user.clear(firstInput)
     await user.type(firstInput, 'UPDATED')
@@ -1307,7 +1358,6 @@ describe('ListField (message items) onChange', () => {
       />
     )
 
-    await user.click(screen.getByRole('button', { name: /expand/i }))
     await user.clear(screen.getByDisplayValue('hello'))
 
     await waitFor(() => {
@@ -1328,7 +1378,6 @@ describe('ListField (message items) onChange', () => {
       />
     )
 
-    await user.click(screen.getByRole('button', { name: /expand/i }))
     const xButtons = screen.getAllByRole('button').filter(b => b.closest('[class*="border-l-2"]') && b.querySelector('svg'))
     await user.click(xButtons[0])
 
@@ -1353,11 +1402,10 @@ describe('MapField (message values) onChange', () => {
   it('adding an entry initialises the message value to {}', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
-    render(<SchemaRenderer schema={mapWithOneofSchema} data={{}} onChange={onChange} readOnly={false} />)
+    render(<SchemaRenderer schema={mapWithOneofSchema} data={{ entries: {} }} onChange={onChange} readOnly={false} />)
 
-    await user.click(screen.getByRole('button', { name: /expand/i }))
-    await user.type(screen.getByPlaceholderText('Key'), 'myKey')
     await user.click(screen.getByTestId('mapField-addEntryButton'))
+    await user.keyboard('myKey{Enter}')
 
     await waitFor(() => {
       const entries = latestCall(onChange).entries as Record<string, unknown>
@@ -1377,7 +1425,6 @@ describe('MapField (message values) onChange', () => {
       />
     )
 
-    await user.click(screen.getByRole('button', { name: /expand/i }))
     const aInput = screen.getByDisplayValue('a')
     await user.clear(aInput)
     await user.type(aInput, 'UPDATED')
@@ -1401,7 +1448,6 @@ describe('MapField (message values) onChange', () => {
       />
     )
 
-    await user.click(screen.getByRole('button', { name: /expand/i }))
     await user.clear(screen.getByDisplayValue('hello'))
 
     await waitFor(() => {
@@ -1422,7 +1468,6 @@ describe('MapField (message values) onChange', () => {
       />
     )
 
-    await user.click(screen.getByRole('button', { name: /expand/i }))
     const removeButtons = screen.getAllByRole('button').filter(
       b => b.closest('[class*="border-l-2"]') && b.querySelector('svg')
     )

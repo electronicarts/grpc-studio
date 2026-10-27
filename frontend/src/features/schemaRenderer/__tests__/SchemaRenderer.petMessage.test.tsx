@@ -12,6 +12,7 @@ import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { DescMessage, DescField, DescEnum, DescOneof } from '@bufbuild/protobuf'
+import { DurationSchema, FloatValueSchema, Int32ValueSchema, StringValueSchema, StructSchema, TimestampSchema } from '@bufbuild/protobuf/wkt'
 import SchemaRenderer from '../components/core/SchemaRenderer'
 import { collectExpandablePaths } from '../utils/pathAnalysis'
 
@@ -83,16 +84,6 @@ const createPetSchema = (): DescMessage => {
     nestedEnums: [],
   } as DescMessage
 
-  const TimestampSchema: DescMessage = {
-    typeName: 'google.protobuf.Timestamp',
-    fields: [
-      { name: 'seconds', fieldKind: 'scalar', scalar: ScalarType.INT64 } as DescField,
-      { name: 'nanos', fieldKind: 'scalar', scalar: ScalarType.INT32 } as DescField,
-    ],
-    oneofs: [],
-    nestedMessages: [],
-    nestedEnums: [],
-  } as DescMessage
 
   const OwnerSchema: DescMessage = {
     typeName: 'petstore.v1.Owner',
@@ -146,15 +137,6 @@ const createPetSchema = (): DescMessage => {
   } as DescMessage
 
   // Repeated message types
-  const StringValueSchema: DescMessage = {
-    typeName: 'google.protobuf.StringValue',
-    fields: [
-      { name: 'value', fieldKind: 'scalar', scalar: ScalarType.STRING } as DescField,
-    ],
-    oneofs: [],
-    nestedMessages: [],
-    nestedEnums: [],
-  } as DescMessage
 
   const VaccinationSchema: DescMessage = {
     typeName: 'petstore.v1.Vaccination',
@@ -170,26 +152,7 @@ const createPetSchema = (): DescMessage => {
     nestedEnums: [],
   } as DescMessage
 
-  const DurationSchema: DescMessage = {
-    typeName: 'google.protobuf.Duration',
-    fields: [
-      { name: 'seconds', fieldKind: 'scalar', scalar: ScalarType.INT64 } as DescField,
-      { name: 'nanos', fieldKind: 'scalar', scalar: ScalarType.INT32 } as DescField,
-    ],
-    oneofs: [],
-    nestedMessages: [],
-    nestedEnums: [],
-  } as DescMessage
 
-  const FloatValueSchema: DescMessage = {
-    typeName: 'google.protobuf.FloatValue',
-    fields: [
-      { name: 'value', fieldKind: 'scalar', scalar: ScalarType.FLOAT } as DescField,
-    ],
-    oneofs: [],
-    nestedMessages: [],
-    nestedEnums: [],
-  } as DescMessage
 
   const MedicalRecordSchema: DescMessage = {
     typeName: 'petstore.v1.MedicalRecord',
@@ -207,24 +170,8 @@ const createPetSchema = (): DescMessage => {
     nestedEnums: [],
   } as DescMessage
 
-  const Int32ValueSchema: DescMessage = {
-    typeName: 'google.protobuf.Int32Value',
-    fields: [
-      { name: 'value', fieldKind: 'scalar', scalar: ScalarType.INT32 } as DescField,
-    ],
-    oneofs: [],
-    nestedMessages: [],
-    nestedEnums: [],
-  } as DescMessage
 
   // Struct schema - simplified placeholder (actual Struct is more complex with Value type)
-  const StructSchema: DescMessage = {
-    typeName: 'google.protobuf.Struct',
-    fields: [],
-    oneofs: [],
-    nestedMessages: [],
-    nestedEnums: [],
-  } as DescMessage
 
   // Main Pet message with ALL field types
   return {

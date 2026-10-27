@@ -4,12 +4,8 @@ import { describe, it, expect } from 'vitest'
 import { ScalarType } from '@bufbuild/protobuf'
 import {
   scalarTypeName,
-  scalarTypeFromName,
   fieldTypeName,
   fieldNestedMessage,
-  isTimestampType,
-  isStructType,
-  wrapperPrimitiveType,
   parseDescriptorIntoMap
 } from '../descUtils'
 import type { DescField, DescMessage } from '@bufbuild/protobuf'
@@ -214,59 +210,8 @@ describe('descUtils', () => {
     })
   })
 
-  describe('isTimestampType', () => {
-    it('should identify google.protobuf.Timestamp', () => {
-      expect(isTimestampType('google.protobuf.Timestamp')).toBe(true)
-    })
 
-    it('should identify .google.protobuf.Timestamp', () => {
-      expect(isTimestampType('.google.protobuf.Timestamp')).toBe(true)
-    })
 
-    it('should return false for non-timestamp types', () => {
-      expect(isTimestampType('google.protobuf.Struct')).toBe(false)
-      expect(isTimestampType('MyMessage')).toBe(false)
-      expect(isTimestampType('string')).toBe(false)
-    })
-  })
-
-  describe('isStructType', () => {
-    it('should identify google.protobuf.Struct', () => {
-      expect(isStructType('google.protobuf.Struct')).toBe(true)
-    })
-
-    it('should identify .google.protobuf.Struct', () => {
-      expect(isStructType('.google.protobuf.Struct')).toBe(true)
-    })
-
-    it('should return false for non-struct types', () => {
-      expect(isStructType('google.protobuf.Timestamp')).toBe(false)
-      expect(isStructType('MyStruct')).toBe(false)
-      expect(isStructType('string')).toBe(false)
-    })
-  })
-
-  describe('wrapperPrimitiveType', () => {
-    it('should return primitive type for wrapper types', () => {
-      expect(wrapperPrimitiveType('google.protobuf.StringValue')).toBe('string')
-      expect(wrapperPrimitiveType('google.protobuf.Int32Value')).toBe('int32')
-      expect(wrapperPrimitiveType('google.protobuf.BoolValue')).toBe('bool')
-      expect(wrapperPrimitiveType('google.protobuf.DoubleValue')).toBe('double')
-      expect(wrapperPrimitiveType('google.protobuf.BytesValue')).toBe('bytes')
-    })
-
-    it('should return null for wrapper types with leading dot', () => {
-      // Wrapper type map doesn't include leading dot versions
-      expect(wrapperPrimitiveType('.google.protobuf.StringValue')).toBeNull()
-      expect(wrapperPrimitiveType('.google.protobuf.Int64Value')).toBeNull()
-    })
-
-    it('should return null for non-wrapper types', () => {
-      expect(wrapperPrimitiveType('google.protobuf.Timestamp')).toBeNull()
-      expect(wrapperPrimitiveType('MyMessage')).toBeNull()
-      expect(wrapperPrimitiveType('string')).toBeNull()
-    })
-  })
 
   describe('parseDescriptorIntoMap', () => {
     it('should parse simple descriptor set', () => {
@@ -301,39 +246,6 @@ describe('descUtils', () => {
     })
   })
 
-  describe('scalarTypeFromName', () => {
-    it('converts type name strings to ScalarType enum', () => {
-      expect(scalarTypeFromName('string')).toBe(ScalarType.STRING)
-      expect(scalarTypeFromName('int32')).toBe(ScalarType.INT32)
-      expect(scalarTypeFromName('bool')).toBe(ScalarType.BOOL)
-      expect(scalarTypeFromName('double')).toBe(ScalarType.DOUBLE)
-      expect(scalarTypeFromName('bytes')).toBe(ScalarType.BYTES)
-    })
-
-    it('handles all numeric types', () => {
-      expect(scalarTypeFromName('int64')).toBe(ScalarType.INT64)
-      expect(scalarTypeFromName('uint32')).toBe(ScalarType.UINT32)
-      expect(scalarTypeFromName('uint64')).toBe(ScalarType.UINT64)
-      expect(scalarTypeFromName('sint32')).toBe(ScalarType.SINT32)
-      expect(scalarTypeFromName('sint64')).toBe(ScalarType.SINT64)
-      expect(scalarTypeFromName('fixed32')).toBe(ScalarType.FIXED32)
-      expect(scalarTypeFromName('fixed64')).toBe(ScalarType.FIXED64)
-      expect(scalarTypeFromName('sfixed32')).toBe(ScalarType.SFIXED32)
-      expect(scalarTypeFromName('sfixed64')).toBe(ScalarType.SFIXED64)
-      expect(scalarTypeFromName('float')).toBe(ScalarType.FLOAT)
-    })
-
-    it('is case-insensitive', () => {
-      expect(scalarTypeFromName('STRING')).toBe(ScalarType.STRING)
-      expect(scalarTypeFromName('Int32')).toBe(ScalarType.INT32)
-      expect(scalarTypeFromName('BOOL')).toBe(ScalarType.BOOL)
-    })
-
-    it('returns STRING for unknown types', () => {
-      expect(scalarTypeFromName('unknown')).toBe(ScalarType.STRING)
-      expect(scalarTypeFromName('invalid')).toBe(ScalarType.STRING)
-    })
-  })
 })
 
 // Helper functions to create test descriptors

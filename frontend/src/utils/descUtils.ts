@@ -3,27 +3,6 @@
 import type { DescField, DescMessage } from '@bufbuild/protobuf'
 import { ScalarType, fromBinary, createFileRegistry } from '@bufbuild/protobuf'
 import { FileDescriptorSetSchema } from '@bufbuild/protobuf/wkt'
-import { WRAPPER_TYPE_TO_SCALAR } from '../types/protoConstants'
-
-export function isTimestampType(typeName: string): boolean {
-  return typeName === 'google.protobuf.Timestamp' || typeName === '.google.protobuf.Timestamp'
-}
-
-export function isDurationType(typeName: string): boolean {
-  return typeName === 'google.protobuf.Duration' || typeName === '.google.protobuf.Duration'
-}
-
-export function isFieldMaskType(typeName: string): boolean {
-  return typeName === 'google.protobuf.FieldMask' || typeName === '.google.protobuf.FieldMask'
-}
-
-export function isAnyType(typeName: string): boolean {
-  return typeName === 'google.protobuf.Any' || typeName === '.google.protobuf.Any'
-}
-
-export function isStructType(typeName: string): boolean {
-  return typeName === 'google.protobuf.Struct' || typeName === '.google.protobuf.Struct'
-}
 
 export function scalarTypeName(s: ScalarType): string {
   return ScalarType[s].toLowerCase()
@@ -60,10 +39,6 @@ export function fieldNestedMessage(field: DescField): DescMessage | null {
 }
 
 
-export function wrapperPrimitiveType(typeName: string): string | null {
-  return WRAPPER_TYPE_TO_SCALAR[typeName] ?? null
-}
-
 export function parseDescriptorIntoMap(
   base64: string,
   target: Map<string, DescMessage>,
@@ -89,28 +64,3 @@ function collectMessages(messages: readonly DescMessage[], target: Map<string, D
   }
 }
 
-/**
- * Convert scalar type name string to ScalarType enum.
- * Used for wrapper types that still need string → enum conversion.
- */
-export function scalarTypeFromName(typeName: string): ScalarType {
-  const lower = typeName.toLowerCase()
-  switch (lower) {
-    case 'double': return ScalarType.DOUBLE
-    case 'float': return ScalarType.FLOAT
-    case 'int32': return ScalarType.INT32
-    case 'int64': return ScalarType.INT64
-    case 'uint32': return ScalarType.UINT32
-    case 'uint64': return ScalarType.UINT64
-    case 'sint32': return ScalarType.SINT32
-    case 'sint64': return ScalarType.SINT64
-    case 'fixed32': return ScalarType.FIXED32
-    case 'fixed64': return ScalarType.FIXED64
-    case 'sfixed32': return ScalarType.SFIXED32
-    case 'sfixed64': return ScalarType.SFIXED64
-    case 'bool': return ScalarType.BOOL
-    case 'string': return ScalarType.STRING
-    case 'bytes': return ScalarType.BYTES
-    default: return ScalarType.STRING
-  }
-}

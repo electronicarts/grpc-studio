@@ -2,6 +2,7 @@
 
 import React from 'react'
 import { FormInput, Code, FileCode2, Tags } from 'lucide-react'
+import { viewTabClass } from './viewTabClass'
 
 export type ViewTab = 'form' | 'json' | 'schema' | 'metadata'
 
@@ -18,13 +19,6 @@ interface ViewTabsProps {
   metadataCount?: number
 }
 
-const cls = (active: boolean) =>
-  `flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
-    active
-      ? 'bg-white dark:bg-gray-700 text-foreground shadow-sm'
-      : 'text-gray-700 dark:text-gray-300 hover:bg-white/60 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white'
-  }`
-
 const ViewTabs: React.FC<ViewTabsProps> = ({
   activeTab,
   onTabChange,
@@ -35,23 +29,23 @@ const ViewTabs: React.FC<ViewTabsProps> = ({
 }) => (
   <div className="flex items-center rounded-lg bg-muted p-0.5">
     {hasSchema && (
-      <button type="button" onClick={() => onTabChange('form')} className={cls(activeTab === 'form')}>
+      <button type="button" onClick={() => onTabChange('form')} className={viewTabClass(activeTab === 'form')}>
         <FormInput className="size-3.5" />
         Form
       </button>
     )}
-    <button type="button" onClick={() => onTabChange('json')} className={cls(activeTab === 'json')}>
+    <button type="button" onClick={() => onTabChange('json')} className={viewTabClass(activeTab === 'json')}>
       <Code className="size-3.5" />
       JSON
     </button>
     {showSchemaTab && (
-      <button type="button" onClick={() => onTabChange('schema')} className={cls(activeTab === 'schema')}>
+      <button type="button" onClick={() => onTabChange('schema')} className={viewTabClass(activeTab === 'schema')}>
         <FileCode2 className="size-3.5" />
         Schema
       </button>
     )}
     {showMetadataTab && (
-      <button type="button" onClick={() => onTabChange('metadata')} className={cls(activeTab === 'metadata')}>
+      <button type="button" onClick={() => onTabChange('metadata')} className={viewTabClass(activeTab === 'metadata')}>
         <Tags className="size-3.5" />
         Metadata
         {metadataCount > 0 && (

@@ -1,6 +1,8 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-import { toDisplayFormat } from './payload'
+import type { DescMessage } from '@bufbuild/protobuf'
+import { toDisplayFormat, toWireJson } from './payload'
+import { isRecord } from '../../../utils/jsonUtils'
 import { schemaCache } from '../../schemaLoader/lib/schemaCache'
 import { formLogger } from '../../../utils/debugLogger'
 import type { GrpcMethod } from '../../../types/grpc'
@@ -15,6 +17,26 @@ export function normalizeResponseMessage(
   target?: string,
 ): ReturnType<typeof toDisplayFormat> {
   return toDisplayFormat(data, outputType, target)
+}
+
+/**
+ * The raw unary response JSON with its message swapped for the message's wire form.
+ * The raw JSON wraps a successful response's message as `data`; errors aren't messages, so they return null.
+ */
+export function wireResponseJson(
+  raw: string,
+  data: unknown,
+  schema: DescMessage | null,
+  target?: string,
+): string | null {
+  const wire = toWireJson(data, schema, target)
+  if (!wire) return null
+  try {
+    const parsed: unknown = JSON.parse(raw)
+    return isRecord(parsed) && parsed.success === true ? JSON.stringify({ ...parsed, data: wire }, null, 2) : null
+  } catch {
+    return null
+  }
 }
 
 /**

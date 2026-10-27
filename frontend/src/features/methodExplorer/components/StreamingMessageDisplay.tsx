@@ -106,7 +106,7 @@ const StreamingMessageDisplay: React.FC<StreamingMessageDisplayProps> = ({
       ) : messages.length > 0 ? (
         <MessageList
           messages={messages}
-          schema={effectiveTab === 'form' ? schema : null}
+          schema={schema}
           isFormMode={effectiveTab === 'form'}
           colorScheme={colorScheme}
           showExpandAll={messages.length > 1}

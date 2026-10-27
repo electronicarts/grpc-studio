@@ -3,6 +3,7 @@
 import { statusIcons, statusConfigs } from '../../certificateValidator'
 import { TONES } from '@/utils/tones'
 import type { ServerItemProps } from '../types'
+import { Checkbox } from '@/components/ui/checkbox'
 
 export function ServerItem({ server, serverStatus, isSelected, onToggle }: ServerItemProps) {
   const isConnected = serverStatus?.connected ?? false
@@ -21,11 +22,10 @@ export function ServerItem({ server, serverStatus, isSelected, onToggle }: Serve
         isSelected ? 'bg-info/10' : ''
       }`}
     >
-      <input
-        type="checkbox"
+      <Checkbox
         checked={isSelected}
         onChange={() => onToggle(server.name)}
-        className="mr-3 size-4 rounded border-input text-info focus:ring-ring"
+        className="mr-3"
       />
       <div className="flex flex-1 items-center gap-2">
         <div className={`size-2 flex-shrink-0 rounded-full ${isConnected ? 'bg-success' : 'bg-danger'}`} />

@@ -12,6 +12,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import ProtoMessageRenderer from '..'
 import { 
   allScalarsSchema,
+  optionalFieldsSchema,
   enumSchema,
   repeatedFieldsSchema,
   mapFieldsSchema,
@@ -19,6 +20,7 @@ import {
   multipleOneofSchema,
   wellKnownTypesSchema,
   structMessageSchema,
+  fieldMaskMessageSchema,
   repeatedWithOneofSchema,
   mapWithOneofSchema,
   deeplyNestedSchema,
@@ -26,6 +28,9 @@ import {
   testData,
   schemaCache as testSchemaMap,
 } from './protoMessageRenderer.fixtures'
+
+const latest = (onChange: ReturnType<typeof vi.fn>) =>
+  onChange.mock.calls[onChange.mock.calls.length - 1][0] as Record<string, unknown>
 
 // Mock protobuf registry to return our test schemas.
 // Signatures match the real cache: getSchema(target, messageType) and
@@ -68,7 +73,7 @@ describe('ProtoMessageRenderer Integration Tests', () => {
       expect(screen.getByPlaceholderText(/enter doubleField/i)).toBeInTheDocument()
     })
 
-    it('should render boolean as checkbox', () => {
+    it('should render boolean as a true/false select, ticked to be sent', () => {
       const onChange = vi.fn()
       render(
         <ProtoMessageRenderer 
@@ -78,9 +83,23 @@ describe('ProtoMessageRenderer Integration Tests', () => {
         />
       )
 
+      expect(screen.getByRole('combobox', { name: 'boolField' })).toHaveValue('true')
+      expect(screen.getByRole('checkbox', { name: 'Send boolField' })).toBeChecked()
+    })
+
+    it('should render boolean as a disabled checkbox in read-only mode', () => {
+      render(
+        <ProtoMessageRenderer
+          schema={allScalarsSchema}
+          data={{ boolField: true }}
+          onChange={vi.fn()}
+          readOnly
+        />
+      )
+
       const checkbox = screen.getByRole('checkbox')
-      expect(checkbox).toBeInTheDocument()
       expect(checkbox).toBeChecked()
+      expect(checkbox).toBeDisabled()
     })
 
     it('should update string value on input', async () => {
@@ -247,6 +266,144 @@ describe('ProtoMessageRenderer Integration Tests', () => {
     })
   })
 
+  describe('Field Presence Checkboxes', () => {
+    it('should give every field a checkbox reflecting whether it is sent', () => {
+      render(
+        <ProtoMessageRenderer
+          schema={optionalFieldsSchema}
+          data={{ label: 'hi', plain: 'p' }}
+          onChange={vi.fn()}
+        />
+      )
+
+      expect(screen.getByRole('checkbox', { name: 'Send label' })).toBeChecked()
+      expect(screen.getByRole('checkbox', { name: 'Send count' })).not.toBeChecked()
+      expect(screen.getByRole('checkbox', { name: 'Send flag' })).not.toBeChecked()
+      expect(screen.getByRole('checkbox', { name: 'Send child' })).not.toBeChecked()
+      expect(screen.getByRole('checkbox', { name: 'Send plain' })).toBeChecked()
+    })
+
+    it('should send a scalar when typed into and leave it out when emptied', async () => {
+      const onChange = vi.fn()
+      render(<ProtoMessageRenderer schema={optionalFieldsSchema} data={{}} onChange={onChange} />)
+
+      const input = screen.getByPlaceholderText('Enter count')
+      fireEvent.change(input, { target: { value: '5' } })
+      await waitFor(() => {
+        expect(latest(onChange).count).toBe(5)
+      })
+      expect(screen.getByRole('checkbox', { name: 'Send count' })).toBeChecked()
+
+      fireEvent.change(input, { target: { value: '' } })
+      await waitFor(() => {
+        expect('count' in latest(onChange)).toBe(false)
+      })
+      expect(screen.getByRole('checkbox', { name: 'Send count' })).not.toBeChecked()
+    })
+
+    it('should send a zero value when an empty scalar is ticked, and leave it out when unticked', async () => {
+      const onChange = vi.fn()
+      render(<ProtoMessageRenderer schema={optionalFieldsSchema} data={{ label: 'hi' }} onChange={onChange} />)
+
+      fireEvent.click(screen.getByRole('checkbox', { name: 'Send count' }))
+      await waitFor(() => {
+        expect(latest(onChange).count).toBe(0)
+      })
+
+      fireEvent.click(screen.getByRole('checkbox', { name: 'Send label' }))
+      await waitFor(() => {
+        expect('label' in latest(onChange)).toBe(false)
+        expect(latest(onChange).count).toBe(0)
+      })
+    })
+
+    it('should send a bool once a value is chosen, or false when ticked', async () => {
+      const onChange = vi.fn()
+      render(<ProtoMessageRenderer schema={optionalFieldsSchema} data={{}} onChange={onChange} />)
+
+      fireEvent.click(screen.getByRole('checkbox', { name: 'Send flag' }))
+      await waitFor(() => {
+        expect(latest(onChange).flag).toBe(false)
+      })
+
+      fireEvent.change(screen.getByRole('combobox', { name: 'flag' }), { target: { value: 'true' } })
+      await waitFor(() => {
+        expect(latest(onChange).flag).toBe(true)
+      })
+    })
+
+    it('should control whether a message is sent, even once its fields are emptied', async () => {
+      const onChange = vi.fn()
+      render(<ProtoMessageRenderer schema={optionalFieldsSchema} data={{}} onChange={onChange} />)
+
+      const childCheckbox = screen.getByRole('checkbox', { name: 'Send child' })
+      expect(screen.queryByPlaceholderText('Enter name')).not.toBeInTheDocument()
+
+      // Ticking sends it as an empty message and shows its fields
+      fireEvent.click(childCheckbox)
+      await waitFor(() => {
+        expect(latest(onChange).child).toEqual({})
+      })
+
+      fireEvent.change(screen.getByPlaceholderText('Enter name'), { target: { value: 'n' } })
+      await waitFor(() => {
+        expect(latest(onChange).child).toEqual({ name: 'n' })
+      })
+
+      // Emptying its fields still sends an empty message, until it is unticked
+      fireEvent.change(screen.getByPlaceholderText('Enter name'), { target: { value: '' } })
+      await waitFor(() => {
+        expect(latest(onChange).child).toEqual({})
+      })
+      expect(childCheckbox).toBeChecked()
+
+      fireEvent.click(childCheckbox)
+      await waitFor(() => {
+        expect('child' in latest(onChange)).toBe(false)
+      })
+      expect(screen.queryByPlaceholderText('Enter name')).not.toBeInTheDocument()
+    })
+
+    it('should let a Struct be left out of the request', async () => {
+      const onChange = vi.fn()
+      render(<ProtoMessageRenderer schema={structMessageSchema} data={{ metadata: {} }} onChange={onChange} />)
+
+      const checkbox = screen.getByRole('checkbox', { name: 'Send metadata' })
+      expect(checkbox).toBeChecked()
+
+      fireEvent.click(checkbox)
+      await waitFor(() => {
+        expect('metadata' in latest(onChange)).toBe(false)
+      })
+    })
+
+    it('should not give oneof members a checkbox, since the oneof selection controls them', () => {
+      render(
+        <ProtoMessageRenderer
+          schema={oneofBasicSchema}
+          data={{ id: 'test', stringOption: 'my value' }}
+          onChange={vi.fn()}
+        />
+      )
+
+      expect(screen.getByRole('checkbox', { name: 'Send id' })).toBeChecked()
+      expect(screen.queryByRole('checkbox', { name: 'Send stringOption' })).not.toBeInTheDocument()
+    })
+
+    it('should not render checkboxes in read-only mode', () => {
+      render(
+        <ProtoMessageRenderer
+          schema={optionalFieldsSchema}
+          data={{ label: 'hi' }}
+          onChange={vi.fn()}
+          readOnly
+        />
+      )
+
+      expect(screen.queryByRole('checkbox', { name: /^Send / })).not.toBeInTheDocument()
+    })
+  })
+
   describe('Rendering Multiple Oneof Groups', () => {
     it('should render multiple oneof sections', () => {
       const onChange = vi.fn()
@@ -288,6 +445,7 @@ describe('ProtoMessageRenderer Integration Tests', () => {
           data={{ repeatedString: ['a', 'b'] }} 
           onChange={onChange}
           defaultCollapsed={true}
+          readOnly
         />
       )
 
@@ -312,13 +470,8 @@ describe('ProtoMessageRenderer Integration Tests', () => {
         />
       )
 
-      // Click to expand (starts collapsed due to defaultCollapsed)
-      const button = screen.getByText('repeatedString')
-      fireEvent.click(button)
-
-      await waitFor(() => {
-        expect(screen.getByText(/Add repeatedString/i)).toBeInTheDocument()
-      })
+      // A sent list is open while editing, with no chevron to click
+      expect(screen.getByText(/Add repeatedString/i)).toBeInTheDocument()
     })
   })
 
@@ -358,6 +511,7 @@ describe('ProtoMessageRenderer Integration Tests', () => {
           data={{ stringToString: { myKey: 'myValue' } }} 
           onChange={onChange}
           defaultCollapsed={true}
+          readOnly
         />
       )
 
@@ -416,13 +570,34 @@ describe('ProtoMessageRenderer Integration Tests', () => {
 
       await waitFor(() => {
         expect(screen.getByText('metadata')).toBeInTheDocument()
-        expect(screen.getByText(/dietary/i)).toBeInTheDocument()
+        expect(screen.getByDisplayValue('dietary')).toBeInTheDocument()
         expect(screen.getByDisplayValue('grain-free')).toBeInTheDocument()
       })
     })
   })
 
   describe('ReadOnly Mode', () => {
+    it('should show map keys, struct field names and mask paths as text, not inputs', () => {
+      const { unmount } = render(
+        <ProtoMessageRenderer schema={mapFieldsSchema} data={{ stringToString: { color: 'red' } }} onChange={vi.fn()} readOnly />
+      )
+      expect(screen.getByText('Key: color')).toBeInTheDocument()
+      expect(screen.queryByDisplayValue('color')).not.toBeInTheDocument()
+      unmount()
+
+      const { unmount: unmountStruct } = render(
+        <ProtoMessageRenderer schema={structMessageSchema} data={{ metadata: { priority: 'high' } }} onChange={vi.fn()} readOnly />
+      )
+      expect(screen.getByText('priority')).toBeInTheDocument()
+      expect(screen.queryByDisplayValue('priority')).not.toBeInTheDocument()
+      unmountStruct()
+
+      render(<ProtoMessageRenderer schema={fieldMaskMessageSchema} data={{ mask: 'name,email' }} onChange={vi.fn()} readOnly />)
+      expect(screen.getByText('name')).toBeInTheDocument()
+      expect(screen.getByText('email')).toBeInTheDocument()
+      expect(screen.queryByDisplayValue('name')).not.toBeInTheDocument()
+    })
+
     it('should disable all inputs in readOnly mode', () => {
       const onChange = vi.fn()
       render(
@@ -469,14 +644,7 @@ describe('ProtoMessageRenderer Integration Tests', () => {
         />
       )
 
-      // Expand the items array
-      const itemsButton = screen.getByText('items')
-      fireEvent.click(itemsButton)
-
-      await waitFor(() => {
-        // Should show 3 items
-        expect(screen.getByText(/3 items/i)).toBeInTheDocument()
-      })
+      expect(screen.getByText(/3 items/i)).toBeInTheDocument()
     })
 
     it('should detect different oneof selections in array items', async () => {
@@ -489,10 +657,7 @@ describe('ProtoMessageRenderer Integration Tests', () => {
         />
       )
 
-      // Use Expand All to ensure all nested sections are visible
-      const expandButton = screen.getByTitle('Expand all')
-      fireEvent.click(expandButton)
-
+      // While editing, every sent section is already open
       await waitFor(() => {
         // Each item has a different oneof selected
         // Item 1: stringValue, Item 2: intValue, Item 3: messageValue
@@ -513,14 +678,7 @@ describe('ProtoMessageRenderer Integration Tests', () => {
         />
       )
 
-      // Expand the entries map
-      const entriesButton = screen.getByText('entries')
-      fireEvent.click(entriesButton)
-
-      await waitFor(() => {
-        // Should show 3 entries
-        expect(screen.getByText(/3 entries/i)).toBeInTheDocument()
-      })
+      expect(screen.getByText(/3 entries/i)).toBeInTheDocument()
     })
   })
 
@@ -629,149 +787,71 @@ describe('ProtoMessageRenderer Integration Tests', () => {
   })
 
   describe('Expand/Collapse Controls', () => {
-    it('should have expand all button for schemas with nested fields', () => {
-      const onChange = vi.fn()
-      render(
-        <ProtoMessageRenderer
-          schema={deeplyNestedSchema}
-          data={{}}
-          onChange={onChange}
-        />
+    it('should only offer expand/collapse all in read-only views', () => {
+      const { unmount } = render(
+        <ProtoMessageRenderer schema={deeplyNestedSchema} data={testData.deeplyNested} onChange={vi.fn()} readOnly />
       )
+      expect(screen.getByTitle('Expand all')).toBeInTheDocument()
+      expect(screen.getByTitle('Collapse all')).toBeInTheDocument()
+      unmount()
 
-      const expandButton = screen.getByRole('button', { name: /expand/i })
-      expect(expandButton).toBeInTheDocument()
+      render(<ProtoMessageRenderer schema={deeplyNestedSchema} data={testData.deeplyNested} onChange={vi.fn()} />)
+      expect(screen.queryByTitle('Expand all')).not.toBeInTheDocument()
+      expect(screen.queryByRole('button', { expanded: false })).not.toBeInTheDocument()
     })
 
-    it('should expand all nested fields when expand all is clicked', async () => {
-      const onChange = vi.fn()
-      render(
-        <ProtoMessageRenderer
-          schema={deeplyNestedSchema}
-          data={{}}
-          onChange={onChange}
-          defaultCollapsed={true}
-        />
-      )
-
-      // Initially, nested fields should be collapsed
-      // The child field is a nested message, so it should not be visible initially
-      expect(screen.queryByPlaceholderText(/enter name/i)).toBeInTheDocument() // root level name
-      const childInputs = screen.queryAllByPlaceholderText(/enter name/i)
-      expect(childInputs.length).toBe(1) // Only root level visible
-
-      // Click expand all
-      const expandButton = screen.getByRole('button', { name: /expand/i })
-      fireEvent.click(expandButton)
-
-      // After expanding, nested fields should be visible (child.name field)
-      await waitFor(() => {
-        const allNameInputs = screen.getAllByPlaceholderText(/enter name/i)
-        expect(allNameInputs.length).toBeGreaterThan(1) // Both root and child visible
-      })
-    })
-
-    it('should expand all fields even with empty data (request form case)', async () => {
-      const onChange = vi.fn()
-      render(
-        <ProtoMessageRenderer
-          schema={deeplyNestedSchema}
-          data={{}}
-          onChange={onChange}
-          defaultCollapsed={true}
-        />
-      )
-
-      // This is the key test for the fix:
-      // With empty data (like in a request form), expand all should still work
-      const expandButton = screen.getByRole('button', { name: /expand/i })
-      fireEvent.click(expandButton)
-
-      // Nested fields should become visible even though data is empty
-      await waitFor(() => {
-        const allNameInputs = screen.getAllByPlaceholderText(/enter name/i)
-        expect(allNameInputs.length).toBeGreaterThan(1) // Should show nested child.name field
-      })
-    })
-
-    it('should collapse all nested fields when collapse all is clicked', async () => {
-      const onChange = vi.fn()
+    it('should expand and collapse nested messages in read-only views', async () => {
       render(
         <ProtoMessageRenderer
           schema={deeplyNestedSchema}
           data={testData.deeplyNested}
-          onChange={onChange}
+          onChange={vi.fn()}
+          defaultCollapsed={true}
+          readOnly
         />
       )
 
-      // Initially, fields with data are auto-expanded
-      // Click expand all to make sure everything is expanded first
-      const expandButton = screen.getByRole('button', { name: /expand/i })
-      fireEvent.click(expandButton)
+      expect(screen.queryByDisplayValue('Child Level')).not.toBeInTheDocument()
 
+      fireEvent.click(screen.getByTitle('Expand all'))
       await waitFor(() => {
-        const allNameInputs = screen.getAllByPlaceholderText(/enter name/i)
-        expect(allNameInputs.length).toBeGreaterThan(1)
+        expect(screen.getByDisplayValue('Child Level')).toBeInTheDocument()
       })
 
-      // Now click collapse
-      const collapseButton = screen.getByRole('button', { name: /collapse/i })
-      fireEvent.click(collapseButton)
-
-      // Nested fields should be hidden, only root level visible
+      fireEvent.click(screen.getByTitle('Collapse all'))
       await waitFor(() => {
-        const visibleInputs = screen.queryAllByPlaceholderText(/enter name/i)
-        expect(visibleInputs.length).toBe(1) // Only root level visible after collapse
+        expect(screen.queryByDisplayValue('Child Level')).not.toBeInTheDocument()
       })
+      expect(screen.getByDisplayValue('Root Level')).toBeInTheDocument()
     })
 
-    it('should work correctly for repeated fields', async () => {
+    it('should show a sent message while editing and hide it once unticked', async () => {
       const onChange = vi.fn()
       render(
-        <ProtoMessageRenderer
-          schema={repeatedFieldsSchema}
-          data={{}}
-          onChange={onChange}
-          defaultCollapsed={true}
-        />
+        <ProtoMessageRenderer schema={deeplyNestedSchema} data={testData.deeplyNested} onChange={onChange} />
       )
 
-      // Click expand all
-      const expandButton = screen.getByRole('button', { name: /expand/i })
-      fireEvent.click(expandButton)
+      expect(screen.getByDisplayValue('Child Level')).toBeInTheDocument()
 
-      // Repeated field sections should become visible
+      fireEvent.click(screen.getByRole('checkbox', { name: 'Send child' }))
       await waitFor(() => {
-        // Look for the "Add" button which indicates the repeated field is expanded
-        const addButtons = screen.queryAllByRole('button', { name: /add/i })
-        expect(addButtons.length).toBeGreaterThan(0)
+        expect('child' in latest(onChange)).toBe(false)
       })
+      expect(screen.queryByPlaceholderText(/enter name/i)).toBeInTheDocument() // root level name only
+      expect(screen.getAllByPlaceholderText(/enter name/i)).toHaveLength(1)
     })
 
-    it('should work correctly for map fields', async () => {
+    it('should keep unsent lists and maps closed until ticked while editing', async () => {
       const onChange = vi.fn()
-      render(
-        <ProtoMessageRenderer
-          schema={mapFieldsSchema}
-          data={{}}
-          onChange={onChange}
-          defaultCollapsed={true}
-        />
-      )
+      render(<ProtoMessageRenderer schema={mapFieldsSchema} data={{}} onChange={onChange} />)
 
-      // Initially map fields are collapsed
-      expect(screen.queryAllByText(/add entry/i).length).toBe(0)
+      expect(screen.queryByText(/add entry/i)).not.toBeInTheDocument()
 
-      // Click expand all
-      const expandButton = screen.getByRole('button', { name: /expand/i })
-      fireEvent.click(expandButton)
-
-      // Map field sections should become visible
+      fireEvent.click(screen.getByRole('checkbox', { name: 'Send stringToString' }))
       await waitFor(() => {
-        // After expanding, map field UI should be visible (check for field names)
-        const mapFieldLabels = screen.queryAllByText(/map/i)
-        expect(mapFieldLabels.length).toBeGreaterThan(0)
+        expect(latest(onChange).stringToString).toEqual({})
       })
+      expect(screen.getByText(/add entry/i)).toBeInTheDocument()
     })
   })
 })

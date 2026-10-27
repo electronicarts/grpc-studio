@@ -17,7 +17,6 @@ const EnumField: React.FC<EnumFieldProps> = ({ name, enumDesc, value, onChange }
   const { readOnly } = useProtoMessageRendererContext()
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    if (readOnly) return
     const newValue = e.target.value || undefined
     onChange(newValue)
   }
@@ -31,7 +30,8 @@ const EnumField: React.FC<EnumFieldProps> = ({ name, enumDesc, value, onChange }
         onChange={handleChange}
         disabled={readOnly}
       >
-        <option value="">Select {name}</option>
+        {/* Placeholder only; a set field is unset through its checkbox (or the oneof selection). */}
+        {!value && <option value="">Select {name}</option>}
         {enumDesc.values.map((ev) => (
           <option key={ev.name} value={ev.name}>{ev.name}</option>
         ))}

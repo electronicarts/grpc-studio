@@ -18,6 +18,7 @@ type FieldInit = {
   label?: FieldDescriptorProto_Label
   typeName?: string
   oneofIndex?: number
+  proto3Optional?: boolean
 }
 
 function field(init: FieldInit) {
@@ -170,6 +171,20 @@ const fdSet = create(FileDescriptorSetSchema, {
         },
       ],
       messageType: [
+        {
+          // proto3 `optional` fields: explicit presence via synthetic oneofs
+          name: 'OptionalFields',
+          field: [
+            field({ name: 'label', number: 1, type: T.STRING, oneofIndex: 0, proto3Optional: true }),
+            field({ name: 'count', number: 2, type: T.INT32, oneofIndex: 1, proto3Optional: true }),
+            field({ name: 'flag', number: 3, type: T.BOOL, oneofIndex: 2, proto3Optional: true }),
+            field({ name: 'plain', number: 4, type: T.STRING }),
+            messageField('child', 5, '.test.NestedValue'),
+            // proto and JSON names differ, as for any snake_case field compiled by protoc
+            { ...field({ name: 'max_count', number: 6, type: T.INT32 }), jsonName: 'maxCount' },
+          ],
+          oneofDecl: [{ name: '_label' }, { name: '_count' }, { name: '_flag' }],
+        },
         {
           name: 'NestedValue',
           field: [
@@ -380,6 +395,7 @@ export const anyMessageSchema = schema('test.AnyMessage')
 export const durationMessageSchema = schema('test.DurationMessage')
 const wrapperMessageSchema = schema('test.WrapperMessage')
 export const allScalarsSchema = schema('test.AllScalars')
+export const optionalFieldsSchema = schema('test.OptionalFields')
 export const enumSchema = schema('test.EnumMessage')
 export const repeatedFieldsSchema = schema('test.RepeatedFields')
 export const mapFieldsSchema = schema('test.MapFields')
@@ -398,6 +414,7 @@ export const recursiveOneofSchema = schema('test.RecursiveOneof')
 export const schemaCache = new Map<string, DescMessage>([
   wrapperMessageSchema,
   allScalarsSchema,
+  optionalFieldsSchema,
   enumSchema,
   repeatedFieldsSchema,
   mapFieldsSchema,

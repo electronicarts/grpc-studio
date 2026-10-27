@@ -1,6 +1,6 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-import React from 'react'
+import React, { useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Copy, Check, ChevronDown, ChevronUp } from 'lucide-react'
@@ -9,6 +9,8 @@ import type { DescMessage } from '@bufbuild/protobuf'
 import { getMessagePreview } from '../utils/messagePreview'
 import { useCopyToClipboard } from '../../../utils/useCopyToClipboard'
 import { useMethodExplorerContext } from '../stores'
+import { toWireJson } from '../utils/payload'
+import JsonViewSwitch, { type JsonView } from './JsonViewSwitch'
 
 interface MessageCardProps {
   msg: unknown
@@ -27,6 +29,11 @@ const MessageCard: React.FC<MessageCardProps> = ({
 }) => {
   const { selectedTarget } = useMethodExplorerContext()
   const { copied, copy } = useCopyToClipboard()
+  const [jsonView, setJsonView] = useState<JsonView>('full')
+  const wire = useMemo(
+    () => (isExpanded && !isFormMode ? toWireJson(msg, schema ?? null, selectedTarget) : null),
+    [isExpanded, isFormMode, msg, schema, selectedTarget],
+  )
 
   const handleCopy = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -113,9 +120,14 @@ const MessageCard: React.FC<MessageCardProps> = ({
               />
             </div>
           ) : (
-            <pre className="mt-2 max-h-80 overflow-auto rounded bg-muted p-3 font-mono text-xs text-foreground">
-              {JSON.stringify(msg, null, 2)}
-            </pre>
+            <div className="mt-2 space-y-2">
+              {wire && (
+                <JsonViewSwitch view={jsonView} onChange={setJsonView} />
+              )}
+              <pre className="max-h-80 overflow-auto rounded bg-muted p-3 font-mono text-xs text-foreground">
+                {JSON.stringify(jsonView === 'wire' && wire ? wire : msg, null, 2)}
+              </pre>
+            </div>
           )}
         </div>
       )}

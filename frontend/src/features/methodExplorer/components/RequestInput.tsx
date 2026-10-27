@@ -8,14 +8,13 @@ import ProtoViewer from './ProtoViewer'
 import HistoryPanel from './HistoryPanel'
 import MetadataEditor from './MetadataEditor'
 import ViewTabs, { type ViewTab } from './ViewTabs'
+import RequestJsonView from './RequestJsonView'
 import { useMethodExplorerContext } from '../stores'
 import { useMethodKind } from '../hooks/useMethodKind'
-import { usePersistentHeight } from '@/hooks/usePersistentHeight'
 
 const RequestInput: React.FC = () => {
   const { selectedTarget, selectedService, selectedMethod, request, response, stream, metadata, execution, history, toggleHistory, loadFromHistory } = useMethodExplorerContext()
   const [activeTab, setActiveTab] = useState<ViewTab>(request.isFormMode ? 'form' : 'json')
-  const jsonInput = usePersistentHeight<HTMLTextAreaElement>('grpc-studio-request-json-height', '10rem')
 
   const handleTabChange = (tab: ViewTab) => {
     setActiveTab(tab)
@@ -113,16 +112,7 @@ const RequestInput: React.FC = () => {
             </div>
           )}
 
-          {activeTab === 'json' && (
-            <textarea
-              ref={jsonInput.ref}
-              style={jsonInput.style}
-              value={request.body}
-              onChange={(e) => request.setBody(e.target.value)}
-              className="min-h-40 w-full resize-y rounded-md border bg-background p-4 font-mono text-sm"
-              placeholder="Enter your gRPC request as JSON..."
-            />
-          )}
+          {activeTab === 'json' && <RequestJsonView />}
 
           {request.validationError && (
             <p className="mt-2 text-sm text-destructive">{request.validationError}</p>

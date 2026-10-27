@@ -1,8 +1,9 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
-import { removeObjectEntry, setObjectEntry } from '../../utils/collectionMutation'
-import { StructFieldAdder } from './StructFieldAdder'
+import { useKeyedRows } from '../../hooks/useKeyedRows'
+import AddButton from '../shared/AddButton'
+import KeyInput from '../shared/KeyInput'
 import { StructValue } from './StructValue'
 
 interface StructObjectFieldsProps {
@@ -12,38 +13,36 @@ interface StructObjectFieldsProps {
 
 export function StructObjectFields({ value, onChange }: StructObjectFieldsProps) {
   const { readOnly } = useProtoMessageRendererContext()
-  const entries = Object.entries(value)
-
-  const updateFieldValue = (key: string, nextValue: unknown) => {
-    onChange(setObjectEntry(value, key, nextValue))
-  }
-
-  const removeField = (key: string) => {
-    onChange(removeObjectEntry(value, key))
-  }
-
-  const addField = (key: string) => {
-    if (Object.prototype.hasOwnProperty.call(value, key)) return
-    onChange(setObjectEntry(value, key, ''))
-  }
+  const { rows, addRow } = useKeyedRows<unknown>(value, onChange, () => '')
 
   return (
     <div className="space-y-3">
-      {entries.map(([key, entryValue]) => (
+      {rows.map(row => (
         <StructValue
-          key={key}
-          label={key}
-          value={entryValue}
-          onChange={(nextValue) => updateFieldValue(key, nextValue)}
-          onRemove={!readOnly ? () => removeField(key) : undefined}
+          key={row.id}
+          label={row.key || 'new field'}
+          labelEditor={!readOnly && (
+            <KeyInput
+              value={row.key}
+              takenKeys={row.takenKeys}
+              onCommit={row.commitKey}
+              placeholder="Field name"
+              aria-label="Struct field name"
+              autoFocus={row.isPending}
+              className="max-w-56"
+            />
+          )}
+          value={row.value}
+          onChange={row.setValue}
+          onRemove={!readOnly ? row.remove : undefined}
         />
       ))}
 
-      {entries.length === 0 && (
+      {rows.length === 0 && (
         <div className="text-sm italic text-muted-foreground">No fields</div>
       )}
 
-      {!readOnly && <StructFieldAdder onAdd={addField} />}
+      {!readOnly && <AddButton noun="field" onClick={addRow} testId="structField-addButton" />}
     </div>
   )
 }

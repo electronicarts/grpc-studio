@@ -57,7 +57,6 @@ const AnyField: React.FC<AnyFieldProps> = ({ name, value, onChange }) => {
     : null
 
   const handleTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    if (readOnly) return
     const typeName = e.target.value
     if (!typeName) {
       onChange(undefined)

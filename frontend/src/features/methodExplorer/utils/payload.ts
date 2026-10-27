@@ -3,7 +3,7 @@
 import { fromJson, toJson, createRegistry } from '@bufbuild/protobuf'
 import type { DescMessage, JsonObject as BufJsonObject, Registry } from '@bufbuild/protobuf'
 import * as wkt from '@bufbuild/protobuf/wkt'
-import type { JsonObject } from '@grpc-studio/shared'
+import type { JsonObject, JsonValue } from '@grpc-studio/shared'
 import { cloneJsonObject, isJsonObject, isRecord } from '../../../utils/jsonUtils'
 import { schemaCache } from '../../schemaLoader/lib/schemaCache'
 import { cleanFormData } from '../../../utils/cleanFormData'
@@ -35,10 +35,22 @@ function lookupSchema(target: string | undefined, type: string): DescMessage | n
   return schemaCache.getCachedSchema(target, type)
 }
 
+interface CanonicalizeOptions {
+  target?: string
+  /** Emit every field, including plain proto3 fields at their default value. */
+  alwaysEmitImplicit?: boolean
+  /**
+   * Emit exactly the fields present in `data`, normalized, and no others: a field given as `false`, `0` or `""`
+   * stays in, and an absent field stays out. The request form relies on this so that its "Send" checkbox and the
+   * JSON view agree on every key. Takes precedence over `alwaysEmitImplicit`.
+   */
+  keepPresentFields?: boolean
+}
+
 export function canonicalizeProtoJson(
   data: Record<string, unknown>,
   schema: DescMessage | null,
-  options: { target?: string; alwaysEmitImplicit?: boolean} = {},
+  options: CanonicalizeOptions = {},
 ): JsonObject {
   if (!schema) {
     if (!isJsonObject(data)) {
@@ -57,7 +69,7 @@ export function canonicalizeProtoJson(
   const message = fromJson(schema, cleanedData, { ignoreUnknownFields: false, registry })
   const json = toJson(schema, message, {
     useProtoFieldName: true,
-    alwaysEmitImplicit: options.alwaysEmitImplicit ?? false,
+    alwaysEmitImplicit: options.keepPresentFields || (options.alwaysEmitImplicit ?? false),
     registry,
   })
 
@@ -65,7 +77,63 @@ export function canonicalizeProtoJson(
     throw new Error(`Expected ${schema.typeName} to encode to a JSON object`)
   }
 
-  return json
+  return options.keepPresentFields ? keepPresentFields(json, cleanedData, schema, registry) : json
+}
+
+/**
+ * Narrows a message's canonical JSON (emitted with every field) to the fields present in its input.
+ * Input keys may use either the proto or the JSON field name. Recurses into nested messages, including list
+ * items, map values and Any content; types with their own JSON shape (Timestamp, Struct, wrappers, …) are kept whole.
+ */
+function keepPresentFields(
+  canonical: JsonObject,
+  input: Record<string, unknown>,
+  schema: DescMessage,
+  registry: Registry,
+): JsonObject {
+  const result: JsonObject = {}
+  for (const field of schema.fields) {
+    const inputKey = field.name in input ? field.name : field.jsonName in input ? field.jsonName : null
+    if (inputKey === null || !(field.name in canonical)) continue
+
+    const value = canonical[field.name]
+    const inputValue = input[inputKey]
+    // Set for message fields, and for lists and maps whose items are messages
+    const nested = field.message
+
+    if (!nested) {
+      result[field.name] = value
+    } else if (field.fieldKind === 'list' && Array.isArray(value) && Array.isArray(inputValue)) {
+      result[field.name] = value.map((item, i) => keepPresentInMessage(item, inputValue[i], nested, registry))
+    } else if (field.fieldKind === 'map' && isJsonObject(value) && isRecord(inputValue)) {
+      result[field.name] = Object.fromEntries(
+        Object.entries(value).map(([key, item]) => [key, keepPresentInMessage(item, inputValue[key], nested, registry)]),
+      )
+    } else {
+      result[field.name] = keepPresentInMessage(value, inputValue, nested, registry)
+    }
+  }
+  return result
+}
+
+function keepPresentInMessage(
+  value: JsonValue,
+  input: unknown,
+  schema: DescMessage,
+  registry: Registry,
+): JsonValue {
+  if (!isJsonObject(value) || !isRecord(input)) return value
+
+  if (schema.typeName === 'google.protobuf.Any') {
+    const typeUrl = value['@type']
+    const content = typeof typeUrl === 'string' ? registry.getMessage(typeUrl.slice(typeUrl.lastIndexOf('/') + 1)) : undefined
+    // Any holding a type with its own JSON shape wraps it as { "@type", "value" }, which is kept whole.
+    if (!content || wkt.hasCustomJsonRepresentation(content)) return value
+    return { '@type': typeUrl, ...keepPresentFields(value, input, content, registry) }
+  }
+
+  if (wkt.hasCustomJsonRepresentation(schema)) return value
+  return keepPresentFields(value, input, schema, registry)
 }
 
 export function toWireFormat(
@@ -97,5 +165,18 @@ export function toDisplayFormat(
   return {
     display: cloneJsonObject(canonical),
     wire: cloneJsonObject(canonical),
+  }
+}
+
+/**
+ * The wire form of a message: what protobuf actually encodes, with plain proto3 fields at their default value
+ * dropped. Returns null when there is no schema to encode with, or the data isn't a valid message.
+ */
+export function toWireJson(data: unknown, schema: DescMessage | null, target?: string): JsonObject | null {
+  if (!schema || !isRecord(data)) return null
+  try {
+    return canonicalizeProtoJson(data, schema, { target })
+  } catch {
+    return null
   }
 }

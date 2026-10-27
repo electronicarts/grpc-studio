@@ -1,13 +1,13 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
+import type { ReactNode } from 'react'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { FormField } from '@/components/shared'
-import { X } from 'lucide-react'
 import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
 import ScalarField from '../fields/ScalarField'
+import RemoveButton from '../shared/RemoveButton'
 import { StructArrayItems } from './StructArrayItems'
 import { StructObjectFields } from './StructObjectFields'
 import {
@@ -22,12 +22,14 @@ import {
 
 interface StructValueProps {
   label: string
+  /** Shown in place of the label, for struct fields whose name can be edited. */
+  labelEditor?: ReactNode
   value: unknown
   onChange: (value: unknown) => void
   onRemove?: () => void
 }
 
-export function StructValue({ label, value, onChange, onRemove }: StructValueProps) {
+export function StructValue({ label, labelEditor, value, onChange, onRemove }: StructValueProps) {
   const { readOnly } = useProtoMessageRendererContext()
   const kind = structKind(value)
   const selectedFieldName = structKindFieldName(kind)
@@ -63,25 +65,16 @@ export function StructValue({ label, value, onChange, onRemove }: StructValuePro
     <div className="space-y-3 rounded-lg border-2 border-brand/30 bg-brand/10 p-4">
       <div className="flex items-center gap-2">
         <Badge className="bg-brand text-white">oneof</Badge>
-        <span className="font-medium text-foreground">{label}</span>
+        {labelEditor || <span className="font-medium text-foreground">{label}</span>}
         <span className="text-xs text-muted-foreground">(google.protobuf.Value)</span>
         {onRemove && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={onRemove}
-            className="ml-auto size-7 p-0"
-            data-testid="structField-removeButton"
-          >
-            <X className="size-3" />
-          </Button>
+          <RemoveButton label={label} onClick={onRemove} className="ml-auto" testId="structField-removeButton" />
         )}
       </div>
 
       <Select
         value={kind}
-        onChange={(event) => !readOnly && onChange(defaultStructValue(event.target.value as StructKind))}
+        onChange={(event) => onChange(defaultStructValue(event.target.value as StructKind))}
         disabled={readOnly}
         className="border-brand/30"
         data-testid="structField-kindSelect"

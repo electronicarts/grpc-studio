@@ -30,7 +30,6 @@ interface AnyContentRendererProps {
  */
 const AnyContentRenderer: React.FC<AnyContentRendererProps> = ({ schema, formData, onChange }) => {
   const { target, readOnly } = useProtoMessageRendererContext()
-  const typeName = schema.typeName
 
   // For WKTs in Any, proto3 JSON encodes them as { "@type": "...", "value": <wkt-json> }
   // We extract the "value" field, pass it to the WKT component, and wrap it back on change.
@@ -48,7 +47,7 @@ const AnyContentRenderer: React.FC<AnyContentRendererProps> = ({ schema, formDat
 
   // Try rendering as a well-known type
   const wktComponent = renderWellKnownType({
-    typeName,
+    message: schema,
     fieldName: 'value',
     value: wktValue,
     onChange: handleWktChange,

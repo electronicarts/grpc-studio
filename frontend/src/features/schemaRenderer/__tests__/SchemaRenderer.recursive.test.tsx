@@ -151,7 +151,7 @@ describe('cyclic schemas', () => {
 
     it('expandAll terminates on a cyclic schema', async () => {
       const user = userEvent.setup()
-      render(<SchemaRenderer schema={recursiveSchema} data={testData.recursive} onChange={vi.fn()} />)
+      render(<SchemaRenderer schema={recursiveSchema} data={testData.recursive} onChange={vi.fn()} readOnly />)
 
       await user.click(screen.getByTitle('Expand all'))
 
@@ -160,13 +160,13 @@ describe('cyclic schemas', () => {
       expect(screen.getByDisplayValue('great-grandparent')).toBeInTheDocument()
     })
 
-    it('drilling into a recursive field renders the same message type again', async () => {
+    it('ticking a recursive field renders the same message type again, one level deep', async () => {
       const user = userEvent.setup()
       render(<SchemaRenderer schema={recursiveSchema} data={{}} onChange={vi.fn()} />)
 
-      // Expanding `parent` must reveal that Recursive's own fields, one level
+      // Ticking `parent` must reveal that Recursive's own fields, one level
       // at a time — lazily, not by pre-walking the infinite graph.
-      await user.click(screen.getByRole('button', { name: /^parent/ }))
+      await user.click(screen.getByRole('checkbox', { name: 'Send parent' }))
       expect(screen.getAllByText('parent').length).toBeGreaterThan(1)
     })
   })
