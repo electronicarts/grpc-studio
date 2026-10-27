@@ -6,7 +6,6 @@ import type { ServiceItemProps } from '../types'
 import { SelectableButton } from '@/components/ui/selectableButton'
 
 const ServiceItem: React.FC<ServiceItemProps & { serverName?: string; serverTarget?: string }> = ({ service, isSelected, isExpanded, onToggle, children, serverName, serverTarget }) => {
-  const displayName = service.name ?? service.fullName.split('.').pop() ?? service.fullName
 
   return (
     <div>
@@ -26,7 +25,7 @@ const ServiceItem: React.FC<ServiceItemProps & { serverName?: string; serverTarg
             <div className="min-w-0">
               <h3 className={`break-words text-sm font-medium ${
                 isSelected ? 'text-info' : 'text-foreground/90'
-              }`}>{displayName}</h3>
+              }`}>{service.name}</h3>
               <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
                 <div>Methods: {service.methods.length}</div>
                 {serverName && <div className="break-words">Server: {serverName}</div>}

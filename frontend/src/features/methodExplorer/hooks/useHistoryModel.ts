@@ -20,7 +20,7 @@ export function useHistoryModel(
 
   useEffect(() => {
     if (service && method) {
-      setItems(getHistory(target, service.name ?? service.fullName, method.name))
+      setItems(getHistory(target, service.name, method.name))
     }
   }, [target, service, method])
 
@@ -30,8 +30,8 @@ export function useHistoryModel(
       historyLogger.warn('save() aborted - no service or method')
       return
     }
-    saveRequest(target, service.name ?? service.fullName, method.name, requestObj, requestObj, undefined, status, metadata)
-    setItems(getHistory(target, service.name ?? service.fullName, method.name))
+    saveRequest(target, service.name, method.name, requestObj, requestObj, undefined, status, metadata)
+    setItems(getHistory(target, service.name, method.name))
   }, [target, service, method])
 
   const parse = useCallback((item: RequestHistoryItem): { json: string; data: Record<string, unknown> } => {
@@ -46,14 +46,14 @@ export function useHistoryModel(
 
   const remove = useCallback((itemId: string) => {
     if (!service || !method) return
-    deleteHistoryItem(target, service.name ?? service.fullName, method.name, itemId)
-    setItems(getHistory(target, service.name ?? service.fullName, method.name))
+    deleteHistoryItem(target, service.name, method.name, itemId)
+    setItems(getHistory(target, service.name, method.name))
   }, [target, service, method])
 
   const clearAll = useCallback(() => {
     if (!service || !method) return
     if (confirm('Clear all request history for this method?')) {
-      clearHistory(target, service.name ?? service.fullName, method.name)
+      clearHistory(target, service.name, method.name)
       setItems([])
     }
   }, [target, service, method])

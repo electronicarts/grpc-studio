@@ -185,7 +185,6 @@ function normalizeJsonNames(files: Map<string, FileDescriptorProto>): Map<string
     const normalizedFile = clone(FileDescriptorProtoSchema, file)
     normalized.set(name, {
       ...normalizedFile,
-      syntax: normalizedFile.syntax || 'proto2',
       messageType: file.messageType.map(normalizeMessageJsonNames),
     })
   }

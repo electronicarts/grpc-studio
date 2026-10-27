@@ -17,7 +17,8 @@ export interface ApiMethod {
 }
 
 export interface ApiService {
-  name?: string
+  /** The service's short name, e.g. "PetStoreService" for "petstore.v1.PetStoreService". */
+  name: string
   fullName: string
   methods: ApiMethod[]
 }

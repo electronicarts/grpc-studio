@@ -10,10 +10,6 @@ import type { ServiceExplorerProps } from '../types'
 import type { GrpcService } from '../../../types/grpc'
 import { useSchemas } from '../../schemaLoader'
 
-function serviceLabel(service: GrpcService): string {
-  return service.name ?? service.fullName.split('.').pop() ?? service.fullName
-}
-
 interface ServiceExplorerWithServerProps extends ServiceExplorerProps {
   selectedServerNames: string[]
   serviceSearchQuery: string
@@ -67,7 +63,7 @@ const ServiceExplorer: React.FC<ServiceExplorerWithServerProps> = ({
 
     const query = serviceSearchQuery.toLowerCase()
     return allServices.filter(({ service }) => {
-      const serviceMatches = (service.name ?? service.fullName).toLowerCase().includes(query)
+      const serviceMatches = service.name.toLowerCase().includes(query)
       const methodMatches = service.methods.some((method) =>
         method.name.toLowerCase().includes(query)
       )
@@ -126,7 +122,7 @@ const ServiceExplorer: React.FC<ServiceExplorerWithServerProps> = ({
   }, [selectedTarget, selectedService, expandedService, onServiceSelect, servers])
 
   const sortedServices = useMemo(
-    () => [...filteredServices].sort((a, b) => serviceLabel(a.service).localeCompare(serviceLabel(b.service))),
+    () => [...filteredServices].sort((a, b) => a.service.name.localeCompare(b.service.name)),
     [filteredServices]
   )
 

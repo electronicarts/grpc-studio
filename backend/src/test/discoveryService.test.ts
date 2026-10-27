@@ -4,8 +4,28 @@ import { describe, it, mock } from 'node:test'
 import assert from 'node:assert/strict'
 import { DiscoveryService } from '../services/discoveryService.js'
 import type { ReflectionSchemaRepository } from '../repositories/reflectionSchemaRepository.js'
+import { create, createFileRegistry } from '@bufbuild/protobuf'
+import { FileDescriptorSetSchema } from '@bufbuild/protobuf/wkt'
+import { fileDescriptor } from './protoFixtures.js'
 
 const TEST_TARGET = 'test-target'
+
+/** A repository serving a real registry with one service, as reflection would. */
+function repositoryWithService(pkg: string, serviceName: string, methods: string[]): ReflectionSchemaRepository {
+  const prefix = pkg ? `.${pkg}.` : '.'
+  const registry = createFileRegistry(create(FileDescriptorSetSchema, {
+    file: [fileDescriptor({
+      name: 'service.proto',
+      package: pkg,
+      messageType: [{ name: 'Request' }, { name: 'Response' }],
+      service: [{
+        name: serviceName,
+        method: methods.map(name => ({ name, inputType: `${prefix}Request`, outputType: `${prefix}Response` })),
+      }],
+    })],
+  }))
+  return { getFileRegistry: mock.fn(async () => registry) } as unknown as ReflectionSchemaRepository
+}
 
 describe('DiscoveryService', () => {
   describe('listServices', () => {
@@ -69,6 +89,7 @@ describe('DiscoveryService', () => {
       ]
 
       const mockDescService = {
+        name: 'UserService',
         methods: mockMethods
       }
 
@@ -118,6 +139,7 @@ describe('DiscoveryService', () => {
       ]
 
       const mockDescService = {
+        name: 'StreamService',
         methods: mockMethods
       }
 
@@ -158,37 +180,22 @@ describe('DiscoveryService', () => {
       )
     })
 
-    it('should parse service name correctly', async () => {
-      const mockMethods = [
-        {
-          name: 'Method1',
-          input: { typeName: 'Request' },
-          output: { typeName: 'Response' },
-          methodKind: 'unary'
-        }
-      ]
+    it('takes the service name from its descriptor', async () => {
+      const qualified = await new DiscoveryService(repositoryWithService('com.example.v1', 'MyService', ['Method1']))
+        .describeService(TEST_TARGET, 'com.example.v1.MyService')
+      assert.strictEqual(qualified.name, 'MyService')
+      assert.strictEqual(qualified.fullName, 'com.example.v1.MyService')
+      assert.strictEqual(qualified.methods[0].inputType, 'com.example.v1.Request')
 
-      const mockDescService = { methods: mockMethods }
-      const mockRegistry = { getService: mock.fn(() => mockDescService) }
-      const mockSchemaRepository = {
-        getFileRegistry: mock.fn(async () => mockRegistry)
-      } as unknown as ReflectionSchemaRepository
-
-      const service = new DiscoveryService(mockSchemaRepository)
-
-      // Test fully qualified name
-      const desc1 = await service.describeService(TEST_TARGET, 'com.example.v1.MyService')
-      assert.strictEqual(desc1.name, 'MyService')
-      assert.strictEqual(desc1.fullName, 'com.example.v1.MyService')
-
-      // Test simple name
-      const desc2 = await service.describeService(TEST_TARGET, 'SimpleService')
-      assert.strictEqual(desc2.name, 'SimpleService')
-      assert.strictEqual(desc2.fullName, 'SimpleService')
+      const unpackaged = await new DiscoveryService(repositoryWithService('', 'SimpleService', ['Method1']))
+        .describeService(TEST_TARGET, 'SimpleService')
+      assert.strictEqual(unpackaged.name, 'SimpleService')
+      assert.strictEqual(unpackaged.fullName, 'SimpleService')
     })
 
     it('should handle service with no methods', async () => {
       const mockDescService = {
+        name: 'EmptyService',
         methods: []
       }
 
@@ -234,7 +241,7 @@ describe('DiscoveryService', () => {
         }
       ]
 
-      const mockDescService = { methods: mockMethods }
+      const mockDescService = { name: 'TestService', methods: mockMethods }
       const mockRegistry = { getService: mock.fn(() => mockDescService) }
       const mockSchemaRepository = {
         getFileRegistry: mock.fn(async () => mockRegistry)
@@ -260,7 +267,7 @@ describe('DiscoveryService', () => {
         }
       ]
 
-      const mockDescService = { methods: mockMethods }
+      const mockDescService = { name: 'Service', methods: mockMethods }
       const mockRegistry = { getService: mock.fn(() => mockDescService) }
       const mockSchemaRepository = {
         getFileRegistry: mock.fn(async () => mockRegistry)

@@ -47,7 +47,7 @@ export class DiscoveryService {
       }))
 
       const description: ApiService = {
-        name: serviceName.split('.').pop(),
+        name: descService.name,
         fullName: serviceName,
         methods,
       }
@@ -126,7 +126,8 @@ export class DiscoveryService {
       return await this.describeService(targetName, serviceName)
     } catch (error) {
       discoveryLogger.warn('Failed to describe service', { target: targetName, service: serviceName, error: errorMessage(error) })
-      return { name: serviceName.split('.').pop(), fullName: serviceName, methods: [] }
+      // No descriptor to read the name from, so take the part after the package
+      return { name: serviceName.slice(serviceName.lastIndexOf('.') + 1), fullName: serviceName, methods: [] }
     }
   }
 }

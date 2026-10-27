@@ -3,6 +3,7 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import { createFileRegistry, fromJson, toJson } from '@bufbuild/protobuf'
+import { FeatureSet_FieldPresence } from '@bufbuild/protobuf/wkt'
 import type { GrpcReflection } from 'grpc-js-reflection-client'
 import * as descriptorSetFromReflection from '../grpc/reflection/descriptorSetFromReflection.js'
 import * as protoFixtures from './protoFixtures.js'
@@ -123,6 +124,22 @@ describe('descriptorSetFromReflection', () => {
     assert.deepEqual(toJson(message, value, { useProtoFieldName: true }), {
       snake_case_field: 'ok',
     })
+  })
+
+  it('loads a file that reflection returns without a syntax as proto2', async () => {
+    // proto2 files compiled by protoc leave `syntax` empty
+    const legacy = protoFixtures.fileDescriptor({
+      name: 'legacy.proto',
+      syntax: '',
+      messageType: [{ name: 'Legacy', field: [protoFixtures.field('id', 1, protoFixtures.FieldType.STRING)] }],
+    })
+    const { client } = reflectionClient({ 'legacy.proto': [protoFixtures.descriptorBytes(legacy)] }, 'legacy.proto')
+
+    const set = await descriptorSetFromReflection.buildFileDescriptorSet(client, 'test.Legacy')
+    const field = createFileRegistry(set).getMessage('test.Legacy')!.fields[0]
+
+    // proto2 singular fields track presence; proto3 ones would not
+    assert.equal(field.presence, FeatureSet_FieldPresence.EXPLICIT)
   })
 
   it('passes call options to reflection descriptor requests', async () => {
