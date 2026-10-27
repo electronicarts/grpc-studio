@@ -123,7 +123,7 @@ const createPetSchema = (): DescMessage => {
       { name: 'vaccinations', fieldKind: 'list', listKind: 'message', message: VaccinationSchema } as DescField,
 
       // Map
-      { name: 'tags', fieldKind: 'map', mapKind: 'scalar', scalar: ScalarType.STRING } as DescField,
+      { name: 'tags', fieldKind: 'map', mapKey: ScalarType.STRING, mapKind: 'scalar', scalar: ScalarType.STRING } as DescField,
     ],
     oneofs: [],
     nestedMessages: [],

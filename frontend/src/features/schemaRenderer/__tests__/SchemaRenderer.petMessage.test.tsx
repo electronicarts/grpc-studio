@@ -210,10 +210,10 @@ const createPetSchema = (): DescMessage => {
       { name: 'medical_history', fieldKind: 'list', listKind: 'message', message: MedicalRecordSchema } as DescField,
 
       // Map<string, string>
-      { name: 'tags', fieldKind: 'map', mapKind: 'scalar', scalar: ScalarType.STRING } as DescField,
+      { name: 'tags', fieldKind: 'map', mapKey: ScalarType.STRING, mapKind: 'scalar', scalar: ScalarType.STRING } as DescField,
 
       // Map<string, message>
-      { name: 'records_by_vet', fieldKind: 'map', mapKind: 'message', message: MedicalRecordSchema } as DescField,
+      { name: 'records_by_vet', fieldKind: 'map', mapKey: ScalarType.STRING, mapKind: 'message', message: MedicalRecordSchema } as DescField,
 
       // Struct
       { name: 'metadata', fieldKind: 'message', message: StructSchema } as DescField,

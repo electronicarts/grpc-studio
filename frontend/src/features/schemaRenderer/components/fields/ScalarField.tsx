@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
-import { getInputType, parseValue, getScalarTypeName } from '../../utils/scalarTypeUtils'
+import { getInputType, parseValue } from '../../utils/scalarTypeUtils'
+import { scalarTypeName } from '../../../../utils/descUtils'
 import { bytesToBase64 } from '../../../../utils/bytesUtils'
 import { FormField } from '../../../../components/shared'
 
@@ -24,7 +25,7 @@ const ScalarField: React.FC<ScalarFieldProps> = ({ name, scalar, value, onChange
   const isBytes = scalar === ScalarType.BYTES
   const isBool = scalar === ScalarType.BOOL
   const isUnset = value === undefined || value === null
-  const typeName = typeNameOverride || getScalarTypeName(scalar)
+  const typeName = typeNameOverride || scalarTypeName(scalar)
   const displayValue = isBytes ? bytesToBase64(value) : String(value ?? '')
 
   const typeMeta = <span className="text-xs text-muted-foreground">({typeName})</span>

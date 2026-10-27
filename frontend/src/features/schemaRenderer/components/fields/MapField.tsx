@@ -8,7 +8,7 @@ import type { DescField } from '@bufbuild/protobuf'
 import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
 import { useKeyedRows, type KeyedRow } from '../../hooks/useKeyedRows'
 import { filterMapEntries } from '../../utils/mapUtils'
-import { getScalarTypeName, getFieldTypeName } from '../../utils/scalarTypeUtils'
+import { fieldTypeName } from '../../../../utils/descUtils'
 import MessageRenderer from '../core/MessageRenderer'
 import MessageFieldFrame from '../shared/MessageFieldFrame'
 import type { FieldPresence } from '../shared/fieldPresence'
@@ -41,9 +41,6 @@ const MapField: React.FC<MapFieldProps> = ({ field, value, onChange, path, prese
   )
   const hasPendingRow = rows.some(row => row.isPending)
 
-  // Determine key and value types for type display (e.g., "map<string, int32>")
-  const keyType = getScalarTypeName(field.mapKey)
-  const valueType = getFieldTypeName(field.mapKind, field)
 
   const renderValue = (row: KeyedRow<unknown>) => {
     if (isScalarValue) {
@@ -80,7 +77,7 @@ const MapField: React.FC<MapFieldProps> = ({ field, value, onChange, path, prese
   return (
     <MessageFieldFrame
       name={field.name}
-      typeName={`map<${keyType}, ${valueType}>`}
+      typeName={fieldTypeName(field)}
       path={path}
       presence={presence}
       className="border-info/30 bg-info/10"

@@ -1,7 +1,6 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import type { DescField, DescMessage } from '@bufbuild/protobuf'
-import { fieldNestedMessage } from '../../../utils/descUtils'
 import { isRecord } from '../../../utils/jsonUtils'
 
 export function isCompositeField(field: DescField): boolean {
@@ -69,7 +68,8 @@ export function nestedMessageSlots(
   fieldValue: unknown,
   fieldPath: string,
 ): NestedMessageSlot[] {
-  const schema = fieldNestedMessage(field)
+  // buf sets `message` for message fields and for lists and maps of messages
+  const schema = field.message
   if (!schema) return []
 
   if (field.fieldKind === 'list' && Array.isArray(fieldValue)) {

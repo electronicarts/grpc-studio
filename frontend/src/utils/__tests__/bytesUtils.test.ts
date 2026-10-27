@@ -1,9 +1,24 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import { describe, it, expect } from 'vitest'
-import { formatBytes } from '../bytesUtils'
+import { bytesToBase64, formatBytes } from '../bytesUtils'
 
 describe('bytesUtils', () => {
+  describe('bytesToBase64', () => {
+    it('returns a base64 string unchanged', () => {
+      expect(bytesToBase64('aGk=')).toBe('aGk=')
+    })
+
+    it('encodes the Node.js Buffer JSON shape', () => {
+      expect(bytesToBase64({ type: 'Buffer', data: [104, 105] })).toBe('aGk=')
+    })
+
+    it('encodes a large buffer without overflowing the call stack', () => {
+      const data = Array.from({ length: 500_000 }, (_, i) => i % 256)
+      expect(bytesToBase64({ type: 'Buffer', data })).toHaveLength(Math.ceil(data.length / 3) * 4)
+    })
+  })
+
   describe('formatBytes', () => {
     it('should format bytes under 1KB', () => {
       expect(formatBytes(0)).toBe('0 B')

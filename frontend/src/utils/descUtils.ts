@@ -3,6 +3,7 @@
 import type { DescField, DescMessage } from '@bufbuild/protobuf'
 import { ScalarType, fromBinary, createFileRegistry } from '@bufbuild/protobuf'
 import { FileDescriptorSetSchema } from '@bufbuild/protobuf/wkt'
+import { base64Decode } from '@bufbuild/protobuf/wire'
 
 export function scalarTypeName(s: ScalarType): string {
   return ScalarType[s].toLowerCase()
@@ -31,36 +32,13 @@ export function fieldTypeName(field: DescField): string {
   }
 }
 
-export function fieldNestedMessage(field: DescField): DescMessage | null {
-  if (field.fieldKind === 'message') return field.message
-  if (field.fieldKind === 'list' && field.listKind === 'message') return field.message
-  if (field.fieldKind === 'map'  && field.mapKind  === 'message') return field.message
-  return null
-}
-
-
 export function parseDescriptorIntoMap(
   base64: string,
   target: Map<string, DescMessage>,
 ): void {
-  const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0))
-  const fdSet = fromBinary(FileDescriptorSetSchema, bytes)
-  const registry = createFileRegistry(fdSet)
-
-  for (const file of fdSet.file) {
-    if (!file.name) continue
-    const descFile = registry.getFile(file.name)
-    if (!descFile) continue
-    collectMessages(descFile.messages, target)
+  const fdSet = fromBinary(FileDescriptorSetSchema, base64Decode(base64))
+  // A registry iterates every type it holds, nested messages included
+  for (const type of createFileRegistry(fdSet)) {
+    if (type.kind === 'message') target.set(type.typeName, type)
   }
 }
-
-function collectMessages(messages: readonly DescMessage[], target: Map<string, DescMessage>): void {
-  for (const msg of messages) {
-    target.set(msg.typeName, msg)
-    if (msg.nestedMessages.length > 0) {
-      collectMessages(msg.nestedMessages, target)
-    }
-  }
-}
-

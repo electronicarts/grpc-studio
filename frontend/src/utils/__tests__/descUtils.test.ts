@@ -1,11 +1,12 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import { describe, it, expect } from 'vitest'
-import { ScalarType } from '@bufbuild/protobuf'
+import { ScalarType, create, toBinary } from '@bufbuild/protobuf'
+import { FileDescriptorSetSchema } from '@bufbuild/protobuf/wkt'
+import { base64Encode } from '@bufbuild/protobuf/wire'
 import {
   scalarTypeName,
   fieldTypeName,
-  fieldNestedMessage,
   parseDescriptorIntoMap
 } from '../descUtils'
 import type { DescField, DescMessage } from '@bufbuild/protobuf'
@@ -134,86 +135,27 @@ describe('descUtils', () => {
     })
   })
 
-  describe('fieldNestedMessage', () => {
-    it('should return message for message field', () => {
-      const mockMessage = { typeName: 'User' } as DescMessage
-
-      const field: Partial<DescField> = {
-        fieldKind: 'message',
-        message: mockMessage
-      }
-
-      expect(fieldNestedMessage(field as DescField)).toBe(mockMessage)
-    })
-
-    it('should return message for list of messages', () => {
-      const mockMessage = { typeName: 'Item' } as DescMessage
-
-      const field: Partial<DescField> = {
-        fieldKind: 'list',
-        listKind: 'message',
-        message: mockMessage
-      }
-
-      expect(fieldNestedMessage(field as DescField)).toBe(mockMessage)
-    })
-
-    it('should return message for map with message value', () => {
-      const mockMessage = { typeName: 'Data' } as DescMessage
-
-      const field: Partial<DescField> = {
-        fieldKind: 'map',
-        mapKind: 'message',
-        message: mockMessage
-      }
-
-      expect(fieldNestedMessage(field as DescField)).toBe(mockMessage)
-    })
-
-    it('should return null for scalar field', () => {
-      const field: Partial<DescField> = {
-        fieldKind: 'scalar',
-        scalar: ScalarType.STRING
-      }
-
-      expect(fieldNestedMessage(field as DescField)).toBeNull()
-    })
-
-    it('should return null for enum field', () => {
-      const field: Partial<DescField> = {
-        fieldKind: 'enum',
-        enum: { typeName: 'Status' } as unknown as DescEnum
-      }
-
-      expect(fieldNestedMessage(field as DescField)).toBeNull()
-    })
-
-    it('should return null for list of scalars', () => {
-      const field: Partial<DescField> = {
-        fieldKind: 'list',
-        listKind: 'scalar',
-        scalar: ScalarType.INT32
-      }
-
-      expect(fieldNestedMessage(field as DescField)).toBeNull()
-    })
-
-    it('should return null for map with scalar value', () => {
-      const field: Partial<DescField> = {
-        fieldKind: 'map',
-        mapKey: ScalarType.STRING,
-        mapKind: 'scalar',
-        scalar: ScalarType.BOOL
-      }
-
-      expect(fieldNestedMessage(field as DescField)).toBeNull()
-    })
-  })
 
 
 
 
   describe('parseDescriptorIntoMap', () => {
+    it('collects top-level and nested messages by their full name', () => {
+      const fdSet = create(FileDescriptorSetSchema, {
+        file: [{
+          name: 'outer.proto',
+          package: 'pkg',
+          syntax: 'proto3',
+          messageType: [{ name: 'Outer', nestedType: [{ name: 'Inner', nestedType: [{ name: 'Deepest' }] }] }],
+        }],
+      })
+      const target = new Map<string, DescMessage>()
+
+      parseDescriptorIntoMap(base64Encode(toBinary(FileDescriptorSetSchema, fdSet)), target)
+
+      expect([...target.keys()].sort()).toEqual(['pkg.Outer', 'pkg.Outer.Inner', 'pkg.Outer.Inner.Deepest'])
+    })
+
     it('should parse simple descriptor set', () => {
       // Create a minimal valid FileDescriptorSet as base64
       // This is a simplified descriptor for testing

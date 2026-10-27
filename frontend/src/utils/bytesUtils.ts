@@ -5,6 +5,8 @@
  * Protobuf bytes are transmitted as base64-encoded strings in JSON.
  */
 
+import { base64Encode } from '@bufbuild/protobuf/wire'
+
 /**
  * Convert a value to base64 string for display in bytes field.
  *
@@ -28,9 +30,7 @@ export function bytesToBase64(value: unknown): string {
     value.type === 'Buffer' &&
     Array.isArray(value.data)
   ) {
-    const bytes = new Uint8Array(value.data)
-    // Use spread to avoid loop - browser handles efficiently
-    return btoa(String.fromCharCode(...bytes))
+    return base64Encode(new Uint8Array(value.data))
   }
 
   // Fallback: stringify

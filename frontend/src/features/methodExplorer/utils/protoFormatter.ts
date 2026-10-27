@@ -11,19 +11,19 @@ function shortType(fqn: string | undefined): string {
   return parts[parts.length - 1]
 }
 
-function formatField(f: DescField, index: number): string {
+function formatField(f: DescField): string {
   const lines: string[] = []
   if (f.fieldKind === 'map') {
     const keyType = scalarTypeName(f.mapKey)
     const valType = f.mapKind === 'message' ? shortType(f.message.typeName)
       : f.mapKind === 'enum' ? shortType(f.enum.typeName)
       : f.scalar !== undefined ? scalarTypeName(f.scalar) : 'unknown'
-    lines.push(`  map<${keyType}, ${valType}> ${f.name} = ${f.proto.number};`)
+    lines.push(`  map<${keyType}, ${valType}> ${f.name} = ${f.number};`)
     return lines.join('\n')
   }
   const label = f.fieldKind === 'list' ? 'repeated ' : ''
   const typeName = shortType(fieldTypeName(f))
-  lines.push(`  ${label}${typeName} ${f.name} = ${f.proto.number ?? index + 1};`)
+  lines.push(`  ${label}${typeName} ${f.name} = ${f.number};`)
   return lines.join('\n')
 }
 
@@ -45,18 +45,16 @@ function formatMessage(
     for (const f of oneof.fields) {
       oneOfFieldNames.add(f.name)
       const ft = shortType(fieldTypeName(f))
-      lines.push(`    ${ft} ${f.name} = ${f.proto.number ?? '?'};`)
+      lines.push(`    ${ft} ${f.name} = ${f.number};`)
     }
     lines.push('  }')
   }
 
   // Regular fields
-  let fieldIndex = 0
   for (const f of schema.fields) {
     if (f.oneof === undefined) {
-      lines.push(formatField(f, fieldIndex))
+      lines.push(formatField(f))
     }
-    fieldIndex++
   }
 
   lines.push('}')

@@ -5,7 +5,7 @@ import { isEmpty } from './scalarTypeUtils'
 import { valueMatchesSearch } from './searchUtils'
 import { getFieldValue as getFieldValueUtil } from './fieldOperations'
 import { canDescendInto } from './descriptorTraversal'
-import { fieldNestedMessage, fieldTypeName } from '../../../utils/descUtils'
+import { fieldTypeName } from '../../../utils/descUtils'
 
 /**
  * Does anything inside `schema` match `query`?
@@ -38,7 +38,7 @@ function fieldOrChildrenMatch(
 ): boolean {
   if (fieldMatchesField(field, fieldValue, query)) return true
 
-  const nested = fieldNestedMessage(field)
+  const nested = field.message
   if (!nested || !canDescendInto(nested, fieldValue != null, ancestorTypes)) return false
   return hasMatchingChildren(nested, query, fieldValue, ancestorTypes)
 }
