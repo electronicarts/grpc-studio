@@ -7,6 +7,7 @@ import { Select } from '@/components/ui/select'
 import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
 import { schemaCache } from '../../../schemaLoader/lib/schemaCache'
 import AnyContentRenderer from './AnyContentRenderer'
+import { anyTypeName, anyTypeUrl } from '../../../../utils/descUtils'
 
 interface AnyFieldProps {
   name: string
@@ -20,7 +21,7 @@ function parseAnyValue(value: unknown): { typeName: string; formData: Record<str
   }
   const obj = value as Record<string, unknown>
   const typeUrl = typeof obj['@type'] === 'string' ? obj['@type'] : ''
-  const typeName = typeUrl ? typeUrl.substring(typeUrl.lastIndexOf('/') + 1) : ''
+  const typeName = typeUrl ? anyTypeName(typeUrl) : ''
   const formData = Object.fromEntries(Object.entries(obj).filter(([k]) => k !== '@type'))
   return { typeName, formData }
 }
@@ -61,12 +62,12 @@ const AnyField: React.FC<AnyFieldProps> = ({ name, value, onChange }) => {
     if (!typeName) {
       onChange(undefined)
     } else {
-      onChange({ '@type': `type.googleapis.com/${typeName}` })
+      onChange({ '@type': anyTypeUrl(typeName) })
     }
   }
 
   const handleFormChange = (data: Record<string, unknown>) => {
-    onChange({ '@type': `type.googleapis.com/${currentTypeName}`, ...data })
+    onChange({ '@type': anyTypeUrl(currentTypeName), ...data })
   }
 
   const typeMeta = <span className="text-xs text-muted-foreground">(google.protobuf.Any)</span>

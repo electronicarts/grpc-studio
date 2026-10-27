@@ -7,12 +7,25 @@ import type { JsonObject, JsonValue } from '@grpc-studio/shared'
 import { cloneJsonObject, isJsonObject, isRecord } from '../../../utils/jsonUtils'
 import { schemaCache } from '../../schemaLoader/lib/schemaCache'
 import { cleanFormData } from '../../../utils/cleanFormData'
+import { anyTypeName } from '../../../utils/descUtils'
 
-// Base registry with all well-known types
+// Every well-known type, via the files buf ships them in
 const wktRegistry: Registry = createRegistry(
-  ...(Object.values(wkt).filter(
-    (v) => typeof v === 'object' && v !== null && 'typeName' in v && 'fields' in v
-  ) as DescMessage[])
+  wkt.file_google_protobuf_any,
+  wkt.file_google_protobuf_api,
+  wkt.file_google_protobuf_compiler_plugin,
+  wkt.file_google_protobuf_cpp_features,
+  wkt.file_google_protobuf_descriptor,
+  wkt.file_google_protobuf_duration,
+  wkt.file_google_protobuf_empty,
+  wkt.file_google_protobuf_field_mask,
+  wkt.file_google_protobuf_go_features,
+  wkt.file_google_protobuf_java_features,
+  wkt.file_google_protobuf_source_context,
+  wkt.file_google_protobuf_struct,
+  wkt.file_google_protobuf_timestamp,
+  wkt.file_google_protobuf_type,
+  wkt.file_google_protobuf_wrappers,
 )
 
 /**
@@ -20,8 +33,7 @@ const wktRegistry: Registry = createRegistry(
  * This allows google.protobuf.Any fields to contain custom reflected types, not just WKTs.
  */
 function buildDynamicRegistry(): Registry {
-  const schemas = Array.from(schemaCache.getSchemaMap().values())
-  return createRegistry(...Array.from(wktRegistry), ...schemas)
+  return createRegistry(wktRegistry, ...schemaCache.getSchemaMap().values())
 }
 
 export interface Payload {
@@ -124,9 +136,9 @@ function keepPresentInMessage(
 ): JsonValue {
   if (!isJsonObject(value) || !isRecord(input)) return value
 
-  if (schema.typeName === 'google.protobuf.Any') {
+  if (schema.typeName === wkt.AnySchema.typeName) {
     const typeUrl = value['@type']
-    const content = typeof typeUrl === 'string' ? registry.getMessage(typeUrl.slice(typeUrl.lastIndexOf('/') + 1)) : undefined
+    const content = typeof typeUrl === 'string' ? registry.getMessage(anyTypeName(typeUrl)) : undefined
     // Any holding a type with its own JSON shape wraps it as { "@type", "value" }, which is kept whole.
     if (!content || wkt.hasCustomJsonRepresentation(content)) return value
     return { '@type': typeUrl, ...keepPresentFields(value, input, content, registry) }

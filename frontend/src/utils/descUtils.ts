@@ -42,3 +42,13 @@ export function parseDescriptorIntoMap(
     if (type.kind === 'message') target.set(type.typeName, type)
   }
 }
+
+/** The `@type` URL for a message type in an Any, with the same prefix buf's `anyPack` uses. */
+export function anyTypeUrl(typeName: string): string {
+  return `type.googleapis.com/${typeName}`
+}
+
+/** The message type name in an Any's `@type` URL: everything after the last "/", per the Any spec. */
+export function anyTypeName(typeUrl: string): string {
+  return typeUrl.slice(typeUrl.lastIndexOf('/') + 1)
+}

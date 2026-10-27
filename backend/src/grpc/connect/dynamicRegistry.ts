@@ -6,43 +6,38 @@
  * via reflection, not just WKTs.
  */
 
-import { createRegistry, createFileRegistry, type DescMessage, type Registry } from '@bufbuild/protobuf'
+import { createRegistry, createFileRegistry, type Registry } from '@bufbuild/protobuf'
 import * as wkt from '@bufbuild/protobuf/wkt'
 import type { FileDescriptorSet } from '@bufbuild/protobuf/wkt'
 import logger from '../../utils/logger.js'
 
 const registryLogger = logger.child({ module: 'dynamic-registry' })
 
-// Static registry containing all well-known types
+// Every well-known type, via the files buf ships them in
 const wktRegistry: Registry = createRegistry(
-  ...(Object.values(wkt).filter(
-    (v) => typeof v === 'object' && v !== null && 'typeName' in v && 'fields' in v
-  ) as DescMessage[])
+  wkt.file_google_protobuf_any,
+  wkt.file_google_protobuf_api,
+  wkt.file_google_protobuf_compiler_plugin,
+  wkt.file_google_protobuf_cpp_features,
+  wkt.file_google_protobuf_descriptor,
+  wkt.file_google_protobuf_duration,
+  wkt.file_google_protobuf_empty,
+  wkt.file_google_protobuf_field_mask,
+  wkt.file_google_protobuf_go_features,
+  wkt.file_google_protobuf_java_features,
+  wkt.file_google_protobuf_source_context,
+  wkt.file_google_protobuf_struct,
+  wkt.file_google_protobuf_timestamp,
+  wkt.file_google_protobuf_type,
+  wkt.file_google_protobuf_wrappers,
 )
 
 /**
- * Builds a Registry containing both WKTs and all message types from the given FileDescriptorSet.
- * This registry can be passed to fromJson/toJson so google.protobuf.Any fields can contain
- * custom types discovered through reflection.
+ * Builds a Registry containing both WKTs and all types from the given FileDescriptorSet, nested
+ * messages included. This registry can be passed to fromJson/toJson so google.protobuf.Any fields
+ * can contain custom types discovered through reflection.
  */
 export function buildDynamicRegistry(fileDescriptorSet: FileDescriptorSet): Registry {
-  const messageDescriptors: DescMessage[] = []
-
-  // Parse the raw FileDescriptorSet into a FileRegistry to get DescFile/DescMessage objects
-  const fileRegistry = createFileRegistry(fileDescriptorSet)
-
-  // Extract all message descriptors from the parsed FileRegistry
-  for (const file of fileRegistry.files) {
-    for (const message of file.messages) {
-      messageDescriptors.push(message)
-    }
-  }
-
-  registryLogger.debug('Building dynamic registry', {
-    wktCount: Array.from(wktRegistry).length,
-    reflectedCount: messageDescriptors.length,
-  })
-
-  // Create a combined registry with WKTs + reflected types
-  return createRegistry(...Array.from(wktRegistry), ...messageDescriptors)
+  registryLogger.debug('Building dynamic registry', { reflectedFiles: fileDescriptorSet.file.length })
+  return createRegistry(wktRegistry, createFileRegistry(fileDescriptorSet))
 }

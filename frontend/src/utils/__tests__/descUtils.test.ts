@@ -7,7 +7,9 @@ import { base64Encode } from '@bufbuild/protobuf/wire'
 import {
   scalarTypeName,
   fieldTypeName,
-  parseDescriptorIntoMap
+  parseDescriptorIntoMap,
+  anyTypeName,
+  anyTypeUrl,
 } from '../descUtils'
 import type { DescField, DescMessage } from '@bufbuild/protobuf'
 
@@ -203,3 +205,15 @@ function createMockDescriptorBase64(): string {
   const mockFDS = new Uint8Array([0x0a, 0x00]) // Empty file list
   return btoa(String.fromCharCode(...mockFDS))
 }
+
+describe('Any type URLs', () => {
+  it('builds the type URL for a message type', () => {
+    expect(anyTypeUrl('pkg.Outer.Inner')).toBe('type.googleapis.com/pkg.Outer.Inner')
+  })
+
+  it('reads the type name after the last slash, whatever the host', () => {
+    expect(anyTypeName('type.googleapis.com/pkg.Outer.Inner')).toBe('pkg.Outer.Inner')
+    expect(anyTypeName('example.com/types/pkg.Msg')).toBe('pkg.Msg')
+    expect(anyTypeName(anyTypeUrl('pkg.Msg'))).toBe('pkg.Msg')
+  })
+})
