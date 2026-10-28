@@ -381,4 +381,4 @@ function randomBookId() {
 // Initialize seed data
 seed();
 
-module.exports = { get, list, create, update, remove, randomBookId, generateId };
+module.exports = { get, list, create, update, remove, randomBookId };

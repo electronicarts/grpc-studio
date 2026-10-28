@@ -17,7 +17,7 @@ const descriptorSetPath = resolve(
   '../../../examples/petstore/proto/petstore_descriptor.bin',
 )
 
-export const petstoreRegistry = createFileRegistry(fromBinary(FileDescriptorSetSchema, readFileSync(descriptorSetPath)))
+const petstoreRegistry = createFileRegistry(fromBinary(FileDescriptorSetSchema, readFileSync(descriptorSetPath)))
 
 function message(typeName: string): DescMessage {
   const desc = petstoreRegistry.getMessage(typeName)

@@ -36,7 +36,8 @@
     "demo:gif": "node ./scripts/demo-gif.mjs",
     "demo:mp4": "node ./scripts/demo-mp4.mjs",
     "format": "prettier --write \"{frontend,backend,shared}/src/**/*.{ts,tsx}\"",
-    "format:check": "prettier --check \"{frontend,backend,shared}/src/**/*.{ts,tsx}\""
+    "format:check": "prettier --check \"{frontend,backend,shared}/src/**/*.{ts,tsx}\"",
+    "knip": "knip"
   },
   "devDependencies": {
     "@playwright/test": "^1.49.0",
