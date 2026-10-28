@@ -2,9 +2,9 @@
 
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { create, fromJson, toJson } from '@bufbuild/protobuf'
+import { create, createFileRegistry, fromJson, toJson } from '@bufbuild/protobuf'
 import { AnySchema, FieldDescriptorProto_Type, FileDescriptorSetSchema } from '@bufbuild/protobuf/wkt'
-import { buildDynamicRegistry } from '../grpc/connect/dynamicRegistry.js'
+import { withWellKnownTypes } from '../grpc/connect/dynamicRegistry.js'
 import { field, fileDescriptor } from './protoFixtures.js'
 
 const fileDescriptorSet = create(FileDescriptorSetSchema, {
@@ -18,8 +18,8 @@ const fileDescriptorSet = create(FileDescriptorSetSchema, {
   })],
 })
 
-describe('buildDynamicRegistry', () => {
-  const registry = buildDynamicRegistry(fileDescriptorSet)
+describe('withWellKnownTypes', () => {
+  const registry = withWellKnownTypes(createFileRegistry(fileDescriptorSet))
 
   it('includes reflected top-level and nested messages', () => {
     assert.ok(registry.getMessage('test.Outer'))

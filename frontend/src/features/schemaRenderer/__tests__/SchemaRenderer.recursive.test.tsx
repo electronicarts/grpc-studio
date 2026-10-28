@@ -17,7 +17,7 @@ import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import SchemaRenderer from '../components/core/SchemaRenderer'
 import { collectExpandablePaths } from '../utils/pathAnalysis'
-import { filterFields } from '../utils/fieldFiltering'
+import { filterMembers } from '../utils/fieldFiltering'
 import { detectOneOfSelections } from '../utils/oneOfDetection'
 import {
   recursiveSchema,
@@ -32,6 +32,7 @@ vi.mock('../../schemaLoader/lib/schemaCache', () => ({
     getSchema: vi.fn((_target: string, type: string) => Promise.resolve(testSchemaMap.get(type) || null)),
     getCacheSize: vi.fn(() => testSchemaMap.size),
     getSchemaMap: vi.fn(() => new Map(testSchemaMap)),
+    getTargetSchemas: vi.fn(() => [...testSchemaMap.values()]),
     getCachedSchema: vi.fn((_target: string, type: string) => testSchemaMap.get(type) ?? null),
     subscribe: vi.fn(() => () => {}),
     get allLoaded() { return true },
@@ -96,23 +97,23 @@ describe('cyclic schemas', () => {
     })
   })
 
-  describe('filterFields', () => {
+  describe('filterMembers', () => {
     it('terminates when searching a cyclic schema', () => {
-      const { filteredRegular } = filterFields(recursiveSchema, testData.recursive, {
+      const members = filterMembers(recursiveSchema, testData.recursive, {
         searchQuery: 'zzz-no-match',
         hideEmptyFields: false,
         isRoot: true,
       })
-      expect(filteredRegular).toHaveLength(0)
+      expect(members).toHaveLength(0)
     })
 
     it('still finds a match nested behind a cycle', () => {
-      const { filteredRegular } = filterFields(recursiveSchema, testData.recursive, {
+      const members = filterMembers(recursiveSchema, testData.recursive, {
         searchQuery: 'registryId',
         hideEmptyFields: false,
         isRoot: true,
       })
-      expect(filteredRegular.map(f => f.name)).toContain('lineage')
+      expect(members.map(m => m.name)).toContain('lineage')
     })
   })
 

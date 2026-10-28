@@ -44,6 +44,12 @@ class SchemaCache {
     return new Map(this.schemas)
   }
 
+  /** Every message type loaded from one target server. */
+  getTargetSchemas(target: string): DescMessage[] {
+    const prefix = scopedKey(target, '')
+    return [...this.schemas].filter(([key]) => key.startsWith(prefix)).map(([, desc]) => desc)
+  }
+
   getCacheSize(): number {
     return this.schemas.size
   }

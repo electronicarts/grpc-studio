@@ -1,6 +1,6 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-import type { DescField, DescMessage } from '@bufbuild/protobuf'
+import type { DescEnum, DescField, DescMessage } from '@bufbuild/protobuf'
 import { ScalarType, fromBinary, createFileRegistry } from '@bufbuild/protobuf'
 import { FileDescriptorSetSchema } from '@bufbuild/protobuf/wkt'
 import { base64Decode } from '@bufbuild/protobuf/wire'
@@ -9,24 +9,28 @@ export function scalarTypeName(s: ScalarType): string {
   return ScalarType[s].toLowerCase()
 }
 
-export function fieldTypeName(field: DescField): string {
+/**
+ * A field's type as written in a .proto file, e.g. `string`, `pkg.Status` or `map<string, pkg.Pet>`.
+ * `nameOf` picks how enum and message types are named: fully qualified by default, or e.g. `d => d.name`.
+ */
+export function fieldTypeName(
+  field: DescField,
+  nameOf: (type: DescEnum | DescMessage) => string = type => type.typeName,
+): string {
   switch (field.fieldKind) {
     case 'scalar':
       return scalarTypeName(field.scalar)
     case 'enum':
-      return field.enum.typeName
+      return nameOf(field.enum)
     case 'message':
-      return field.message.typeName
+      return nameOf(field.message)
     case 'list':
       if (field.listKind === 'scalar') return scalarTypeName(field.scalar)
-      if (field.listKind === 'enum')   return field.enum.typeName
-      return field.message.typeName
+      return nameOf(field.listKind === 'enum' ? field.enum : field.message)
     case 'map': {
       const key = scalarTypeName(field.mapKey)
-      const val =
-        field.mapKind === 'scalar' ? scalarTypeName(field.scalar)
-        : field.mapKind === 'enum'   ? field.enum.typeName
-        : field.message.typeName
+      const val = field.mapKind === 'scalar' ? scalarTypeName(field.scalar)
+        : nameOf(field.mapKind === 'enum' ? field.enum : field.message)
       return `map<${key}, ${val}>`
     }
   }

@@ -7,6 +7,7 @@ import { useProtoMessageRendererContext } from '../../stores/schemaRendererConte
 import { removeArrayItem, replaceArrayItem } from '../../utils/collectionMutation'
 import { valueMatchesSearch } from '../../utils/searchUtils'
 import { fieldTypeName } from '../../../../utils/descUtils'
+import { defaultListItem } from '../../utils/fieldDefaults'
 import ScalarField from './ScalarField'
 import EnumField from './EnumField'
 import MessageRenderer from '../core/MessageRenderer'
@@ -98,10 +99,7 @@ const ListField: React.FC<ListFieldProps> = ({ field, value, onChange, path, pre
       {!readOnly && (
         <AddButton
           noun={field.name}
-          onClick={() => {
-            const newItem = field.listKind === 'scalar' || field.listKind === 'enum' ? '' : {}
-            onChange([...allItems, newItem])
-          }}
+          onClick={() => onChange([...allItems, defaultListItem(field)])}
         />
       )}
     </MessageFieldFrame>

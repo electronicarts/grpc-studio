@@ -1,6 +1,6 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-import { ScalarType } from '@bufbuild/protobuf'
+import { ScalarType, protoInt64 } from '@bufbuild/protobuf'
 
 /**
  * Check if a scalar type is numeric (needs number input).
@@ -19,6 +19,18 @@ function isFloat(scalar: ScalarType): boolean {
 }
 
 /**
+ * 64-bit integers are strings in proto JSON, since JS numbers can't hold them exactly.
+ */
+function is64Bit(scalar: ScalarType): boolean {
+  return scalar === ScalarType.INT64 || scalar === ScalarType.SINT64 || scalar === ScalarType.SFIXED64
+    || isUnsigned64Bit(scalar)
+}
+
+function isUnsigned64Bit(scalar: ScalarType): boolean {
+  return scalar === ScalarType.UINT64 || scalar === ScalarType.FIXED64
+}
+
+/**
  * Get the HTML input type for a scalar field.
  */
 export function getInputType(scalar: ScalarType): string {
@@ -32,6 +44,15 @@ export function getInputType(scalar: ScalarType): string {
  */
 export function parseValue(value: string, scalar: ScalarType): unknown {
   if (!value && value !== '0') return undefined
+
+  if (is64Bit(scalar)) {
+    // Kept as a string, like proto JSON, so values beyond 2^53 survive; buf validates the range
+    try {
+      return String(isUnsigned64Bit(scalar) ? protoInt64.uParse(value) : protoInt64.parse(value))
+    } catch {
+      return undefined
+    }
+  }
 
   if (isNumeric(scalar)) {
     const num = isFloat(scalar) ? parseFloat(value) : parseInt(value, 10)
@@ -49,6 +70,7 @@ export function parseValue(value: string, scalar: ScalarType): unknown {
  * The value a scalar field takes when set without user input, in form-data representation.
  */
 export function scalarZeroValue(scalar: ScalarType): unknown {
+  if (is64Bit(scalar)) return '0'
   if (isNumeric(scalar)) return 0
   if (scalar === ScalarType.BOOL) return false
   return ''

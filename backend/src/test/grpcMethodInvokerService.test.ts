@@ -7,6 +7,7 @@ import type { DescMethod, FileRegistry } from '@bufbuild/protobuf'
 import type { Transport } from '@connectrpc/connect'
 import { FileDescriptorSetSchema } from '@bufbuild/protobuf/wkt'
 import { GrpcMethodInvokerService } from '../services/grpcMethodInvokerService.js'
+import { withWellKnownTypes } from '../grpc/connect/dynamicRegistry.js'
 import multiClientManager from '../grpc/multiClientManager.js'
 import * as userContextMiddleware from '../middlewares/userContextMiddleware.js'
 import type { ReflectionSchemaRepository } from '../repositories/reflectionSchemaRepository.js'
@@ -76,14 +77,10 @@ function testRegistry(): FileRegistry {
   return registry
 }
 
-function repository(registry: FileRegistry): Pick<ReflectionSchemaRepository, 'getFileRegistry' | 'getAllFileDescriptorSet'> {
-  // Convert FileRegistry to FileDescriptorSet for getAllFileDescriptorSet
-  const files = Array.from(registry.files)
-  const fileDescriptorSet = create(FileDescriptorSetSchema, { file: files.map(f => f.proto) })
-
+function repository(registry: FileRegistry): Pick<ReflectionSchemaRepository, 'getFileRegistry' | 'getTargetRegistry'> {
   return {
     getFileRegistry: async () => registry,
-    getAllFileDescriptorSet: async () => fileDescriptorSet,
+    getTargetRegistry: async () => withWellKnownTypes(registry),
   }
 }
 
@@ -318,11 +315,11 @@ describe('GrpcMethodInvokerService', () => {
           getService: () => null,
           files: []
         }),
-        getAllFileDescriptorSet: async () => create(FileDescriptorSetSchema, { file: [] })
+        getTargetRegistry: async () => withWellKnownTypes()
       }
       const mockTransport = {} as Transport
       useTransport(mockTransport)
-      const invoker = new GrpcMethodInvokerService(mockRepo as unknown as Pick<ReflectionSchemaRepository, 'getFileRegistry' | 'getAllFileDescriptorSet'>)
+      const invoker = new GrpcMethodInvokerService(mockRepo as unknown as Pick<ReflectionSchemaRepository, 'getFileRegistry' | 'getTargetRegistry'>)
 
       const result = await invoker.invokeUnary(TEST_TARGET, 'MissingService', 'Method', {})
 
@@ -364,11 +361,11 @@ describe('GrpcMethodInvokerService', () => {
           getService: () => null,
           files: []
         }),
-        getAllFileDescriptorSet: async () => create(FileDescriptorSetSchema, { file: [] })
+        getTargetRegistry: async () => withWellKnownTypes()
       }
       const mockTransport = {} as Transport
       useTransport(mockTransport)
-      const invoker = new GrpcMethodInvokerService(mockRepo as unknown as Pick<ReflectionSchemaRepository, 'getFileRegistry' | 'getAllFileDescriptorSet'>)
+      const invoker = new GrpcMethodInvokerService(mockRepo as unknown as Pick<ReflectionSchemaRepository, 'getFileRegistry' | 'getTargetRegistry'>)
 
       const result = await invoker.invokeUnary(TEST_TARGET, 'com.example.UserService', 'Get', {})
 
@@ -414,11 +411,11 @@ describe('GrpcMethodInvokerService', () => {
           getService: () => null,
           files: []
         }),
-        getAllFileDescriptorSet: async () => create(FileDescriptorSetSchema, { file: [] })
+        getTargetRegistry: async () => withWellKnownTypes()
       }
       const mockTransport = {} as Transport
       useTransport(mockTransport)
-      const invoker = new GrpcMethodInvokerService(mockRepo as unknown as Pick<ReflectionSchemaRepository, 'getFileRegistry' | 'getAllFileDescriptorSet'>)
+      const invoker = new GrpcMethodInvokerService(mockRepo as unknown as Pick<ReflectionSchemaRepository, 'getFileRegistry' | 'getTargetRegistry'>)
 
       await invoker.invokeServerStream(TEST_TARGET, 'MissingService', 'Method', {}, callbacks)
 
@@ -440,7 +437,7 @@ describe('GrpcMethodInvokerService', () => {
       }
       const mockTransport = {} as Transport
       useTransport(mockTransport)
-      const invoker = new GrpcMethodInvokerService(mockRepo as unknown as Pick<ReflectionSchemaRepository, 'getFileRegistry' | 'getAllFileDescriptorSet'>)
+      const invoker = new GrpcMethodInvokerService(mockRepo as unknown as Pick<ReflectionSchemaRepository, 'getFileRegistry' | 'getTargetRegistry'>)
 
       const handle = await invoker.invokeServerStream(TEST_TARGET, 'test.TestService', 'List', {}, callbacks)
 

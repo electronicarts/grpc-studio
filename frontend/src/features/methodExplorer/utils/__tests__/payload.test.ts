@@ -15,6 +15,7 @@ vi.mock('../../../schemaLoader/lib/schemaCache', () => ({
     // Matches the real two-arg signature: getCachedSchema(target, messageType).
     getCachedSchema: vi.fn((_target: string, type: string) => testSchemaMap.get(type) ?? null),
     getSchemaMap: vi.fn(() => testSchemaMap),
+    getTargetSchemas: vi.fn(() => [...testSchemaMap.values()]),
   },
 }))
 

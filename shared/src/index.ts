@@ -7,9 +7,7 @@ export {
 } from './api/methodKind.js'
 
 export type {
-  JsonPrimitive,
   JsonObject,
-  JsonArray,
   JsonValue,
 } from './api/json.js'
 

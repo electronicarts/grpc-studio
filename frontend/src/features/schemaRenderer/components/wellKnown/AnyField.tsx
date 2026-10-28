@@ -46,10 +46,10 @@ const AnyField: React.FC<AnyFieldProps> = ({ name, value, onChange }) => {
   )
 
   const knownTypeNames = useMemo(
-    () => Array.from(schemaCache.getSchemaMap().keys()).sort(),
+    () => schemaCache.getTargetSchemas(target).map(desc => desc.typeName).sort(),
     // cacheVersion triggers recomputation when new schemas are registered
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [cacheVersion],
+    [cacheVersion, target],
   )
 
   const { typeName: currentTypeName, formData } = parseAnyValue(value)

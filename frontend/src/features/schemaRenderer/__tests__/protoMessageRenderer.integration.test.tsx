@@ -42,6 +42,7 @@ vi.mock('../../schemaLoader/lib/schemaCache', () => ({
     }),
     getCacheSize: vi.fn(() => testSchemaMap.size),
     getSchemaMap: vi.fn(() => new Map(testSchemaMap)),
+    getTargetSchemas: vi.fn(() => [...testSchemaMap.values()]),
     getCachedSchema: vi.fn((_target: string, type: string) => testSchemaMap.get(type) ?? null),
     subscribe: vi.fn(() => () => {}),
     get allLoaded() { return true },
@@ -695,6 +696,20 @@ describe('ProtoMessageRenderer Integration Tests', () => {
 
       // Should show Level1 name
       expect(screen.getByDisplayValue('Root Level')).toBeInTheDocument()
+    })
+  })
+
+  describe('Field order', () => {
+    it('should show fields and oneof groups in .proto source order', () => {
+      // test.Comprehensive declares id, status, the `choice` oneof, then tags
+      const { container } = render(
+        <ProtoMessageRenderer schema={comprehensiveSchema} data={testData.comprehensive} onChange={vi.fn()} />
+      )
+      const text = container.textContent ?? ''
+      const position = (label: string) => text.indexOf(label)
+
+      expect(position('status')).toBeLessThan(position('choice'))
+      expect(position('choice')).toBeLessThan(position('tags'))
     })
   })
 

@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import { fromJson, toJson, createRegistry } from '@bufbuild/protobuf'
-import type { DescMessage, JsonObject as BufJsonObject, Registry } from '@bufbuild/protobuf'
+import type { DescMessage, Registry } from '@bufbuild/protobuf'
 import * as wkt from '@bufbuild/protobuf/wkt'
 import type { JsonObject, JsonValue } from '@grpc-studio/shared'
 import { cloneJsonObject, isJsonObject, isRecord } from '../../../utils/jsonUtils'
@@ -29,11 +29,13 @@ const wktRegistry: Registry = createRegistry(
 )
 
 /**
- * Builds a dynamic registry that includes both WKTs and all types from the schema cache.
+ * Builds a dynamic registry with the WKTs and every type loaded from the target server.
  * This allows google.protobuf.Any fields to contain custom reflected types, not just WKTs.
+ * Without a target, every loaded type is included.
  */
-function buildDynamicRegistry(): Registry {
-  return createRegistry(wktRegistry, ...schemaCache.getSchemaMap().values())
+function buildDynamicRegistry(target?: string): Registry {
+  const schemas = target === undefined ? schemaCache.getSchemaMap().values() : schemaCache.getTargetSchemas(target)
+  return createRegistry(wktRegistry, ...schemas)
 }
 
 export interface Payload {
@@ -73,10 +75,10 @@ export function canonicalizeProtoJson(
 
   // Clean undefined values before passing to fromJson
   // Protobuf JSON format doesn't support undefined - fields should be omitted
-  const cleanedData = cleanFormData(data) as BufJsonObject
+  const cleanedData = cleanFormData(data) as JsonObject
 
   // Use dynamic registry so Any fields can contain custom reflected types
-  const registry = buildDynamicRegistry()
+  const registry = buildDynamicRegistry(options.target)
 
   const message = fromJson(schema, cleanedData, { ignoreUnknownFields: false, registry })
   const json = toJson(schema, message, {

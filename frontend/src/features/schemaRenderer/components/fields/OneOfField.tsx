@@ -3,12 +3,14 @@
 import React from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Select } from '@/components/ui/select'
-import type { DescField, DescOneof } from '@bufbuild/protobuf'
+import type { DescOneof } from '@bufbuild/protobuf'
 import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
 import { getFieldValue } from '../../utils/fieldOperations'
 import { setFieldValue } from '../../utils'
 import { fieldTypeName } from '../../../../utils/descUtils'
 import FieldRenderer from '../core/FieldRenderer'
+import { isCompositeField } from '../../utils/descriptorTraversal'
+import { defaultFieldValue } from '../../utils/fieldDefaults'
 
 interface OneOfFieldProps {
   oneof: DescOneof
@@ -21,7 +23,7 @@ const OneOfField: React.FC<OneOfFieldProps> = ({ oneof, value, onChange, basePat
   const { readOnly, oneOfSelections, setOneOfSelection } = useProtoMessageRendererContext()
 
   const selectionKey = basePath ? `${basePath}.${oneof.name}` : oneof.name
-  const fields = oneof.fields as unknown as DescField[]
+  const fields = oneof.fields
   
   let selectedField = oneOfSelections.get(selectionKey) || ''
   
@@ -47,12 +49,10 @@ const OneOfField: React.FC<OneOfFieldProps> = ({ oneof, value, onChange, basePat
     })
     if (fieldName) {
       const field = fields.find(f => f.name === fieldName)
-      if (field) {
-        // Initialize with default value for message types, omit scalars/enums until user provides value
-        if (field.fieldKind !== 'scalar' && field.fieldKind !== 'enum') {
-          newValue[fieldName] = {}
-        }
-        // For scalar/enum, don't set the key - let the user provide the value
+      // Message members start at their default ({}, or a valid Timestamp/Duration/FieldMask value); scalars and
+      // enums stay unset until the user enters a value
+      if (field && isCompositeField(field)) {
+        newValue[fieldName] = defaultFieldValue(field)
       }
     }
     onChange(newValue)

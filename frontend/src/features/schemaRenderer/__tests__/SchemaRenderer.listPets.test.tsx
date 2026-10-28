@@ -8,96 +8,14 @@
 import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import type { DescMessage, DescField } from '@bufbuild/protobuf'
 import SchemaRenderer from '../components/core/SchemaRenderer'
+import { listPetsResponseSchema } from './petstore.fixtures'
 import { collectExpandablePaths } from '../utils/pathAnalysis'
 
 // Mock ListPetsResponse schema structure
-const createListPetsResponseSchema = (): DescMessage => {
-  const CoordinatesSchema: DescMessage = {
-    typeName: 'petstore.v1.Coordinates',
-    fields: [
-      { name: 'latitude', fieldKind: 'scalar', scalar: 1 /* DOUBLE */ } as DescField,
-      { name: 'longitude', fieldKind: 'scalar', scalar: 1 /* DOUBLE */ } as DescField,
-    ],
-    oneofs: [],
-    nestedMessages: [],
-    nestedEnums: [],
-  } as DescMessage
-
-  const AddressSchema: DescMessage = {
-    typeName: 'petstore.v1.Address',
-    fields: [
-      { name: 'street', fieldKind: 'scalar', scalar: 9 /* STRING */ } as DescField,
-      { name: 'city', fieldKind: 'scalar', scalar: 9 /* STRING */ } as DescField,
-      { name: 'coordinates', fieldKind: 'message', message: CoordinatesSchema } as DescField,
-    ],
-    oneofs: [],
-    nestedMessages: [],
-    nestedEnums: [],
-  } as DescMessage
-
-  const OwnerSchema: DescMessage = {
-    typeName: 'petstore.v1.Owner',
-    fields: [
-      { name: 'name', fieldKind: 'scalar', scalar: 9 /* STRING */ } as DescField,
-      { name: 'email', fieldKind: 'scalar', scalar: 9 /* STRING */ } as DescField,
-      { name: 'address', fieldKind: 'message', message: AddressSchema } as DescField,
-    ],
-    oneofs: [],
-    nestedMessages: [],
-    nestedEnums: [],
-  } as DescMessage
-
-  const VaccinationSchema: DescMessage = {
-    typeName: 'petstore.v1.Vaccination',
-    fields: [
-      { name: 'name', fieldKind: 'scalar', scalar: 9 /* STRING */ } as DescField,
-      { name: 'veterinarian', fieldKind: 'scalar', scalar: 9 /* STRING */ } as DescField,
-    ],
-    oneofs: [],
-    nestedMessages: [],
-    nestedEnums: [],
-  } as DescMessage
-
-  const PetSchema: DescMessage = {
-    typeName: 'petstore.v1.Pet',
-    fields: [
-      { name: 'id', fieldKind: 'scalar', scalar: 9 /* STRING */ } as DescField,
-      { name: 'name', fieldKind: 'scalar', scalar: 9 /* STRING */ } as DescField,
-      { name: 'breed', fieldKind: 'scalar', scalar: 9 /* STRING */ } as DescField,
-      { name: 'owner', fieldKind: 'message', message: OwnerSchema } as DescField,
-      {
-        name: 'vaccinations',
-        fieldKind: 'list',
-        listKind: 'message',
-        message: VaccinationSchema,
-      } as DescField,
-    ],
-    oneofs: [],
-    nestedMessages: [],
-    nestedEnums: [],
-  } as DescMessage
-
-  return {
-    typeName: 'petstore.v1.ListPetsResponse',
-    fields: [
-      {
-        name: 'pets',
-        fieldKind: 'list',
-        listKind: 'message',
-        message: PetSchema,
-      } as DescField,
-      { name: 'total_count', fieldKind: 'scalar', scalar: 5 /* INT32 */ } as DescField,
-    ],
-    oneofs: [],
-    nestedMessages: [],
-    nestedEnums: [],
-  } as DescMessage
-}
 
 describe('SchemaRenderer - ListPetsResponse Integration', () => {
-  const schema = createListPetsResponseSchema()
+  const schema = listPetsResponseSchema
 
   const sampleResponseData = {
     pets: [

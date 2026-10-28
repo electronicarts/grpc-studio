@@ -6,12 +6,8 @@
  * via reflection, not just WKTs.
  */
 
-import { createRegistry, createFileRegistry, type Registry } from '@bufbuild/protobuf'
+import { createRegistry, type Registry } from '@bufbuild/protobuf'
 import * as wkt from '@bufbuild/protobuf/wkt'
-import type { FileDescriptorSet } from '@bufbuild/protobuf/wkt'
-import logger from '../../utils/logger.js'
-
-const registryLogger = logger.child({ module: 'dynamic-registry' })
 
 // Every well-known type, via the files buf ships them in
 const wktRegistry: Registry = createRegistry(
@@ -33,11 +29,9 @@ const wktRegistry: Registry = createRegistry(
 )
 
 /**
- * Builds a Registry containing both WKTs and all types from the given FileDescriptorSet, nested
- * messages included. This registry can be passed to fromJson/toJson so google.protobuf.Any fields
- * can contain custom types discovered through reflection.
+ * Merges reflected registries with the WKTs into one Registry, nested messages included. It can be passed
+ * to fromJson/toJson so google.protobuf.Any fields can contain custom types discovered through reflection.
  */
-export function buildDynamicRegistry(fileDescriptorSet: FileDescriptorSet): Registry {
-  registryLogger.debug('Building dynamic registry', { reflectedFiles: fileDescriptorSet.file.length })
-  return createRegistry(wktRegistry, createFileRegistry(fileDescriptorSet))
+export function withWellKnownTypes(...registries: Registry[]): Registry {
+  return createRegistry(wktRegistry, ...registries)
 }

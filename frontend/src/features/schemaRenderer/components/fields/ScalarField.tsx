@@ -8,7 +8,6 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
 import { getInputType, parseValue } from '../../utils/scalarTypeUtils'
 import { scalarTypeName } from '../../../../utils/descUtils'
-import { bytesToBase64 } from '../../../../utils/bytesUtils'
 import { FormField } from '../../../../components/shared'
 
 interface ScalarFieldProps {
@@ -26,7 +25,8 @@ const ScalarField: React.FC<ScalarFieldProps> = ({ name, scalar, value, onChange
   const isBool = scalar === ScalarType.BOOL
   const isUnset = value === undefined || value === null
   const typeName = typeNameOverride || scalarTypeName(scalar)
-  const displayValue = isBytes ? bytesToBase64(value) : String(value ?? '')
+  // Bytes are already base64 strings in proto JSON
+  const displayValue = String(value ?? '')
 
   const typeMeta = <span className="text-xs text-muted-foreground">({typeName})</span>
 

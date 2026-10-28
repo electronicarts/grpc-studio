@@ -35,10 +35,9 @@ export const detectOneOfSelections = (
       const fv = getFieldValue(value, f.name)
       if (fv !== undefined && fv !== null) {
         selections.set(groupPath, f.name)
-        const field = f as unknown as DescField
-        if (isCompositeField(field)) {
+        if (isCompositeField(f)) {
           const fieldPath = pathPrefix ? `${pathPrefix}.${f.name}` : f.name
-          processNestedValue(field, fv, fieldPath)
+          processNestedValue(f, fv, fieldPath)
         }
         break
       }

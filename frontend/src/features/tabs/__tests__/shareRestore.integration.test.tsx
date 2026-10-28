@@ -40,6 +40,7 @@ vi.mock('../../schemaLoader/lib/schemaCache', () => ({
     getSchema: vi.fn(() => Promise.resolve(null)),
     getCacheSize: vi.fn(() => 0),
     getSchemaMap: vi.fn(() => new Map()),
+    getTargetSchemas: vi.fn(() => []),
   },
 }))
 

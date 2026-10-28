@@ -2,7 +2,7 @@
 
 import { describe, it, expect } from 'vitest'
 import { ScalarType } from '@bufbuild/protobuf'
-import { getInputType, parseValue, isEmpty } from '../scalarTypeUtils'
+import { getInputType, parseValue, isEmpty, scalarZeroValue } from '../scalarTypeUtils'
 
 describe('scalarTypeUtils', () => {
   describe('getInputType', () => {
@@ -32,9 +32,22 @@ describe('scalarTypeUtils', () => {
   })
 
   describe('parseValue', () => {
+    it('keeps 64-bit integers as exact strings, as proto JSON does', () => {
+      // 2^53 + 1: a JS number would round this to 9007199254740992
+      expect(parseValue('9007199254740993', ScalarType.INT64)).toBe('9007199254740993')
+      expect(parseValue('-100', ScalarType.SINT64)).toBe('-100')
+      expect(parseValue('18446744073709551615', ScalarType.UINT64)).toBe('18446744073709551615')
+      expect(parseValue('9223372036854775807', ScalarType.SFIXED64)).toBe('9223372036854775807')
+    })
+
+    it('rejects 64-bit values that are out of range or not integers', () => {
+      expect(parseValue('9223372036854775808', ScalarType.INT64)).toBeUndefined()
+      expect(parseValue('-1', ScalarType.UINT64)).toBeUndefined()
+      expect(parseValue('1.5', ScalarType.FIXED64)).toBeUndefined()
+    })
+
     it('parses integers', () => {
       expect(parseValue('42', ScalarType.INT32)).toBe(42)
-      expect(parseValue('-100', ScalarType.INT64)).toBe(-100)
       expect(parseValue('1000', ScalarType.UINT32)).toBe(1000)
     })
 
@@ -95,6 +108,16 @@ describe('scalarTypeUtils', () => {
       expect(isEmpty(false)).toBe(false)
       expect(isEmpty([1, 2])).toBe(false)
       expect(isEmpty({ key: 'value' })).toBe(false)
+    })
+  })
+
+  describe('scalarZeroValue', () => {
+    it('gives each scalar its proto JSON zero value', () => {
+      expect(scalarZeroValue(ScalarType.INT32)).toBe(0)
+      expect(scalarZeroValue(ScalarType.INT64)).toBe('0')
+      expect(scalarZeroValue(ScalarType.DOUBLE)).toBe(0)
+      expect(scalarZeroValue(ScalarType.BOOL)).toBe(false)
+      expect(scalarZeroValue(ScalarType.STRING)).toBe('')
     })
   })
 })

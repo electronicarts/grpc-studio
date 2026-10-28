@@ -52,7 +52,11 @@ function fieldMatchesField(field: DescField, fieldValue: unknown, query: string)
   return false
 }
 
-export function filterFields(
+/**
+ * The message's fields and oneof groups to show, in .proto source order (buf's `members`), narrowed by the
+ * search query (top level only) and, in response views, to those with data.
+ */
+export function filterMembers(
   schema: DescMessage,
   value: Record<string, unknown>,
   options: {
@@ -60,33 +64,19 @@ export function filterFields(
     hideEmptyFields: boolean
     isRoot: boolean
   }
-): { filteredRegular: DescField[]; filteredOneOf: DescOneof[] } {
-  const { searchQuery, hideEmptyFields, isRoot } = options
-  const regularFields = schema.fields.filter(f => f.oneof === undefined)
+): (DescField | DescOneof)[] {
+  const { hideEmptyFields } = options
+  const query = options.isRoot ? options.searchQuery : ''
 
-  const matches = (f: DescField) =>
-    fieldOrChildrenMatch(f, getFieldValueUtil(value, f.name), searchQuery)
+  const hasData = (f: DescField) => !isEmpty(getFieldValueUtil(value, f.name))
+  const matches = (f: DescField) => fieldOrChildrenMatch(f, getFieldValueUtil(value, f.name), query)
 
-  let filteredRegular = isRoot && searchQuery
-    ? regularFields.filter(matches)
-    : regularFields
-
-  if (hideEmptyFields) {
-    filteredRegular = filteredRegular.filter(f => !isEmpty(getFieldValueUtil(value, f.name)))
-  }
-
-  let filteredOneOf = isRoot && searchQuery
-    ? schema.oneofs.filter((oneof) => {
-        if (oneof.name.toLowerCase().includes(searchQuery.toLowerCase())) return true
-        return oneof.fields.some(f => matches(f as unknown as DescField))
-      })
-    : schema.oneofs
-
-  if (hideEmptyFields) {
-    filteredOneOf = filteredOneOf.filter((oneof) =>
-      oneof.fields.some(f => !isEmpty(getFieldValueUtil(value, f.name)))
-    )
-  }
-
-  return { filteredRegular, filteredOneOf }
+  return schema.members.filter(member => {
+    if (member.kind === 'oneof') {
+      if (query && !member.name.toLowerCase().includes(query.toLowerCase()) && !member.fields.some(matches)) return false
+      return !hideEmptyFields || member.fields.some(hasData)
+    }
+    if (query && !matches(member)) return false
+    return !hideEmptyFields || hasData(member)
+  })
 }

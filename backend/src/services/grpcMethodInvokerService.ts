@@ -36,7 +36,7 @@ function isRetryableConnectionError(codeName: string, errorMessage: string): boo
 
 export class GrpcMethodInvokerService {
   constructor(
-    private readonly schemaRepository: Pick<ReflectionSchemaRepository, 'getFileRegistry' | 'getAllFileDescriptorSet'> = reflectionSchemaRepository
+    private readonly schemaRepository: Pick<ReflectionSchemaRepository, 'getFileRegistry' | 'getTargetRegistry'> = reflectionSchemaRepository
   ) {}
 
   close(): void {
@@ -97,7 +97,7 @@ export class GrpcMethodInvokerService {
           target,
           async (forceRecreate) => {
             // Use global descriptor set so Any fields can contain types from any reflected service
-            const fileDescriptorSet = await this.schemaRepository.getAllFileDescriptorSet(target)
+            const registry = await this.schemaRepository.getTargetRegistry(target)
             const method = await this.resolveMethod(target, serviceName, methodName)
             assertUnaryMethod(method)
             const headers = await headerManager.getOutboundHeaders(userContextMiddleware.getCurrentUserContext(), metadata)
@@ -105,7 +105,7 @@ export class GrpcMethodInvokerService {
             const connectInvoker = new ConnectInvoker({
               getTransport: () => transport
             })
-            return await connectInvoker.invokeUnary(method, request, headers, fileDescriptorSet)
+            return await connectInvoker.invokeUnary(method, request, headers, registry)
           },
           `unary call ${serviceName}.${methodName}`
         )
@@ -135,7 +135,7 @@ export class GrpcMethodInvokerService {
         return await this.withConnectionRetry(
           target,
           async (forceRecreate) => {
-            const fileDescriptorSet = await this.schemaRepository.getAllFileDescriptorSet(target)
+            const registry = await this.schemaRepository.getTargetRegistry(target)
             const method = await this.resolveMethod(target, serviceName, methodName)
             assertServerStreamingMethod(method)
             const headers = await headerManager.getOutboundHeaders(userContextMiddleware.getCurrentUserContext(), metadata)
@@ -143,7 +143,7 @@ export class GrpcMethodInvokerService {
             const connectInvoker = new ConnectInvoker({
               getTransport: () => transport
             })
-            return await connectInvoker.startServerStream(method, request, wrappedCallbacks, headers, fileDescriptorSet)
+            return await connectInvoker.startServerStream(method, request, wrappedCallbacks, headers, registry)
           },
           `server stream ${serviceName}.${methodName}`
         )
@@ -167,7 +167,7 @@ export class GrpcMethodInvokerService {
         return await this.withConnectionRetry(
           target,
           async (forceRecreate) => {
-            const fileDescriptorSet = await this.schemaRepository.getAllFileDescriptorSet(target)
+            const registry = await this.schemaRepository.getTargetRegistry(target)
             const method = await this.resolveMethod(target, serviceName, methodName)
             assertClientStreamingMethod(method)
             const headers = await headerManager.getOutboundHeaders(userContextMiddleware.getCurrentUserContext(), metadata)
@@ -175,7 +175,7 @@ export class GrpcMethodInvokerService {
             const connectInvoker = new ConnectInvoker({
               getTransport: () => transport
             })
-            return await connectInvoker.startClientStream(method, requests, wrappedCallbacks, headers, fileDescriptorSet)
+            return await connectInvoker.startClientStream(method, requests, wrappedCallbacks, headers, registry)
           },
           `client stream ${serviceName}.${methodName}`
         )
@@ -199,7 +199,7 @@ export class GrpcMethodInvokerService {
         return await this.withConnectionRetry(
           target,
           async (forceRecreate) => {
-            const fileDescriptorSet = await this.schemaRepository.getAllFileDescriptorSet(target)
+            const registry = await this.schemaRepository.getTargetRegistry(target)
             const method = await this.resolveMethod(target, serviceName, methodName)
             assertBidiStreamingMethod(method)
             const headers = await headerManager.getOutboundHeaders(userContextMiddleware.getCurrentUserContext(), metadata)
@@ -207,7 +207,7 @@ export class GrpcMethodInvokerService {
             const connectInvoker = new ConnectInvoker({
               getTransport: () => transport
             })
-            return await connectInvoker.startBidiStream(method, requests, wrappedCallbacks, headers, fileDescriptorSet)
+            return await connectInvoker.startBidiStream(method, requests, wrappedCallbacks, headers, registry)
           },
           `bidi stream ${serviceName}.${methodName}`
         )

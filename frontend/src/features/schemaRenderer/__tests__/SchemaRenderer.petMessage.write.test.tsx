@@ -14,125 +14,15 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import type { DescMessage, DescField, DescEnum } from '@bufbuild/protobuf'
-import { StringValueSchema } from '@bufbuild/protobuf/wkt'
 import SchemaRenderer from '../components/core/SchemaRenderer'
+import { petSchema } from './petstore.fixtures'
 import { structMessageSchema, durationMessageSchema, fieldMaskMessageSchema } from './protoMessageRenderer.fixtures'
 
-// ScalarType enum values
-const ScalarType = {
-  DOUBLE: 1,
-  FLOAT: 2,
-  INT64: 3,
-  UINT64: 4,
-  INT32: 5,
-  FIXED64: 6,
-  FIXED32: 7,
-  BOOL: 8,
-  STRING: 9,
-  BYTES: 12,
-  UINT32: 13,
-  SFIXED32: 15,
-  SFIXED64: 16,
-  SINT32: 17,
-  SINT64: 18,
-}
 
 // Reuse schema creation from read tests
-const createPetSchema = (): DescMessage => {
-  const SpeciesEnum: DescEnum = {
-    typeName: 'petstore.v1.Species',
-    values: [
-      { name: 'SPECIES_UNSPECIFIED', number: 0 },
-      { name: 'SPECIES_DOG', number: 1 },
-      { name: 'SPECIES_CAT', number: 2 },
-    ],
-  } as DescEnum
-
-  const CoordinatesSchema: DescMessage = {
-    typeName: 'petstore.v1.Coordinates',
-    fields: [
-      { name: 'latitude', fieldKind: 'scalar', scalar: ScalarType.DOUBLE } as DescField,
-      { name: 'longitude', fieldKind: 'scalar', scalar: ScalarType.DOUBLE } as DescField,
-    ],
-    oneofs: [],
-    nestedMessages: [],
-    nestedEnums: [],
-  } as DescMessage
-
-  const AddressSchema: DescMessage = {
-    typeName: 'petstore.v1.Address',
-    fields: [
-      { name: 'street', fieldKind: 'scalar', scalar: ScalarType.STRING } as DescField,
-      { name: 'city', fieldKind: 'scalar', scalar: ScalarType.STRING } as DescField,
-      { name: 'coordinates', fieldKind: 'message', message: CoordinatesSchema } as DescField,
-    ],
-    oneofs: [],
-    nestedMessages: [],
-    nestedEnums: [],
-  } as DescMessage
-
-  const OwnerSchema: DescMessage = {
-    typeName: 'petstore.v1.Owner',
-    fields: [
-      { name: 'name', fieldKind: 'scalar', scalar: ScalarType.STRING } as DescField,
-      { name: 'email', fieldKind: 'scalar', scalar: ScalarType.STRING } as DescField,
-      { name: 'address', fieldKind: 'message', message: AddressSchema } as DescField,
-    ],
-    oneofs: [],
-    nestedMessages: [],
-    nestedEnums: [],
-  } as DescMessage
-
-  const VaccinationSchema: DescMessage = {
-    typeName: 'petstore.v1.Vaccination',
-    fields: [
-      { name: 'name', fieldKind: 'scalar', scalar: ScalarType.STRING } as DescField,
-      { name: 'veterinarian', fieldKind: 'scalar', scalar: ScalarType.STRING } as DescField,
-    ],
-    oneofs: [],
-    nestedMessages: [],
-    nestedEnums: [],
-  } as DescMessage
-
-
-  return {
-    typeName: 'petstore.v1.Pet',
-    fields: [
-      // Scalars
-      { name: 'id', fieldKind: 'scalar', scalar: ScalarType.STRING } as DescField,
-      { name: 'name', fieldKind: 'scalar', scalar: ScalarType.STRING } as DescField,
-      { name: 'age_months', fieldKind: 'scalar', scalar: ScalarType.INT32 } as DescField,
-      { name: 'weight_kg', fieldKind: 'scalar', scalar: ScalarType.DOUBLE } as DescField,
-      { name: 'is_neutered', fieldKind: 'scalar', scalar: ScalarType.BOOL } as DescField,
-      { name: 'photo_thumbnail', fieldKind: 'scalar', scalar: ScalarType.BYTES } as DescField,
-
-      // Enum
-      { name: 'species', fieldKind: 'enum', enum: SpeciesEnum } as DescField,
-
-      // Nested message
-      { name: 'owner', fieldKind: 'message', message: OwnerSchema } as DescField,
-
-      // Wrapper type
-      { name: 'description', fieldKind: 'message', message: StringValueSchema } as DescField,
-
-      // Repeated scalar
-      { name: 'nicknames', fieldKind: 'list', listKind: 'scalar', scalar: ScalarType.STRING } as DescField,
-
-      // Repeated message
-      { name: 'vaccinations', fieldKind: 'list', listKind: 'message', message: VaccinationSchema } as DescField,
-
-      // Map
-      { name: 'tags', fieldKind: 'map', mapKey: ScalarType.STRING, mapKind: 'scalar', scalar: ScalarType.STRING } as DescField,
-    ],
-    oneofs: [],
-    nestedMessages: [],
-    nestedEnums: [],
-  } as DescMessage
-}
 
 describe('SchemaRenderer - Pet Message WRITE Path', () => {
-  const schema = createPetSchema()
+  const schema = petSchema
 
   describe('Creating new Pet (empty form)', () => {
     it('allows filling in all scalar field types', async () => {
@@ -973,16 +863,8 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
 // ---------------------------------------------------------------------------
 
 describe('SchemaRenderer - Wrapper type field write path', () => {
-  const schema = (() => {
-
-    return {
-      typeName: 'test.WrapperHolder',
-      fields: [
-        { name: 'description', fieldKind: 'message', message: StringValueSchema } as DescField,
-      ],
-      oneofs: [], nestedMessages: [], nestedEnums: [],
-    } as DescMessage
-  })()
+  // Pet.description is a google.protobuf.StringValue
+  const schema = petSchema
 
   it('emits raw scalar (not wrapped object) when a wrapper field is filled', async () => {
     const user = userEvent.setup()

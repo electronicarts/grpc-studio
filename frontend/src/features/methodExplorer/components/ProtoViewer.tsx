@@ -5,6 +5,8 @@ import { Code, ChevronDown, ChevronRight } from 'lucide-react'
 import { GrpcService, GrpcMethod } from '../../../types/grpc'
 import { schemaCache } from '../../schemaLoader/lib/schemaCache'
 import { formatMethodProto } from '../utils/protoFormatter'
+import { ScalarType } from '@bufbuild/protobuf'
+import { scalarTypeName } from '../../../utils/descUtils'
 
 // Proto syntax highlighting via regex tokenisation
 const PROTO_KEYWORDS = new Set([
@@ -12,14 +14,10 @@ const PROTO_KEYWORDS = new Set([
   'repeated', 'map', 'stream', 'reserved', 'option', 'import', 'syntax', 'package',
 ])
 
-// Proto scalar type names for syntax highlighting (not type checking)
-const PROTO_SCALARS = new Set([
-  'string', 'bytes', 'bool',
-  'double', 'float',
-  'int32', 'int64', 'uint32', 'uint64',
-  'sint32', 'sint64', 'fixed32', 'fixed64',
-  'sfixed32', 'sfixed64',
-])
+// Proto scalar type names for syntax highlighting (not type checking), from buf's ScalarType enum
+const PROTO_SCALARS = new Set(
+  Object.values(ScalarType).filter((v): v is ScalarType => typeof v === 'number').map(scalarTypeName),
+)
 
 function highlightProto(text: string): React.ReactNode[] {
   return text.split('\n').map((line, lineIdx) => {

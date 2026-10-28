@@ -1,7 +1,17 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
+import type { DescMessage } from '@bufbuild/protobuf'
 import { schemaCache } from '../schemaCache'
+
+// Stands in for the backend: each request loads one message type for its target.
+vi.mock('../descriptorSetFetcher', () => ({
+  fetchDescriptorSet: vi.fn(async (target: string, messageType: string, cache: Map<string, DescMessage>) => {
+    const desc = { typeName: messageType } as DescMessage
+    cache.set(`${target}:${messageType}`, desc)
+    return desc
+  }),
+}))
 
 describe('schemaCache', () => {
   beforeEach(() => {
@@ -28,6 +38,18 @@ describe('schemaCache', () => {
       map.set('x', {} as never)
       // Mutating the returned copy must not affect the cache.
       expect(schemaCache.getCacheSize()).toBe(0)
+    })
+  })
+
+  describe('getTargetSchemas', () => {
+    it("returns one target's message types, not another's or the cache keys", async () => {
+      await schemaCache.getSchema('A', 'pkg.Alpha')
+      await schemaCache.getSchema('AB', 'pkg.Beta')
+      await schemaCache.getSchema('A', 'pkg.Gamma')
+
+      expect(schemaCache.getTargetSchemas('A').map(d => d.typeName).sort()).toEqual(['pkg.Alpha', 'pkg.Gamma'])
+      expect(schemaCache.getTargetSchemas('AB').map(d => d.typeName)).toEqual(['pkg.Beta'])
+      expect(schemaCache.getTargetSchemas('C')).toEqual([])
     })
   })
 

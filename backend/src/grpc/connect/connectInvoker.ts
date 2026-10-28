@@ -9,13 +9,10 @@ import {
   type DescMethodClientStreaming,
   type DescMethodServerStreaming,
   type DescMethodUnary,
-  type JsonValue as BufJsonValue,
   type MessageInitShape,
   type Registry,
 } from '@bufbuild/protobuf'
-import type { FileDescriptorSet } from '@bufbuild/protobuf/wkt'
 import { Code, ConnectError, createClient, type CallOptions, type Transport } from '@connectrpc/connect'
-import { buildDynamicRegistry } from './dynamicRegistry.js'
 import type { JsonValue } from '@grpc-studio/shared'
 import type { FormattedGrpcError, StreamCallbacks, StreamHandle } from '../../types/index.js'
 
@@ -63,9 +60,8 @@ export class ConnectInvoker {
     method: DescMethodUnary,
     request: JsonValue | undefined,
     headers: OutboundHeaders,
-    fileDescriptorSet: FileDescriptorSet
+    registry: Registry
   ): Promise<JsonValue> {
-    const registry = buildDynamicRegistry(fileDescriptorSet)
     const response = await this.getClientMethod<UnaryClientMethod>(method)(
       toProtoRequest(method.input, request, registry),
       this.buildCallOptions(DEFAULT_UNARY_DEADLINE_MS, headers)
@@ -79,9 +75,8 @@ export class ConnectInvoker {
     request: JsonValue | undefined,
     callbacks: StreamCallbacks,
     headers: OutboundHeaders,
-    fileDescriptorSet: FileDescriptorSet
+    registry: Registry
   ): Promise<StreamHandle> {
-    const registry = buildDynamicRegistry(fileDescriptorSet)
     return this.startResponseStream(
       callbacks,
       async (signal) => this.getClientMethod<ServerStreamingClientMethod>(method)(
@@ -98,10 +93,9 @@ export class ConnectInvoker {
     requests: RequestStream,
     callbacks: StreamCallbacks,
     headers: OutboundHeaders,
-    fileDescriptorSet: FileDescriptorSet
+    registry: Registry
   ): Promise<StreamHandle> {
     const abortController = new AbortController()
-    const registry = buildDynamicRegistry(fileDescriptorSet)
 
     this.pumpClientStream(method, requests, callbacks, headers, abortController.signal, registry)
       .catch((error) => {
@@ -123,9 +117,8 @@ export class ConnectInvoker {
     requests: RequestStream,
     callbacks: StreamCallbacks,
     headers: OutboundHeaders,
-    fileDescriptorSet: FileDescriptorSet
+    registry: Registry
   ): Promise<StreamHandle> {
-    const registry = buildDynamicRegistry(fileDescriptorSet)
     return this.startResponseStream(
       callbacks,
       async (signal) => this.getClientMethod<BidiStreamingClientMethod>(method)(
@@ -237,11 +230,11 @@ export function formatConnectError(error: unknown): FormattedGrpcError {
 }
 
 function toProtoRequest(desc: DescMessage, data: JsonValue | undefined, registry: Registry): MessageInitShape<DescMessage> {
-  return fromJson(desc, (data ?? {}) as BufJsonValue, { ignoreUnknownFields: true, registry }) as MessageInitShape<DescMessage>
+  return fromJson(desc, data ?? {}, { ignoreUnknownFields: true, registry }) as MessageInitShape<DescMessage>
 }
 
 function toJsonResponse(desc: DescMessage, message: unknown, registry: Registry): JsonValue {
-  return toJson(desc, message as never, { alwaysEmitImplicit: true, useProtoFieldName: true, registry }) as JsonValue
+  return toJson(desc, message as never, { alwaysEmitImplicit: true, useProtoFieldName: true, registry })
 }
 
 async function* toConnectRequestStream(
