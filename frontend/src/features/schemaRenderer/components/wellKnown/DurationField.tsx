@@ -2,8 +2,8 @@
 
 import React from 'react'
 import { Input } from '@/components/ui/input'
-import { FormField } from '../../../../components/shared'
-import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
+import { FormField } from '@/components/shared'
+import { useProtoMessageRendererContext } from '@/features/schemaRenderer/stores/schemaRendererContext'
 
 interface DurationFieldProps {
   name: string

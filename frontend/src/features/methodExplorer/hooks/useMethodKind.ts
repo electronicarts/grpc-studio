@@ -1,6 +1,6 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-import { useMethodExplorerContext } from '../stores'
+import { useMethodExplorerContext } from '@/features/methodExplorer/stores'
 import { MethodKind } from '@grpc-studio/shared'
 
 /**

@@ -8,7 +8,7 @@
 import { describe, it, beforeEach, afterEach } from 'node:test'
 import assert from 'node:assert/strict'
 import { createServer, type Server } from 'node:http'
-import { createExpressApp } from '../app.js'
+import { createExpressApp } from '#src/app.js'
 import type { Application } from 'express'
 
 let app: Application
@@ -18,7 +18,7 @@ let baseUrl: string
 async function startServer(): Promise<void> {
   app = createExpressApp()
   server = createServer(app)
-  await new Promise<void>((resolve) => {
+  await new Promise<void>(resolve => {
     server.listen(0, '127.0.0.1', () => {
       const addr = server.address() as { port: number }
       baseUrl = `http://127.0.0.1:${addr.port}`
@@ -28,7 +28,7 @@ async function startServer(): Promise<void> {
 }
 
 async function stopServer(): Promise<void> {
-  await new Promise<void>((resolve) => server.close(() => resolve()))
+  await new Promise<void>(resolve => server.close(() => resolve()))
 }
 
 async function get(path: string, headers?: Record<string, string>) {
@@ -186,7 +186,7 @@ describe('Integration: Prometheus Metrics', () => {
     const labelStr = Object.entries(labels)
       .map(([k, v]) => `${k}="${v}"`)
       .join(',')
-    const line = metrics.split('\n').find((l) => l.startsWith(name) && l.includes(labelStr))
+    const line = metrics.split('\n').find(l => l.startsWith(name) && l.includes(labelStr))
     return line ? parseFloat(line.split(' ').pop()!) : 0
   }
 
@@ -198,13 +198,21 @@ describe('Integration: Prometheus Metrics', () => {
 
   it('increments http_requests_total counter on each request', async () => {
     const before = await getRawMetrics()
-    const countBefore = getCounterValue(before, 'grpc_studio_http_requests_total', { method: 'GET', path: '/', status: '200' })
+    const countBefore = getCounterValue(before, 'grpc_studio_http_requests_total', {
+      method: 'GET',
+      path: '/',
+      status: '200',
+    })
 
     await get('/')
     await get('/')
 
     const after = await getRawMetrics()
-    const countAfter = getCounterValue(after, 'grpc_studio_http_requests_total', { method: 'GET', path: '/', status: '200' })
+    const countAfter = getCounterValue(after, 'grpc_studio_http_requests_total', {
+      method: 'GET',
+      path: '/',
+      status: '200',
+    })
 
     assert.equal(countAfter - countBefore, 2, 'Expected counter to increment by 2')
   })
@@ -236,14 +244,20 @@ describe('Integration: Prometheus Metrics', () => {
     // and are therefore not instrumented.  Use two paths that ARE metered.
     const before = await getRawMetrics()
     const rootBefore = getCounterValue(before, 'grpc_studio_http_requests_total', { method: 'GET', path: '/' })
-    const configBefore = getCounterValue(before, 'grpc_studio_http_requests_total', { method: 'GET', path: '/api/grpc/config' })
+    const configBefore = getCounterValue(before, 'grpc_studio_http_requests_total', {
+      method: 'GET',
+      path: '/api/grpc/config',
+    })
 
     await get('/')
     await get('/api/grpc/config')
 
     const after = await getRawMetrics()
     const rootAfter = getCounterValue(after, 'grpc_studio_http_requests_total', { method: 'GET', path: '/' })
-    const configAfter = getCounterValue(after, 'grpc_studio_http_requests_total', { method: 'GET', path: '/api/grpc/config' })
+    const configAfter = getCounterValue(after, 'grpc_studio_http_requests_total', {
+      method: 'GET',
+      path: '/api/grpc/config',
+    })
 
     assert.equal(rootAfter - rootBefore, 1)
     assert.equal(configAfter - configBefore, 1)
@@ -268,21 +282,33 @@ describe('Integration: Prometheus Metrics', () => {
     // There should be no counter for path="/metrics"
     const metricsPathLine = metrics
       .split('\n')
-      .find((l) => l.startsWith('grpc_studio_http_requests_total') && l.includes('path="/metrics"'))
+      .find(l => l.startsWith('grpc_studio_http_requests_total') && l.includes('path="/metrics"'))
 
     assert.equal(metricsPathLine, undefined, '/metrics endpoint should not be self-instrumented')
   })
 
   it('records latency within reasonable range', async () => {
     const before = await getRawMetrics()
-    const sumBefore = getCounterValue(before, 'grpc_studio_http_request_duration_seconds_sum', { method: 'GET', path: '/' })
-    const cntBefore = getCounterValue(before, 'grpc_studio_http_request_duration_seconds_count', { method: 'GET', path: '/' })
+    const sumBefore = getCounterValue(before, 'grpc_studio_http_request_duration_seconds_sum', {
+      method: 'GET',
+      path: '/',
+    })
+    const cntBefore = getCounterValue(before, 'grpc_studio_http_request_duration_seconds_count', {
+      method: 'GET',
+      path: '/',
+    })
 
     await get('/')
 
     const after = await getRawMetrics()
-    const sumAfter = getCounterValue(after, 'grpc_studio_http_request_duration_seconds_sum', { method: 'GET', path: '/' })
-    const cntAfter = getCounterValue(after, 'grpc_studio_http_request_duration_seconds_count', { method: 'GET', path: '/' })
+    const sumAfter = getCounterValue(after, 'grpc_studio_http_request_duration_seconds_sum', {
+      method: 'GET',
+      path: '/',
+    })
+    const cntAfter = getCounterValue(after, 'grpc_studio_http_request_duration_seconds_count', {
+      method: 'GET',
+      path: '/',
+    })
 
     const latency = sumAfter - sumBefore
     const count = cntAfter - cntBefore

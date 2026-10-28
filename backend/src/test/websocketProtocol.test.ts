@@ -3,20 +3,25 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import { MethodKind, type InvokeStreamStartRequest } from '@grpc-studio/shared'
-import { parseClientMessage } from '../websocket/websocketProtocol.js'
+import { parseClientMessage } from '#src/websocket/websocketProtocol.js'
 
 describe('WebSocket protocol', () => {
   it('parses start messages into the shared stream request shape', () => {
-    const result = parseClientMessage(Buffer.from(JSON.stringify({
-      type: 'start',
-      payload: {
-        target: 'test-target',
-        service: 'test.Service',
-        method: 'List',
-        methodKind: MethodKind.SERVER_STREAMING,
-        data: { pageSize: 10 },
-      },
-    })), 1024)
+    const result = parseClientMessage(
+      Buffer.from(
+        JSON.stringify({
+          type: 'start',
+          payload: {
+            target: 'test-target',
+            service: 'test.Service',
+            method: 'List',
+            methodKind: MethodKind.SERVER_STREAMING,
+            data: { pageSize: 10 },
+          },
+        }),
+      ),
+      1024,
+    )
 
     assert.equal(result.ok, true)
     assert.deepEqual(result.ok ? result.message : null, {
@@ -32,20 +37,25 @@ describe('WebSocket protocol', () => {
   })
 
   it('parses user headers on start messages', () => {
-    const result = parseClientMessage(Buffer.from(JSON.stringify({
-      type: 'start',
-      payload: {
-        target: 'test-target',
-        service: 'test.Service',
-        method: 'List',
-        methodKind: MethodKind.SERVER_STREAMING,
-        userHeaders: {
-          'X-User-Id': 'user-1',
-          'X-User-Email': 'ada@example.com',
-          'X-User-Name': 'Ada',
-        },
-      },
-    })), 1024)
+    const result = parseClientMessage(
+      Buffer.from(
+        JSON.stringify({
+          type: 'start',
+          payload: {
+            target: 'test-target',
+            service: 'test.Service',
+            method: 'List',
+            methodKind: MethodKind.SERVER_STREAMING,
+            userHeaders: {
+              'X-User-Id': 'user-1',
+              'X-User-Email': 'ada@example.com',
+              'X-User-Name': 'Ada',
+            },
+          },
+        }),
+      ),
+      1024,
+    )
 
     assert.equal(result.ok, true)
     assert.deepEqual(result.ok ? (result.message as InvokeStreamStartRequest).payload.userHeaders : null, {
@@ -56,19 +66,24 @@ describe('WebSocket protocol', () => {
   })
 
   it('parses and sanitizes request metadata on start messages', () => {
-    const result = parseClientMessage(Buffer.from(JSON.stringify({
-      type: 'start',
-      payload: {
-        target: 'test-target',
-        service: 'test.Service',
-        method: 'List',
-        methodKind: MethodKind.SERVER_STREAMING,
-        metadata: {
-          'X-Request-Id': 'req-1',
-          'x-tenant': 'acme',
-        },
-      },
-    })), 1024)
+    const result = parseClientMessage(
+      Buffer.from(
+        JSON.stringify({
+          type: 'start',
+          payload: {
+            target: 'test-target',
+            service: 'test.Service',
+            method: 'List',
+            methodKind: MethodKind.SERVER_STREAMING,
+            metadata: {
+              'X-Request-Id': 'req-1',
+              'x-tenant': 'acme',
+            },
+          },
+        }),
+      ),
+      1024,
+    )
 
     assert.equal(result.ok, true)
     assert.deepEqual(result.ok ? (result.message as InvokeStreamStartRequest).payload.metadata : null, {
@@ -78,34 +93,44 @@ describe('WebSocket protocol', () => {
   })
 
   it('rejects invalid request metadata on start messages', () => {
-    const result = parseClientMessage(Buffer.from(JSON.stringify({
-      type: 'start',
-      payload: {
-        target: 'test-target',
-        service: 'test.Service',
-        method: 'List',
-        methodKind: MethodKind.SERVER_STREAMING,
-        metadata: {
-          'bad key': 'value',
-        },
-      },
-    })), 1024)
+    const result = parseClientMessage(
+      Buffer.from(
+        JSON.stringify({
+          type: 'start',
+          payload: {
+            target: 'test-target',
+            service: 'test.Service',
+            method: 'List',
+            methodKind: MethodKind.SERVER_STREAMING,
+            metadata: {
+              'bad key': 'value',
+            },
+          },
+        }),
+      ),
+      1024,
+    )
 
     assert.equal(result.ok, false)
   })
 
   it('rejects unsupported user headers on start messages', () => {
-    const result = parseClientMessage(Buffer.from(JSON.stringify({
-      type: 'start',
-      payload: {
-        service: 'test.Service',
-        method: 'List',
-        methodKind: MethodKind.SERVER_STREAMING,
-        userHeaders: {
-          authorization: 'nope',
-        },
-      },
-    })), 1024)
+    const result = parseClientMessage(
+      Buffer.from(
+        JSON.stringify({
+          type: 'start',
+          payload: {
+            service: 'test.Service',
+            method: 'List',
+            methodKind: MethodKind.SERVER_STREAMING,
+            userHeaders: {
+              authorization: 'nope',
+            },
+          },
+        }),
+      ),
+      1024,
+    )
 
     assert.deepEqual(result, {
       ok: false,
@@ -114,14 +139,19 @@ describe('WebSocket protocol', () => {
   })
 
   it('rejects invalid start payloads', () => {
-    const result = parseClientMessage(Buffer.from(JSON.stringify({
-      type: 'start',
-      payload: {
-        service: 'test.Service',
-        method: 'List',
-        methodKind: 'not_a_real_kind',
-      },
-    })), 1024)
+    const result = parseClientMessage(
+      Buffer.from(
+        JSON.stringify({
+          type: 'start',
+          payload: {
+            service: 'test.Service',
+            method: 'List',
+            methodKind: 'not_a_real_kind',
+          },
+        }),
+      ),
+      1024,
+    )
 
     assert.deepEqual(result, {
       ok: false,
@@ -130,15 +160,20 @@ describe('WebSocket protocol', () => {
   })
 
   it('rejects unary start payloads because unary uses HTTP invocation', () => {
-    const result = parseClientMessage(Buffer.from(JSON.stringify({
-      type: 'start',
-      payload: {
-        service: 'test.Service',
-        method: 'Get',
-        methodKind: MethodKind.UNARY,
-        data: { id: '123' },
-      },
-    })), 1024)
+    const result = parseClientMessage(
+      Buffer.from(
+        JSON.stringify({
+          type: 'start',
+          payload: {
+            service: 'test.Service',
+            method: 'Get',
+            methodKind: MethodKind.UNARY,
+            data: { id: '123' },
+          },
+        }),
+      ),
+      1024,
+    )
 
     assert.deepEqual(result, {
       ok: false,
@@ -157,10 +192,7 @@ describe('WebSocket protocol', () => {
   })
 
   it('parses fragmented raw WebSocket messages', () => {
-    const result = parseClientMessage([
-      Buffer.from('{"type":"'),
-      Buffer.from('ping"}'),
-    ], 1024)
+    const result = parseClientMessage([Buffer.from('{"type":"'), Buffer.from('ping"}')], 1024)
 
     assert.deepEqual(result, {
       ok: true,
@@ -177,9 +209,14 @@ describe('WebSocket protocol', () => {
     })
 
     it('should reject messages without type field', () => {
-      const result = parseClientMessage(Buffer.from(JSON.stringify({
-        payload: { some: 'data' }
-      })), 1024)
+      const result = parseClientMessage(
+        Buffer.from(
+          JSON.stringify({
+            payload: { some: 'data' },
+          }),
+        ),
+        1024,
+      )
 
       assert.deepEqual(result, {
         ok: false,
@@ -188,9 +225,14 @@ describe('WebSocket protocol', () => {
     })
 
     it('should reject messages with non-string type', () => {
-      const result = parseClientMessage(Buffer.from(JSON.stringify({
-        type: 123
-      })), 1024)
+      const result = parseClientMessage(
+        Buffer.from(
+          JSON.stringify({
+            type: 123,
+          }),
+        ),
+        1024,
+      )
 
       assert.deepEqual(result, {
         ok: false,
@@ -199,9 +241,14 @@ describe('WebSocket protocol', () => {
     })
 
     it('should reject unknown message types', () => {
-      const result = parseClientMessage(Buffer.from(JSON.stringify({
-        type: 'unknown_type'
-      })), 1024)
+      const result = parseClientMessage(
+        Buffer.from(
+          JSON.stringify({
+            type: 'unknown_type',
+          }),
+        ),
+        1024,
+      )
 
       assert.deepEqual(result, {
         ok: false,
@@ -210,47 +257,67 @@ describe('WebSocket protocol', () => {
     })
 
     it('should reject data message with missing payload field', () => {
-      const result = parseClientMessage(Buffer.from(JSON.stringify({
-        type: 'data'
-      })), 1024)
+      const result = parseClientMessage(
+        Buffer.from(
+          JSON.stringify({
+            type: 'data',
+          }),
+        ),
+        1024,
+      )
 
       assert.equal(result.ok, false)
       assert.ok(result.ok === false && result.error.includes('payload'))
     })
 
     it('should reject data message with non-JSON payload', () => {
-      const result = parseClientMessage(Buffer.from(JSON.stringify({
-        type: 'data',
-        payload: undefined
-      })), 1024)
+      const result = parseClientMessage(
+        Buffer.from(
+          JSON.stringify({
+            type: 'data',
+            payload: undefined,
+          }),
+        ),
+        1024,
+      )
 
       // After JSON.stringify, undefined becomes missing, so this tests missing payload
       assert.equal(result.ok, false)
     })
 
     it('should accept empty object as data payload', () => {
-      const result = parseClientMessage(Buffer.from(JSON.stringify({
-        type: 'data',
-        payload: {}
-      })), 1024)
+      const result = parseClientMessage(
+        Buffer.from(
+          JSON.stringify({
+            type: 'data',
+            payload: {},
+          }),
+        ),
+        1024,
+      )
 
       assert.equal(result.ok, true)
       assert.deepEqual(result.ok ? result.message : null, {
         type: 'data',
-        payload: {}
+        payload: {},
       })
     })
 
     it('should accept null as data payload', () => {
-      const result = parseClientMessage(Buffer.from(JSON.stringify({
-        type: 'data',
-        payload: null
-      })), 1024)
+      const result = parseClientMessage(
+        Buffer.from(
+          JSON.stringify({
+            type: 'data',
+            payload: null,
+          }),
+        ),
+        1024,
+      )
 
       assert.equal(result.ok, true)
       assert.deepEqual(result.ok ? result.message : null, {
         type: 'data',
-        payload: null
+        payload: null,
       })
     })
   })

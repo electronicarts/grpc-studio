@@ -2,12 +2,12 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
-import ServiceExplorer from '../ServiceExplorer'
-import { useSchemas } from '../../../schemaLoader'
-import type { GrpcService, ApiServer } from '../../../../types/grpc'
+import ServiceExplorer from '@/features/serviceExplorer/components/ServiceExplorer'
+import { useSchemas } from '@/features/schemaLoader'
+import type { GrpcService, ApiServer } from '@/types/grpc'
 import { MethodKind } from '@grpc-studio/shared'
 
-vi.mock('../../../schemaLoader', () => ({
+vi.mock('@/features/schemaLoader', () => ({
   useSchemas: vi.fn(),
 }))
 
@@ -24,9 +24,7 @@ function mockServers(servers: ApiServer[]) {
 const service: GrpcService = {
   name: 'UserService',
   fullName: 'com.example.UserService',
-  methods: [
-    { name: 'GetUser', inputType: 'GetUserRequest', outputType: 'User', kind: MethodKind.UNARY },
-  ],
+  methods: [{ name: 'GetUser', inputType: 'GetUserRequest', outputType: 'User', kind: MethodKind.UNARY }],
 }
 
 const server: ApiServer = {
@@ -107,9 +105,7 @@ describe('ServiceExplorer toggle', () => {
     const adminService: GrpcService = {
       name: 'AdminService',
       fullName: 'com.example.AdminService',
-      methods: [
-        { name: 'GetAdmin', inputType: 'GetAdminRequest', outputType: 'Admin', kind: MethodKind.UNARY },
-      ],
+      methods: [{ name: 'GetAdmin', inputType: 'GetAdminRequest', outputType: 'Admin', kind: MethodKind.UNARY }],
     }
     mockServers([{ name: 'Server1', target: 'localhost:50051', services: [adminService, service] }])
 
@@ -124,7 +120,7 @@ describe('ServiceExplorer toggle', () => {
         selectedServerNames={[]}
         serviceSearchQuery="Service"
         onSearchChange={vi.fn()}
-      />
+      />,
     )
 
     // Auto-expand picked the first match (AdminService), so GetUser is hidden.
@@ -146,7 +142,7 @@ describe('ServiceExplorer toggle', () => {
         selectedServerNames={[]}
         serviceSearchQuery="Service"
         onSearchChange={vi.fn()}
-      />
+      />,
     )
 
     // UserService is now expanded (its method is visible) after a single click.

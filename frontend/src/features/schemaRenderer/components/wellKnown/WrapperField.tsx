@@ -2,7 +2,7 @@
 
 import React from 'react'
 import type { WktWrapperDesc } from '@bufbuild/protobuf/wkt'
-import ScalarField from '../fields/ScalarField'
+import ScalarField from '@/features/schemaRenderer/components/fields/ScalarField'
 
 interface WrapperFieldProps {
   name: string

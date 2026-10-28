@@ -30,7 +30,11 @@ export function field(
   } as MessageInitShape<typeof FieldDescriptorProtoSchema>
 }
 
-export function messageField(name: string, number: number, typeName: string): MessageInitShape<typeof FieldDescriptorProtoSchema> {
+export function messageField(
+  name: string,
+  number: number,
+  typeName: string,
+): MessageInitShape<typeof FieldDescriptorProtoSchema> {
   return field(name, number, T.MESSAGE, { typeName })
 }
 

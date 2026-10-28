@@ -1,8 +1,12 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import type { DescMessage, DescField } from '@bufbuild/protobuf'
-import { getFieldValue } from './fieldOperations'
-import { forEachNestedMessageValue, isCompositeField, MAX_TRAVERSAL_DEPTH } from './descriptorTraversal'
+import { getFieldValue } from '@/features/schemaRenderer/utils/fieldOperations'
+import {
+  forEachNestedMessageValue,
+  isCompositeField,
+  MAX_TRAVERSAL_DEPTH,
+} from '@/features/schemaRenderer/utils/descriptorTraversal'
 
 /**
  * Walk the data, recording which member of each oneOf group is set.
@@ -23,8 +27,7 @@ export const detectOneOfSelections = (
 
   const processNestedValue = (field: DescField, fieldValue: unknown, fieldPath: string) => {
     forEachNestedMessageValue(field, fieldValue, fieldPath, (schema, nestedValue, nestedPath) => {
-      detectOneOfSelections(schema, nestedValue, nestedPath, depth + 1)
-        .forEach((v, k) => selections.set(k, v))
+      detectOneOfSelections(schema, nestedValue, nestedPath, depth + 1).forEach((v, k) => selections.set(k, v))
     })
   }
 

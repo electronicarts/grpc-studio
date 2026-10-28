@@ -6,14 +6,12 @@
  *
  * Outbound header management is handled by headerManager.ts.
  */
-import { buildApiUrl, buildCustomApiUrl, getConfig, isConfigLoaded } from '../../config'
-import { getHttpRequestHeaders } from '../headers/headerManager'
-import { parseErrorResponse } from './apiErrorParser'
-import { executeWithRetry, fetchWithTimeout } from './requestHelpers'
+import { buildApiUrl, buildCustomApiUrl, getConfig, isConfigLoaded } from '@/config'
+import { getHttpRequestHeaders } from '@/lib/headers/headerManager'
+import { parseErrorResponse } from '@/lib/http/apiErrorParser'
+import { executeWithRetry, fetchWithTimeout } from '@/lib/http/requestHelpers'
 
 // ── types ───────────────────────────────────────────────────────
-
-
 
 interface RequestOptions {
   timeout?: number
@@ -31,15 +29,10 @@ const DEFAULT_RETRY_DELAY = 1000
 
 class ApiClient {
   private defaultHeaders: Record<string, string> = {
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
   }
 
-  async request<T>(
-    url: string,
-    method: string,
-    body?: unknown,
-    options: RequestOptions = {}
-  ): Promise<T> {
+  async request<T>(url: string, method: string, body?: unknown, options: RequestOptions = {}): Promise<T> {
     const timeout = options.timeout ?? getDefaultTimeout()
     const retries = options.retries ?? DEFAULT_RETRIES
     const retryDelay = options.retryDelay ?? DEFAULT_RETRY_DELAY
@@ -53,9 +46,9 @@ class ApiClient {
           {
             method,
             headers: getHttpRequestHeaders(this.defaultHeaders, headers),
-            body: body ? JSON.stringify(body) : undefined
+            body: body ? JSON.stringify(body) : undefined,
           },
-          timeout
+          timeout,
         )
 
         const responseText = await response.text()
@@ -75,7 +68,7 @@ class ApiClient {
       },
       retries,
       retryDelay,
-      onRetry
+      onRetry,
     )
   }
 
@@ -107,12 +100,7 @@ export class ApiClientError extends Error {
   status?: number
   details?: Record<string, unknown>
 
-  constructor(
-    message: string,
-    code?: string,
-    status?: number,
-    details?: Record<string, unknown>
-  ) {
+  constructor(message: string, code?: string, status?: number, details?: Record<string, unknown>) {
     super(message)
     this.name = 'ApiClientError'
     this.code = code

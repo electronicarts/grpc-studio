@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react'
 import type { DescMessage } from '@bufbuild/protobuf'
-import type { ResponseModel } from '../types'
+import type { ResponseModel } from '@/features/methodExplorer/types'
 import type { TabResponseSnapshot } from '@/stores'
 
 export function useResponseModel(restored?: TabResponseSnapshot): ResponseModel {
@@ -23,8 +23,20 @@ export function useResponseModel(restored?: TabResponseSnapshot): ResponseModel 
   }, [])
 
   return {
-    raw, data, time, size, schema, isFormMode, singleExpanded,
-    setRaw, setData, setTime, setSize, setSchema, setFormMode, setSingleExpanded,
+    raw,
+    data,
+    time,
+    size,
+    schema,
+    isFormMode,
+    singleExpanded,
+    setRaw,
+    setData,
+    setTime,
+    setSize,
+    setSchema,
+    setFormMode,
+    setSingleExpanded,
     clear,
   }
 }

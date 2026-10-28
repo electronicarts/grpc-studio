@@ -11,9 +11,9 @@
 import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import SchemaRenderer from '../components/core/SchemaRenderer'
+import SchemaRenderer from '@/features/schemaRenderer/components/core/SchemaRenderer'
 import { petSchema } from '@/test/petstore.fixtures'
-import { collectExpandablePaths } from '../utils/pathAnalysis'
+import { collectExpandablePaths } from '@/features/schemaRenderer/utils/pathAnalysis'
 
 // Create complete Pet schema with ALL field types
 
@@ -99,7 +99,7 @@ describe('SchemaRenderer - Complete Pet Message Integration', () => {
         treatment: 'Antibiotic drops',
         date: '2023-08-15T13:20:00Z',
         recovery_time: { seconds: 604800 }, // 7 days
-        cost: { value: 85.50 },
+        cost: { value: 85.5 },
         follow_up_required: true,
       },
       {
@@ -108,7 +108,7 @@ describe('SchemaRenderer - Complete Pet Message Integration', () => {
         treatment: 'Routine examination',
         date: '2024-02-20T14:00:00Z',
         recovery_time: { seconds: 0 },
-        cost: { value: 120.00 },
+        cost: { value: 120.0 },
         follow_up_required: false,
       },
     ],
@@ -224,14 +224,7 @@ describe('SchemaRenderer - Complete Pet Message Integration', () => {
     it('renders scalar fields correctly', async () => {
       const user = userEvent.setup()
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={completePetData}
-          onChange={() => {}}
-          readOnly={true}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={completePetData} onChange={() => {}} readOnly={true} />)
 
       // Expand all
       await user.click(screen.getByRole('button', { name: /expand/i }))
@@ -257,14 +250,7 @@ describe('SchemaRenderer - Complete Pet Message Integration', () => {
     it('renders enum fields', async () => {
       const user = userEvent.setup()
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={completePetData}
-          onChange={() => {}}
-          readOnly={true}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={completePetData} onChange={() => {}} readOnly={true} />)
 
       await user.click(screen.getByRole('button', { name: /expand/i }))
 
@@ -277,14 +263,7 @@ describe('SchemaRenderer - Complete Pet Message Integration', () => {
     it('renders deeply nested messages (3 levels)', async () => {
       const user = userEvent.setup()
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={completePetData}
-          onChange={() => {}}
-          readOnly={true}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={completePetData} onChange={() => {}} readOnly={true} />)
 
       await user.click(screen.getByRole('button', { name: /expand/i }))
 
@@ -303,14 +282,7 @@ describe('SchemaRenderer - Complete Pet Message Integration', () => {
     it('renders repeated scalar fields', async () => {
       const user = userEvent.setup()
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={completePetData}
-          onChange={() => {}}
-          readOnly={true}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={completePetData} onChange={() => {}} readOnly={true} />)
 
       await user.click(screen.getByRole('button', { name: /expand/i }))
 
@@ -323,14 +295,7 @@ describe('SchemaRenderer - Complete Pet Message Integration', () => {
     it('renders repeated message fields with all items', async () => {
       const user = userEvent.setup()
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={completePetData}
-          onChange={() => {}}
-          readOnly={true}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={completePetData} onChange={() => {}} readOnly={true} />)
 
       await user.click(screen.getByRole('button', { name: /expand/i }))
 
@@ -351,14 +316,7 @@ describe('SchemaRenderer - Complete Pet Message Integration', () => {
     it('renders map with scalar values', async () => {
       const user = userEvent.setup()
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={completePetData}
-          onChange={() => {}}
-          readOnly={true}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={completePetData} onChange={() => {}} readOnly={true} />)
 
       await user.click(screen.getByRole('button', { name: /expand/i }))
 
@@ -372,14 +330,7 @@ describe('SchemaRenderer - Complete Pet Message Integration', () => {
     it('renders map with message values', async () => {
       const user = userEvent.setup()
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={completePetData}
-          onChange={() => {}}
-          readOnly={true}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={completePetData} onChange={() => {}} readOnly={true} />)
 
       await user.click(screen.getByRole('button', { name: /expand/i }))
 
@@ -393,14 +344,7 @@ describe('SchemaRenderer - Complete Pet Message Integration', () => {
     it('renders wrapper types (StringValue, Int32Value, FloatValue)', async () => {
       const user = userEvent.setup()
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={completePetData}
-          onChange={() => {}}
-          readOnly={true}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={completePetData} onChange={() => {}} readOnly={true} />)
 
       await user.click(screen.getByRole('button', { name: /expand/i }))
 
@@ -427,7 +371,7 @@ describe('SchemaRenderer - Complete Pet Message Integration', () => {
           onChange={() => {}}
           readOnly={true}
           defaultCollapsed={true}
-        />
+        />,
       )
 
       // Top level scalars are always visible (not collapsible)
@@ -524,14 +468,7 @@ describe('SchemaRenderer - Complete Pet Message Integration', () => {
         name: 'Minimal Pet',
       }
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={minimalData}
-          onChange={() => {}}
-          readOnly={true}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={minimalData} onChange={() => {}} readOnly={true} />)
 
       // Should render without crashing
       expect(screen.getByDisplayValue('Minimal Pet')).toBeInTheDocument()

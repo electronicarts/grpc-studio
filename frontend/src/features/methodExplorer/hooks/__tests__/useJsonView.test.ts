@@ -2,7 +2,7 @@
 
 import { describe, expect, it, vi } from 'vitest'
 import { act, renderHook } from '@testing-library/react'
-import { useJsonView } from '../useJsonView'
+import { useJsonView } from '@/features/methodExplorer/hooks/useJsonView'
 
 describe('useJsonView', () => {
   it('computes the wire form only while the wire view is shown', () => {
@@ -29,7 +29,11 @@ describe('useJsonView', () => {
   })
 
   it('reports the wire form as unavailable when it cannot be computed', () => {
-    const { result } = renderHook(() => useJsonView(true, () => { throw new Error('bad json') }))
+    const { result } = renderHook(() =>
+      useJsonView(true, () => {
+        throw new Error('bad json')
+      }),
+    )
 
     act(() => result.current.setView('wire'))
 

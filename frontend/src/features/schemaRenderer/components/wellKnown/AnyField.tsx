@@ -2,12 +2,12 @@
 
 import React, { useMemo, useSyncExternalStore } from 'react'
 import type { DescMessage } from '@bufbuild/protobuf'
-import { FormField } from '../../../../components/shared'
+import { FormField } from '@/components/shared'
 import { Select } from '@/components/ui/select'
-import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
-import { schemaCache } from '../../../schemaLoader/lib/schemaCache'
-import AnyContentRenderer from './AnyContentRenderer'
-import { anyTypeName, anyTypeUrl } from '../../../../utils/descUtils'
+import { useProtoMessageRendererContext } from '@/features/schemaRenderer/stores/schemaRendererContext'
+import { schemaCache } from '@/features/schemaLoader/lib/schemaCache'
+import AnyContentRenderer from '@/features/schemaRenderer/components/wellKnown/AnyContentRenderer'
+import { anyTypeName, anyTypeUrl } from '@/utils/descUtils'
 
 interface AnyFieldProps {
   name: string
@@ -46,7 +46,11 @@ const AnyField: React.FC<AnyFieldProps> = ({ name, value, onChange }) => {
   )
 
   const knownTypeNames = useMemo(
-    () => schemaCache.getTargetSchemas(target).map(desc => desc.typeName).sort(),
+    () =>
+      schemaCache
+        .getTargetSchemas(target)
+        .map(desc => desc.typeName)
+        .sort(),
     // cacheVersion triggers recomputation when new schemas are registered
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [cacheVersion, target],
@@ -85,18 +89,16 @@ const AnyField: React.FC<AnyFieldProps> = ({ name, value, onChange }) => {
         >
           <option value="">Select a type…</option>
           {knownTypeNames.map(t => (
-            <option key={t} value={t}>{t}</option>
+            <option key={t} value={t}>
+              {t}
+            </option>
           ))}
         </Select>
 
         {/* Nested form for the selected type */}
         {currentTypeName && currentSchema && (
           <div className="border-l-2 border-muted pl-3 pt-1">
-            <AnyContentRenderer
-              schema={currentSchema}
-              formData={formData}
-              onChange={handleFormChange}
-            />
+            <AnyContentRenderer schema={currentSchema} formData={formData} onChange={handleFormChange} />
           </div>
         )}
 

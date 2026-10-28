@@ -1,9 +1,9 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-import configManager from '../config/configManager.js'
-import type { CertificateMetadata } from '../types/index.js'
-import type { Cache } from './cache.js'
-import { TimedCache } from './timedCache.js'
+import configManager from '#src/config/configManager.js'
+import type { CertificateMetadata } from '#src/types/index.js'
+import type { Cache } from '#src/cache/cache.js'
+import { TimedCache } from '#src/cache/timedCache.js'
 
 const DEFAULT_CERTIFICATE_CACHE_TTL_MS = 60000
 const DEFAULT_CERTIFICATE_CACHE_MAX_ENTRIES = 1

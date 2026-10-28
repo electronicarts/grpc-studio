@@ -37,7 +37,7 @@ export function buildShareableUrl(
   serviceFullName: string,
   methodName: string,
   requestBody: Record<string, unknown>,
-  metadata?: RequestMetadata | null
+  metadata?: RequestMetadata | null,
 ): string {
   const payload: SharedRequestState = {
     s: serviceFullName,
@@ -79,9 +79,7 @@ export function parseShareableUrl(): SharedRequestState | null {
     // entirely if it is malformed so a bad fragment can't break restoration.
     if (payload.md !== undefined) {
       const sanitized = sanitizeRequestMetadata(payload.md)
-      payload.md = sanitized.ok && Object.keys(sanitized.metadata).length > 0
-        ? sanitized.metadata
-        : undefined
+      payload.md = sanitized.ok && Object.keys(sanitized.metadata).length > 0 ? sanitized.metadata : undefined
     }
 
     return payload

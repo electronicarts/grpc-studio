@@ -11,9 +11,7 @@ export function cleanFormData(data: unknown): unknown {
 
   if (Array.isArray(data)) {
     // For arrays, filter out undefined elements and recursively clean
-    return data
-      .filter(item => item !== undefined)
-      .map(item => cleanFormData(item))
+    return data.filter(item => item !== undefined).map(item => cleanFormData(item))
   }
 
   if (typeof data === 'object') {

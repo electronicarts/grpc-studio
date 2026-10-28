@@ -3,17 +3,29 @@
 import React, { useState } from 'react'
 import { Loader2, History, RotateCcw, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import ProtoMessageRenderer from '../../schemaRenderer'
-import ProtoViewer from './ProtoViewer'
-import HistoryPanel from './HistoryPanel'
-import MetadataEditor from './MetadataEditor'
-import ViewTabs, { type ViewTab } from './ViewTabs'
-import RequestJsonView from './RequestJsonView'
-import { useMethodExplorerContext } from '../stores'
-import { useMethodKind } from '../hooks/useMethodKind'
+import ProtoMessageRenderer from '@/features/schemaRenderer'
+import ProtoViewer from '@/features/methodExplorer/components/ProtoViewer'
+import HistoryPanel from '@/features/methodExplorer/components/HistoryPanel'
+import MetadataEditor from '@/features/methodExplorer/components/MetadataEditor'
+import ViewTabs, { type ViewTab } from '@/features/methodExplorer/components/ViewTabs'
+import RequestJsonView from '@/features/methodExplorer/components/RequestJsonView'
+import { useMethodExplorerContext } from '@/features/methodExplorer/stores'
+import { useMethodKind } from '@/features/methodExplorer/hooks/useMethodKind'
 
 const RequestInput: React.FC = () => {
-  const { selectedTarget, selectedService, selectedMethod, request, response, stream, metadata, execution, history, toggleHistory, loadFromHistory } = useMethodExplorerContext()
+  const {
+    selectedTarget,
+    selectedService,
+    selectedMethod,
+    request,
+    response,
+    stream,
+    metadata,
+    execution,
+    history,
+    toggleHistory,
+    loadFromHistory,
+  } = useMethodExplorerContext()
   const [activeTab, setActiveTab] = useState<ViewTab>(request.isFormMode ? 'form' : 'json')
 
   const handleTabChange = (tab: ViewTab) => {
@@ -76,12 +88,7 @@ const RequestInput: React.FC = () => {
                 </Button>
               )}
               {!stream.active && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-7 rounded-full px-3"
-                  onClick={handleReset}
-                >
+                <Button variant="outline" size="sm" className="h-7 rounded-full px-3" onClick={handleReset}>
                   <RotateCcw className="mr-1 size-3" />
                   Reset
                 </Button>
@@ -114,9 +121,7 @@ const RequestInput: React.FC = () => {
 
           {activeTab === 'json' && <RequestJsonView />}
 
-          {request.validationError && (
-            <p className="mt-2 text-sm text-danger">{request.validationError}</p>
-          )}
+          {request.validationError && <p className="mt-2 text-sm text-danger">{request.validationError}</p>}
 
           {activeTab === 'schema' && (
             <ProtoViewer
@@ -127,9 +132,7 @@ const RequestInput: React.FC = () => {
             />
           )}
 
-          {activeTab === 'metadata' && (
-            <MetadataEditor metadata={metadata} disabled={stream.active} />
-          )}
+          {activeTab === 'metadata' && <MetadataEditor metadata={metadata} disabled={stream.active} />}
         </>
       )}
 

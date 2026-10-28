@@ -2,18 +2,18 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
-import { useServiceSelection } from '../useServiceDiscovery'
-import { useSchemas } from '../../../schemaLoader'
-import { useShareableLink } from '../useShareableLink'
-import type { GrpcService, GrpcMethod, ApiServer } from '../../../../types/grpc'
+import { useServiceSelection } from '@/features/serviceExplorer/hooks/useServiceDiscovery'
+import { useSchemas } from '@/features/schemaLoader'
+import { useShareableLink } from '@/features/serviceExplorer/hooks/useShareableLink'
+import type { GrpcService, GrpcMethod, ApiServer } from '@/types/grpc'
 import { MethodKind } from '@grpc-studio/shared'
 
 // Mock the schema source and shareableLink hook
-vi.mock('../../../schemaLoader', () => ({
+vi.mock('@/features/schemaLoader', () => ({
   useSchemas: vi.fn(),
 }))
 
-vi.mock('../useShareableLink', () => ({
+vi.mock('@/features/serviceExplorer/hooks/useShareableLink', () => ({
   useShareableLink: vi.fn(),
 }))
 
@@ -67,22 +67,30 @@ describe('useServiceSelection', () => {
 
   it('selectService sets service and clears method', () => {
     const { result } = renderHook(() => useServiceSelection())
-    act(() => { result.current.selectService(mockService, mockServer1) })
+    act(() => {
+      result.current.selectService(mockService, mockServer1)
+    })
     expect(result.current.selectedService).toBe(mockService)
     expect(result.current.selectedMethod).toBeNull()
   })
 
   it('selectMethod sets both service and method', () => {
     const { result } = renderHook(() => useServiceSelection())
-    act(() => { result.current.selectMethod(mockMethod, mockService, mockServer1) })
+    act(() => {
+      result.current.selectMethod(mockMethod, mockService, mockServer1)
+    })
     expect(result.current.selectedService).toBe(mockService)
     expect(result.current.selectedMethod).toBe(mockMethod)
   })
 
   it('clearSelection resets both service and method', () => {
     const { result } = renderHook(() => useServiceSelection())
-    act(() => { result.current.selectMethod(mockMethod, mockService, mockServer1) })
-    act(() => { result.current.clearSelection() })
+    act(() => {
+      result.current.selectMethod(mockMethod, mockService, mockServer1)
+    })
+    act(() => {
+      result.current.clearSelection()
+    })
     expect(result.current.selectedService).toBeNull()
     expect(result.current.selectedMethod).toBeNull()
   })
@@ -91,16 +99,23 @@ describe('useServiceSelection', () => {
     const { result } = renderHook(() => useServiceSelection())
     const onRestore = vi.mocked(useShareableLink).mock.lastCall![2]
     const share = {
-      target: 'Server1', service: mockService, method: mockMethod,
-      requestBody: { id: '1' }, metadata: null,
+      target: 'Server1',
+      service: mockService,
+      method: mockMethod,
+      requestBody: { id: '1' },
+      metadata: null,
     }
 
-    act(() => { onRestore(share) })
+    act(() => {
+      onRestore(share)
+    })
     expect(result.current.selectedTarget).toBe('Server1')
     expect(result.current.selectedMethod).toBe(mockMethod)
     expect(result.current.pendingShare).toBe(share)
 
-    act(() => { result.current.consumeShare() })
+    act(() => {
+      result.current.consumeShare()
+    })
     expect(result.current.pendingShare).toBeNull()
     expect(result.current.selectedMethod).toBe(mockMethod)
   })
@@ -114,7 +129,9 @@ describe('useServiceSelection', () => {
   describe('server context propagation', () => {
     it('sets target from passed server on selectService', () => {
       const { result } = renderHook(() => useServiceSelection())
-      act(() => { result.current.selectService(mockService, mockServer1) })
+      act(() => {
+        result.current.selectService(mockService, mockServer1)
+      })
       expect(result.current.selectedTarget).toBe('Server1')
       expect(result.current.selectedService).toBe(mockService)
     })
@@ -122,36 +139,50 @@ describe('useServiceSelection', () => {
     it('updates target when selecting service from different server', () => {
       const { result } = renderHook(() => useServiceSelection())
 
-      act(() => { result.current.selectService(mockService, mockServer1) })
+      act(() => {
+        result.current.selectService(mockService, mockServer1)
+      })
       expect(result.current.selectedTarget).toBe('Server1')
 
-      act(() => { result.current.selectService(mockService, mockServer2) })
+      act(() => {
+        result.current.selectService(mockService, mockServer2)
+      })
       expect(result.current.selectedTarget).toBe('Server2')
     })
 
     it('sets target from passed server on selectMethod', () => {
       const { result } = renderHook(() => useServiceSelection())
-      act(() => { result.current.selectMethod(mockMethod, mockService, mockServer1) })
+      act(() => {
+        result.current.selectMethod(mockMethod, mockService, mockServer1)
+      })
       expect(result.current.selectedTarget).toBe('Server1')
     })
 
     it('updates target when selecting method from different server', () => {
       const { result } = renderHook(() => useServiceSelection())
 
-      act(() => { result.current.selectMethod(mockMethod, mockService, mockServer1) })
+      act(() => {
+        result.current.selectMethod(mockMethod, mockService, mockServer1)
+      })
       expect(result.current.selectedTarget).toBe('Server1')
 
-      act(() => { result.current.selectMethod(mockMethod, mockService, mockServer2) })
+      act(() => {
+        result.current.selectMethod(mockMethod, mockService, mockServer2)
+      })
       expect(result.current.selectedTarget).toBe('Server2')
     })
 
     it('clears target on clearSelection', () => {
       const { result } = renderHook(() => useServiceSelection())
 
-      act(() => { result.current.selectMethod(mockMethod, mockService, mockServer1) })
+      act(() => {
+        result.current.selectMethod(mockMethod, mockService, mockServer1)
+      })
       expect(result.current.selectedTarget).toBe('Server1')
 
-      act(() => { result.current.clearSelection() })
+      act(() => {
+        result.current.clearSelection()
+      })
       expect(result.current.selectedTarget).toBeNull()
     })
   })

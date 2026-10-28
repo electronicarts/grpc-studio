@@ -18,7 +18,7 @@ export function StatusDot({ connected, className }: StatusDotProps) {
       className={cn(
         'size-2 flex-shrink-0 rounded-full',
         connected ? TONES.success.bgSolid : TONES.danger.bgSolid,
-        className
+        className,
       )}
     />
   )

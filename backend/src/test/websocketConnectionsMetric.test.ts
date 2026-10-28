@@ -13,15 +13,15 @@
 
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { wsConnectionsTotal } from '../metrics/collectors/websocketMetrics.js'
-import { metricsRegistry } from '../metrics/registry.js'
+import { wsConnectionsTotal } from '#src/metrics/collectors/websocketMetrics.js'
+import { metricsRegistry } from '#src/metrics/registry.js'
 
 async function value(labels: Record<string, string>): Promise<number> {
   const json = await metricsRegistry.getRegistry().getMetricsAsJSON()
-  const entry = json.find((m) => m.name === 'grpc_studio_ws_connections_total')
+  const entry = json.find(m => m.name === 'grpc_studio_ws_connections_total')
   if (!entry) return 0
-  const match = (entry.values as Array<{ value: number; labels: Record<string, string> }>).find((v) =>
-    Object.entries(labels).every(([k, val]) => v.labels[k] === val)
+  const match = (entry.values as Array<{ value: number; labels: Record<string, string> }>).find(v =>
+    Object.entries(labels).every(([k, val]) => v.labels[k] === val),
   )
   return match?.value ?? 0
 }

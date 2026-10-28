@@ -2,8 +2,8 @@
 
 import type { DescEnum, DescField, DescMessage } from '@bufbuild/protobuf'
 import { usedTypes } from '@bufbuild/protobuf/reflect'
-import type { GrpcMethod } from '../../../types/grpc'
-import { fieldTypeName } from '../../../utils/descUtils'
+import type { GrpcMethod } from '@/types/grpc'
+import { fieldTypeName } from '@/utils/descUtils'
 import { MethodKind } from '@grpc-studio/shared'
 
 function formatField(f: DescField): string {
@@ -45,7 +45,7 @@ export function formatMethodProto(
   serviceName: string,
   method: GrpcMethod,
   resolveSchema: (type: string) => DescMessage | null,
-  options?: { outputOnly?: boolean }
+  options?: { outputOnly?: boolean },
 ): string {
   const input = resolveSchema(method.inputType)
   const output = resolveSchema(method.outputType)
@@ -60,11 +60,9 @@ export function formatMethodProto(
   const inputWrap = clientStreams ? `stream ${inputName}` : inputName
   const outputWrap = serverStreams ? `stream ${outputName}` : outputName
 
-  const blocks = [[
-    `service ${serviceName} {`,
-    `  rpc ${method.name}(${inputWrap}) returns (${outputWrap});`,
-    '}',
-  ].join('\n')]
+  const blocks = [
+    [`service ${serviceName} {`, `  rpc ${method.name}(${inputWrap}) returns (${outputWrap});`, '}'].join('\n'),
+  ]
 
   const printed = new Set<string>()
   for (const root of [options?.outputOnly ? null : input, output]) {

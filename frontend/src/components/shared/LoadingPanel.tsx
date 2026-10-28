@@ -8,11 +8,7 @@ interface LoadingPanelProps {
   testId?: string
 }
 
-export function LoadingPanel({
-  message = 'Loading...',
-  className = 'p-6',
-  testId,
-}: LoadingPanelProps) {
+export function LoadingPanel({ message = 'Loading...', className = 'p-6', testId }: LoadingPanelProps) {
   return (
     <div className={className} data-testid={testId}>
       <div className="mx-auto max-w-4xl text-center">

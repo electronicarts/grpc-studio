@@ -5,8 +5,8 @@ import assert from 'node:assert/strict'
 import { createFileRegistry, fromJson, toJson } from '@bufbuild/protobuf'
 import { FeatureSet_FieldPresence } from '@bufbuild/protobuf/wkt'
 import type { GrpcReflection } from 'grpc-js-reflection-client'
-import * as descriptorSetFromReflection from '../grpc/reflection/descriptorSetFromReflection.js'
-import * as protoFixtures from './protoFixtures.js'
+import * as descriptorSetFromReflection from '#src/grpc/reflection/descriptorSetFromReflection.js'
+import * as protoFixtures from '#src/test/protoFixtures.js'
 
 function reflectionClient(files: Record<string, Uint8Array[]>, symbolFile: string) {
   const requestedFiles: string[] = []
@@ -48,17 +48,18 @@ describe('descriptorSetFromReflection', () => {
       service: [
         {
           name: 'TestService',
-          method: [
-            { name: 'GetChild', inputType: '.test.Child', outputType: '.test.Common' },
-          ],
+          method: [{ name: 'GetChild', inputType: '.test.Child', outputType: '.test.Common' }],
         },
       ],
     })
 
-    const { client, requestedFiles } = reflectionClient({
-      'service.proto': [protoFixtures.descriptorBytes(service)],
-      'child.proto': [protoFixtures.descriptorBytes(child), protoFixtures.descriptorBytes(common)],
-    }, 'service.proto')
+    const { client, requestedFiles } = reflectionClient(
+      {
+        'service.proto': [protoFixtures.descriptorBytes(service)],
+        'child.proto': [protoFixtures.descriptorBytes(child), protoFixtures.descriptorBytes(common)],
+      },
+      'service.proto',
+    )
 
     const fdSet = await descriptorSetFromReflection.buildFileDescriptorSet(client, 'test.TestService')
     const registry = createFileRegistry(fdSet)
@@ -77,20 +78,24 @@ describe('descriptorSetFromReflection', () => {
       service: [
         {
           name: 'TestService',
-          method: [
-            { name: 'Get', inputType: '.test.Request', outputType: '.test.Response' },
-          ],
+          method: [{ name: 'Get', inputType: '.test.Request', outputType: '.test.Response' }],
         },
       ],
     })
 
-    const { client } = reflectionClient({
-      'service.proto': [protoFixtures.descriptorBytes(service)],
-    }, 'service.proto')
+    const { client } = reflectionClient(
+      {
+        'service.proto': [protoFixtures.descriptorBytes(service)],
+      },
+      'service.proto',
+    )
 
     const fdSet = await descriptorSetFromReflection.buildFileDescriptorSet(client, 'test.TestService')
 
-    assert.deepEqual(fdSet.file.map(file => file.name), ['service.proto'])
+    assert.deepEqual(
+      fdSet.file.map(file => file.name),
+      ['service.proto'],
+    )
     assert.deepEqual(fdSet.file[0]?.dependency, [])
   })
 
@@ -109,9 +114,12 @@ describe('descriptorSetFromReflection', () => {
       ],
     })
 
-    const { client } = reflectionClient({
-      'request.proto': [protoFixtures.descriptorBytes(request)],
-    }, 'request.proto')
+    const { client } = reflectionClient(
+      {
+        'request.proto': [protoFixtures.descriptorBytes(request)],
+      },
+      'request.proto',
+    )
 
     const fdSet = await descriptorSetFromReflection.buildFileDescriptorSet(client, 'test.Request')
     const registry = createFileRegistry(fdSet)
@@ -148,16 +156,17 @@ describe('descriptorSetFromReflection', () => {
       service: [
         {
           name: 'TestService',
-          method: [
-            { name: 'Get', inputType: '.test.Request', outputType: '.test.Response' },
-          ],
+          method: [{ name: 'Get', inputType: '.test.Request', outputType: '.test.Response' }],
         },
       ],
     })
     const options = { deadline: new Date(Date.now() + 1000) }
-    const { client, callOptions } = reflectionClient({
-      'service.proto': [protoFixtures.descriptorBytes(service)],
-    }, 'service.proto')
+    const { client, callOptions } = reflectionClient(
+      {
+        'service.proto': [protoFixtures.descriptorBytes(service)],
+      },
+      'service.proto',
+    )
 
     await descriptorSetFromReflection.buildFileDescriptorSet(client, 'test.TestService', options)
 

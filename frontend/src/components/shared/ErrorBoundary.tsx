@@ -3,7 +3,7 @@
 import { Component, ErrorInfo, ReactNode } from 'react'
 import { RefreshCcw } from 'lucide-react'
 import { createLogger } from '@/utils/debugLogger'
-import { AlertPanel } from './AlertPanel'
+import { AlertPanel } from '@/components/shared/AlertPanel'
 
 const logger = createLogger('ErrorBoundary')
 
@@ -46,7 +46,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
           <AlertPanel
             title="Something went wrong"
             className="mx-auto max-w-lg"
-            footer={(
+            footer={
               <button
                 onClick={this.handleRetry}
                 className="inline-flex items-center gap-2 rounded-md bg-danger/10 px-4 py-2 text-sm font-medium text-danger transition-colors hover:bg-danger/20"
@@ -54,11 +54,9 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
                 <RefreshCcw className="size-4" />
                 Try Again
               </button>
-            )}
+            }
           >
-            <p className="mb-4 text-sm text-danger">
-              {this.state.error?.message || 'An unexpected error occurred.'}
-            </p>
+            <p className="mb-4 text-sm text-danger">{this.state.error?.message || 'An unexpected error occurred.'}</p>
           </AlertPanel>
         </div>
       )

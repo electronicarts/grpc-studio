@@ -2,7 +2,7 @@
 
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
-import ViewTabs from '../ViewTabs'
+import ViewTabs from '@/features/methodExplorer/components/ViewTabs'
 
 describe('ViewTabs', () => {
   it('renders Form, JSON and Schema tabs by default', () => {

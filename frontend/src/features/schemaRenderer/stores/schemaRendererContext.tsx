@@ -50,29 +50,34 @@ export function ProtoMessageRendererProvider({
   hideEmptyFields,
   onToggleExpand,
   onSetOneOfSelection,
-  children
+  children,
 }: ProtoMessageRendererProviderProps) {
-  const value = useMemo<ProtoMessageRendererContextValue>(() => ({
-    target,
-    readOnly,
-    hideEmptyFields,
-    formData,
-    schemasLoaded,
-    expanded,
-    oneOfSelections,
-    searchQuery,
-    toggleExpand: onToggleExpand,
-    setOneOfSelection: onSetOneOfSelection,
-  }), [
-    target, readOnly, hideEmptyFields, formData, schemasLoaded,
-    expanded, oneOfSelections, searchQuery,
-    onToggleExpand, onSetOneOfSelection,
-  ])
-
-  return (
-    <ProtoMessageRendererContext.Provider value={value}>
-      {children}
-    </ProtoMessageRendererContext.Provider>
+  const value = useMemo<ProtoMessageRendererContextValue>(
+    () => ({
+      target,
+      readOnly,
+      hideEmptyFields,
+      formData,
+      schemasLoaded,
+      expanded,
+      oneOfSelections,
+      searchQuery,
+      toggleExpand: onToggleExpand,
+      setOneOfSelection: onSetOneOfSelection,
+    }),
+    [
+      target,
+      readOnly,
+      hideEmptyFields,
+      formData,
+      schemasLoaded,
+      expanded,
+      oneOfSelections,
+      searchQuery,
+      onToggleExpand,
+      onSetOneOfSelection,
+    ],
   )
-}
 
+  return <ProtoMessageRendererContext.Provider value={value}>{children}</ProtoMessageRendererContext.Provider>
+}

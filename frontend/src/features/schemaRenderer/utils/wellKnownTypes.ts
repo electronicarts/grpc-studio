@@ -16,8 +16,7 @@ import {
  * narrowed descriptor, so callers can read the wrapped scalar without checking again.
  */
 export type WellKnownType =
-  | { kind: 'timestamp' | 'duration' | 'fieldMask' | 'any' | 'struct' }
-  | { kind: 'wrapper'; desc: WktWrapperDesc }
+  { kind: 'timestamp' | 'duration' | 'fieldMask' | 'any' | 'struct' } | { kind: 'wrapper'; desc: WktWrapperDesc }
 
 /**
  * Classifies a message type by the editor it gets, or returns null for a regular message.

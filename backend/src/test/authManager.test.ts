@@ -2,9 +2,9 @@
 
 import { afterEach, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { AuthManager } from '../auth/authManager.js'
-import { authPluginRegistry } from '../auth/authPluginRegistry.js'
-import type { AuthConfig } from '../config/schemas/appConfigSchema.js'
+import { AuthManager } from '#src/auth/authManager.js'
+import { authPluginRegistry } from '#src/auth/authPluginRegistry.js'
+import type { AuthConfig } from '#src/config/schemas/appConfigSchema.js'
 
 describe('AuthManager', () => {
   afterEach(async () => {
@@ -26,10 +26,7 @@ describe('AuthManager', () => {
       },
     }
 
-    await assert.rejects(
-      () => manager.initialize(config),
-      /Only one authentication plugin can be enabled at a time/
-    )
+    await assert.rejects(() => manager.initialize(config), /Only one authentication plugin can be enabled at a time/)
   })
 
   it('uses the none plugin when no auth plugin is enabled', async () => {
@@ -51,10 +48,7 @@ describe('AuthManager', () => {
 
     assert.equal(manager.getCurrentPluginName(), 'none')
     assert.deepEqual(await manager.getCurrentPlugin()?.getHeaders(), {})
-    assert.match(
-      warningLines.join('\n'),
-      /No outbound authentication plugin configured; using 'none'/
-    )
+    assert.match(warningLines.join('\n'), /No outbound authentication plugin configured; using 'none'/)
   })
 
   it('uses the single enabled auth plugin', async () => {

@@ -1,10 +1,10 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-import { Router } from 'express';
-import { metricsEndpoint } from '../controllers/MetricsController.js';
+import { Router } from 'express'
+import { metricsEndpoint } from '#src/controllers/MetricsController.js'
 
-const router = Router();
+const router = Router()
 
-router.get('/', metricsEndpoint);
+router.get('/', metricsEndpoint)
 
-export default router;
+export default router

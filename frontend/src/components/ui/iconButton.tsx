@@ -16,10 +16,10 @@ export const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
       type={type}
       className={cn(
         'rounded-lg border border-input p-2 text-muted-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50',
-        className
+        className,
       )}
       {...props}
     />
-  )
+  ),
 )
 IconButton.displayName = 'IconButton'

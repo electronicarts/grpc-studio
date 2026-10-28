@@ -4,13 +4,7 @@ import { describe, it, expect } from 'vitest'
 import { ScalarType, create, toBinary } from '@bufbuild/protobuf'
 import { FileDescriptorSetSchema } from '@bufbuild/protobuf/wkt'
 import { base64Encode } from '@bufbuild/protobuf/wire'
-import {
-  scalarTypeName,
-  fieldTypeName,
-  parseDescriptorIntoMap,
-  anyTypeName,
-  anyTypeUrl,
-} from '../descUtils'
+import { scalarTypeName, fieldTypeName, parseDescriptorIntoMap, anyTypeName, anyTypeUrl } from '@/utils/descUtils'
 import type { DescField, DescMessage } from '@bufbuild/protobuf'
 
 describe('descUtils', () => {
@@ -33,7 +27,7 @@ describe('descUtils', () => {
         ScalarType.BOOL,
         ScalarType.FLOAT,
         ScalarType.DOUBLE,
-        ScalarType.BYTES
+        ScalarType.BYTES,
       ]
 
       scalarTypes.forEach(type => {
@@ -49,7 +43,7 @@ describe('descUtils', () => {
     it('should return type name for scalar field', () => {
       const field: Partial<DescField> = {
         fieldKind: 'scalar',
-        scalar: ScalarType.STRING
+        scalar: ScalarType.STRING,
       }
 
       expect(fieldTypeName(field as DescField)).toBe('string')
@@ -58,7 +52,7 @@ describe('descUtils', () => {
     it('should return type name for enum field', () => {
       const field: Partial<DescField> = {
         fieldKind: 'enum',
-        enum: { typeName: 'MyEnum' } as unknown as DescEnum
+        enum: { typeName: 'MyEnum' } as unknown as DescEnum,
       }
 
       expect(fieldTypeName(field as DescField)).toBe('MyEnum')
@@ -67,7 +61,7 @@ describe('descUtils', () => {
     it('should return type name for message field', () => {
       const field: Partial<DescField> = {
         fieldKind: 'message',
-        message: { typeName: 'MyMessage' } as unknown as DescMessage
+        message: { typeName: 'MyMessage' } as unknown as DescMessage,
       }
 
       expect(fieldTypeName(field as DescField)).toBe('MyMessage')
@@ -77,7 +71,7 @@ describe('descUtils', () => {
       const field: Partial<DescField> = {
         fieldKind: 'list',
         listKind: 'scalar',
-        scalar: ScalarType.INT32
+        scalar: ScalarType.INT32,
       }
 
       expect(fieldTypeName(field as DescField)).toBe('int32')
@@ -87,7 +81,7 @@ describe('descUtils', () => {
       const field: Partial<DescField> = {
         fieldKind: 'list',
         listKind: 'enum',
-        enum: { typeName: 'Status' } as unknown as DescEnum
+        enum: { typeName: 'Status' } as unknown as DescEnum,
       }
 
       expect(fieldTypeName(field as DescField)).toBe('Status')
@@ -97,7 +91,7 @@ describe('descUtils', () => {
       const field: Partial<DescField> = {
         fieldKind: 'list',
         listKind: 'message',
-        message: { typeName: 'Item' } as unknown as DescMessage
+        message: { typeName: 'Item' } as unknown as DescMessage,
       }
 
       expect(fieldTypeName(field as DescField)).toBe('Item')
@@ -108,7 +102,7 @@ describe('descUtils', () => {
         fieldKind: 'map',
         mapKey: ScalarType.STRING,
         mapKind: 'scalar',
-        scalar: ScalarType.INT32
+        scalar: ScalarType.INT32,
       }
 
       expect(fieldTypeName(field as DescField)).toBe('map<string, int32>')
@@ -119,7 +113,7 @@ describe('descUtils', () => {
         fieldKind: 'map',
         mapKey: ScalarType.STRING,
         mapKind: 'enum',
-        enum: { typeName: 'Color' } as unknown as DescEnum
+        enum: { typeName: 'Color' } as unknown as DescEnum,
       }
 
       expect(fieldTypeName(field as DescField)).toBe('map<string, Color>')
@@ -130,26 +124,24 @@ describe('descUtils', () => {
         fieldKind: 'map',
         mapKey: ScalarType.STRING,
         mapKind: 'message',
-        message: { typeName: 'Value' } as unknown as DescMessage
+        message: { typeName: 'Value' } as unknown as DescMessage,
       }
 
       expect(fieldTypeName(field as DescField)).toBe('map<string, Value>')
     })
   })
 
-
-
-
-
   describe('parseDescriptorIntoMap', () => {
     it('should collect top-level and nested messages by their full name', () => {
       const fdSet = create(FileDescriptorSetSchema, {
-        file: [{
-          name: 'outer.proto',
-          package: 'pkg',
-          syntax: 'proto3',
-          messageType: [{ name: 'Outer', nestedType: [{ name: 'Inner', nestedType: [{ name: 'Deepest' }] }] }],
-        }],
+        file: [
+          {
+            name: 'outer.proto',
+            package: 'pkg',
+            syntax: 'proto3',
+            messageType: [{ name: 'Outer', nestedType: [{ name: 'Inner', nestedType: [{ name: 'Deepest' }] }] }],
+          },
+        ],
       })
       const target = new Map<string, DescMessage>()
 
@@ -189,7 +181,6 @@ describe('descUtils', () => {
       expect(target).toBeInstanceOf(Map)
     })
   })
-
 })
 
 // Helper functions to create test descriptors

@@ -7,14 +7,14 @@
 
 import React from 'react'
 import type { DescMessage } from '@bufbuild/protobuf'
-import { wellKnownType } from '../../utils/wellKnownTypes'
-import TimestampField from '../wellKnown/TimestampField'
-import DurationField from '../wellKnown/DurationField'
-import FieldMaskField from '../wellKnown/FieldMaskField'
-import WrapperField from '../wellKnown/WrapperField'
-import AnyField from '../wellKnown/AnyField'
-import StructField from '../struct/StructField'
-import type { FieldPresence } from './fieldPresence'
+import { wellKnownType } from '@/features/schemaRenderer/utils/wellKnownTypes'
+import TimestampField from '@/features/schemaRenderer/components/wellKnown/TimestampField'
+import DurationField from '@/features/schemaRenderer/components/wellKnown/DurationField'
+import FieldMaskField from '@/features/schemaRenderer/components/wellKnown/FieldMaskField'
+import WrapperField from '@/features/schemaRenderer/components/wellKnown/WrapperField'
+import AnyField from '@/features/schemaRenderer/components/wellKnown/AnyField'
+import StructField from '@/features/schemaRenderer/components/struct/StructField'
+import type { FieldPresence } from '@/features/schemaRenderer/components/shared/fieldPresence'
 
 interface WellKnownTypeRendererProps {
   message: DescMessage

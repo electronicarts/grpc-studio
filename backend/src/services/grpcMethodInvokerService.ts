@@ -8,15 +8,17 @@ import type {
   DescMethodServerStreaming,
   DescMethodUnary,
 } from '@bufbuild/protobuf'
-import headerManager from '../headers/headerManager.js'
-import { ConnectInvoker, formatConnectError, type RequestStream } from '../grpc/connect/connectInvoker.js'
-import * as userContextMiddleware from '../middlewares/userContextMiddleware.js'
-import reflectionSchemaRepository, { type ReflectionSchemaRepository } from '../repositories/reflectionSchemaRepository.js'
-import multiClientManager from '../grpc/multiClientManager.js'
-import type { StreamCallbacks, StreamHandle, UnaryResult } from '../types/index.js'
-import { instrumentUnaryCall, instrumentStreamCall } from '../grpc/instrumentation/grpcInstrumentation.js'
-import { AppError } from '../errors/AppError.js'
-import logger from '../utils/logger.js'
+import headerManager from '#src/headers/headerManager.js'
+import { ConnectInvoker, formatConnectError, type RequestStream } from '#src/grpc/connect/connectInvoker.js'
+import * as userContextMiddleware from '#src/middlewares/userContextMiddleware.js'
+import reflectionSchemaRepository, {
+  type ReflectionSchemaRepository,
+} from '#src/repositories/reflectionSchemaRepository.js'
+import multiClientManager from '#src/grpc/multiClientManager.js'
+import type { StreamCallbacks, StreamHandle, UnaryResult } from '#src/types/index.js'
+import { instrumentUnaryCall, instrumentStreamCall } from '#src/grpc/instrumentation/grpcInstrumentation.js'
+import { AppError } from '#src/errors/AppError.js'
+import logger from '#src/utils/logger.js'
 
 const invokerLogger = logger.child({ module: 'grpc-method-invoker-service' })
 const VALID_NAME_RE = /^[a-zA-Z_][\w.]*$/
@@ -36,8 +38,10 @@ function isRetryableConnectionError(codeName: string, errorMessage: string): boo
 
 export class GrpcMethodInvokerService {
   constructor(
-    private readonly schemaRepository: Pick<ReflectionSchemaRepository, 'getFileRegistry' | 'getTargetRegistry'> =
-      reflectionSchemaRepository
+    private readonly schemaRepository: Pick<
+      ReflectionSchemaRepository,
+      'getFileRegistry' | 'getTargetRegistry'
+    > = reflectionSchemaRepository,
   ) {}
 
   close(): void {
@@ -50,7 +54,7 @@ export class GrpcMethodInvokerService {
   private async withConnectionRetry<T>(
     target: string,
     operation: (forceRecreate: boolean) => Promise<T>,
-    operationName: string
+    operationName: string,
   ): Promise<T> {
     let attempt = 0
     const maxAttempts = 2
@@ -91,24 +95,33 @@ export class GrpcMethodInvokerService {
     throw new Error('Unexpected error in retry logic')
   }
 
-  async invokeUnary(target: string, serviceName: string, methodName: string, request: JsonValue | undefined, metadata?: RequestMetadata): Promise<UnaryResult> {
+  async invokeUnary(
+    target: string,
+    serviceName: string,
+    methodName: string,
+    request: JsonValue | undefined,
+    metadata?: RequestMetadata,
+  ): Promise<UnaryResult> {
     return instrumentUnaryCall(serviceName, methodName, async () => {
       try {
         const data = await this.withConnectionRetry(
           target,
-          async (forceRecreate) => {
+          async forceRecreate => {
             // One registry for the target, so Any fields can contain types from any reflected service
             const registry = await this.schemaRepository.getTargetRegistry(target)
             const method = await this.resolveMethod(target, serviceName, methodName)
             assertUnaryMethod(method)
-            const headers = await headerManager.getOutboundHeaders(userContextMiddleware.getCurrentUserContext(), metadata)
+            const headers = await headerManager.getOutboundHeaders(
+              userContextMiddleware.getCurrentUserContext(),
+              metadata,
+            )
             const transport = multiClientManager.getConnectTransport(target, forceRecreate)
             const connectInvoker = new ConnectInvoker({
-              getTransport: () => transport
+              getTransport: () => transport,
             })
             return await connectInvoker.invokeUnary(method, request, headers, registry)
           },
-          `unary call ${serviceName}.${methodName}`
+          `unary call ${serviceName}.${methodName}`,
         )
 
         return {
@@ -129,24 +142,27 @@ export class GrpcMethodInvokerService {
     methodName: string,
     request: JsonValue | undefined,
     callbacks: StreamCallbacks,
-    metadata?: RequestMetadata
+    metadata?: RequestMetadata,
   ): Promise<StreamHandle> {
-    return instrumentStreamCall(serviceName, methodName, 'server_streaming', callbacks, async (wrappedCallbacks) => {
+    return instrumentStreamCall(serviceName, methodName, 'server_streaming', callbacks, async wrappedCallbacks => {
       try {
         return await this.withConnectionRetry(
           target,
-          async (forceRecreate) => {
+          async forceRecreate => {
             const registry = await this.schemaRepository.getTargetRegistry(target)
             const method = await this.resolveMethod(target, serviceName, methodName)
             assertServerStreamingMethod(method)
-            const headers = await headerManager.getOutboundHeaders(userContextMiddleware.getCurrentUserContext(), metadata)
+            const headers = await headerManager.getOutboundHeaders(
+              userContextMiddleware.getCurrentUserContext(),
+              metadata,
+            )
             const transport = multiClientManager.getConnectTransport(target, forceRecreate)
             const connectInvoker = new ConnectInvoker({
-              getTransport: () => transport
+              getTransport: () => transport,
             })
             return await connectInvoker.startServerStream(method, request, wrappedCallbacks, headers, registry)
           },
-          `server stream ${serviceName}.${methodName}`
+          `server stream ${serviceName}.${methodName}`,
         )
       } catch (error) {
         wrappedCallbacks.onError(formatConnectError(error))
@@ -161,24 +177,27 @@ export class GrpcMethodInvokerService {
     methodName: string,
     requests: RequestStream,
     callbacks: StreamCallbacks,
-    metadata?: RequestMetadata
+    metadata?: RequestMetadata,
   ): Promise<StreamHandle> {
-    return instrumentStreamCall(serviceName, methodName, 'client_streaming', callbacks, async (wrappedCallbacks) => {
+    return instrumentStreamCall(serviceName, methodName, 'client_streaming', callbacks, async wrappedCallbacks => {
       try {
         return await this.withConnectionRetry(
           target,
-          async (forceRecreate) => {
+          async forceRecreate => {
             const registry = await this.schemaRepository.getTargetRegistry(target)
             const method = await this.resolveMethod(target, serviceName, methodName)
             assertClientStreamingMethod(method)
-            const headers = await headerManager.getOutboundHeaders(userContextMiddleware.getCurrentUserContext(), metadata)
+            const headers = await headerManager.getOutboundHeaders(
+              userContextMiddleware.getCurrentUserContext(),
+              metadata,
+            )
             const transport = multiClientManager.getConnectTransport(target, forceRecreate)
             const connectInvoker = new ConnectInvoker({
-              getTransport: () => transport
+              getTransport: () => transport,
             })
             return await connectInvoker.startClientStream(method, requests, wrappedCallbacks, headers, registry)
           },
-          `client stream ${serviceName}.${methodName}`
+          `client stream ${serviceName}.${methodName}`,
         )
       } catch (error) {
         wrappedCallbacks.onError(formatConnectError(error))
@@ -193,24 +212,27 @@ export class GrpcMethodInvokerService {
     methodName: string,
     requests: RequestStream,
     callbacks: StreamCallbacks,
-    metadata?: RequestMetadata
+    metadata?: RequestMetadata,
   ): Promise<StreamHandle> {
-    return instrumentStreamCall(serviceName, methodName, 'bidi_streaming', callbacks, async (wrappedCallbacks) => {
+    return instrumentStreamCall(serviceName, methodName, 'bidi_streaming', callbacks, async wrappedCallbacks => {
       try {
         return await this.withConnectionRetry(
           target,
-          async (forceRecreate) => {
+          async forceRecreate => {
             const registry = await this.schemaRepository.getTargetRegistry(target)
             const method = await this.resolveMethod(target, serviceName, methodName)
             assertBidiStreamingMethod(method)
-            const headers = await headerManager.getOutboundHeaders(userContextMiddleware.getCurrentUserContext(), metadata)
+            const headers = await headerManager.getOutboundHeaders(
+              userContextMiddleware.getCurrentUserContext(),
+              metadata,
+            )
             const transport = multiClientManager.getConnectTransport(target, forceRecreate)
             const connectInvoker = new ConnectInvoker({
-              getTransport: () => transport
+              getTransport: () => transport,
             })
             return await connectInvoker.startBidiStream(method, requests, wrappedCallbacks, headers, registry)
           },
-          `bidi stream ${serviceName}.${methodName}`
+          `bidi stream ${serviceName}.${methodName}`,
         )
       } catch (error) {
         wrappedCallbacks.onError(formatConnectError(error))
@@ -234,8 +256,10 @@ export class GrpcMethodInvokerService {
 }
 
 function validateMethodNames(serviceName: string, methodName: string): void {
-  if (!VALID_NAME_RE.test(serviceName)) throw new AppError(`Invalid service name: ${serviceName}`, 400, 'INVALID_SERVICE_NAME')
-  if (!VALID_NAME_RE.test(methodName)) throw new AppError(`Invalid method name: ${methodName}`, 400, 'INVALID_METHOD_NAME')
+  if (!VALID_NAME_RE.test(serviceName))
+    throw new AppError(`Invalid service name: ${serviceName}`, 400, 'INVALID_SERVICE_NAME')
+  if (!VALID_NAME_RE.test(methodName))
+    throw new AppError(`Invalid method name: ${methodName}`, 400, 'INVALID_METHOD_NAME')
 }
 
 function noopStreamHandle(): StreamHandle {
@@ -258,15 +282,12 @@ function assertBidiStreamingMethod(method: DescMethod): asserts method is DescMe
   assertMethodKind(method, 'bidi_streaming')
 }
 
-function assertMethodKind(
-  method: DescMethod,
-  methodKind: DescMethod['methodKind']
-): void {
+function assertMethodKind(method: DescMethod, methodKind: DescMethod['methodKind']): void {
   if (method.methodKind !== methodKind) {
     throw new AppError(
       `Method ${method.parent.typeName}/${method.name} is ${method.methodKind}, not ${methodKind}`,
       400,
-      'METHOD_KIND_MISMATCH'
+      'METHOD_KIND_MISMATCH',
     )
   }
 }

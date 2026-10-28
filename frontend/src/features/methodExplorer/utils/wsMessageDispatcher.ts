@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-import { wsLogger } from '../../../utils/debugLogger'
-import type { GrpcStreamMessage } from '../hooks/useGrpcWebSocket'
+import { wsLogger } from '@/utils/debugLogger'
+import type { GrpcStreamMessage } from '@/features/methodExplorer/hooks/useGrpcWebSocket'
 
 export interface MessageCallbacks {
   onResponse?: (data: unknown) => void
@@ -26,7 +26,7 @@ export function dispatchWebSocketMessage(
         break
       case 'error':
         setIsStreaming(false)
-        callbacks.onError?.(message.error as string || 'Unknown error')
+        callbacks.onError?.((message.error as string) || 'Unknown error')
         break
       case 'complete':
         setIsStreaming(false)

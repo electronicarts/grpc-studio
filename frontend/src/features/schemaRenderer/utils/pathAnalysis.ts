@@ -1,7 +1,11 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import type { DescField, DescMessage } from '@bufbuild/protobuf'
-import { canDescendInto, isCompositeField, nestedMessageSlots } from './descriptorTraversal'
+import {
+  canDescendInto,
+  isCompositeField,
+  nestedMessageSlots,
+} from '@/features/schemaRenderer/utils/descriptorTraversal'
 import get from 'lodash-es/get'
 
 /**
@@ -11,18 +15,10 @@ import get from 'lodash-es/get'
  * The schema graph may be cyclic (a message containing itself), so descent is
  * gated by `canDescendInto` — see that function for the rule.
  */
-export function collectExpandablePaths(
-  schema: DescMessage,
-  data?: Record<string, unknown>
-): Set<string> {
+export function collectExpandablePaths(schema: DescMessage, data?: Record<string, unknown>): Set<string> {
   const pathsFound = new Set<string>()
 
-  const processField = (
-    field: DescField,
-    fieldPath: string,
-    fieldData: unknown,
-    ancestorTypes: readonly string[],
-  ) => {
+  const processField = (field: DescField, fieldPath: string, fieldData: unknown, ancestorTypes: readonly string[]) => {
     // Composite fields (message / repeated / map) are the expandable ones
     if (isCompositeField(field)) {
       pathsFound.add(fieldPath)

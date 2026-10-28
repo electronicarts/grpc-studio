@@ -4,10 +4,10 @@ import { fromJson, toJson } from '@bufbuild/protobuf'
 import type { DescMessage, Registry } from '@bufbuild/protobuf'
 import * as wkt from '@bufbuild/protobuf/wkt'
 import { withWellKnownTypes, type JsonObject, type JsonValue } from '@grpc-studio/shared'
-import { cloneJsonObject, isJsonObject, isRecord } from '../../../utils/jsonUtils'
-import { schemaCache } from '../../schemaLoader/lib/schemaCache'
-import { cleanFormData } from '../../../utils/cleanFormData'
-import { anyTypeName } from '../../../utils/descUtils'
+import { cloneJsonObject, isJsonObject, isRecord } from '@/utils/jsonUtils'
+import { schemaCache } from '@/features/schemaLoader/lib/schemaCache'
+import { cleanFormData } from '@/utils/cleanFormData'
+import { anyTypeName } from '@/utils/descUtils'
 
 const registries = new Map<string, { version: number; registry: Registry }>()
 
@@ -110,12 +110,7 @@ function keepPresentFields(
   return result
 }
 
-function keepPresentInMessage(
-  value: JsonValue,
-  input: unknown,
-  schema: DescMessage,
-  registry: Registry,
-): JsonValue {
+function keepPresentInMessage(value: JsonValue, input: unknown, schema: DescMessage, registry: Registry): JsonValue {
   if (!isJsonObject(value) || !isRecord(input)) return value
 
   if (schema.typeName === wkt.AnySchema.typeName) {
@@ -130,11 +125,7 @@ function keepPresentInMessage(
   return keepPresentFields(value, input, schema, registry)
 }
 
-export function toWireFormat(
-  obj: Record<string, unknown>,
-  messageType: string | null,
-  target: string,
-): Payload {
+export function toWireFormat(obj: Record<string, unknown>, messageType: string | null, target: string): Payload {
   const schema = messageType ? schemaCache.getCachedSchema(target, messageType) : null
   const canonical = canonicalizeProtoJson(obj, schema, target)
 
@@ -144,11 +135,7 @@ export function toWireFormat(
   }
 }
 
-export function toDisplayFormat(
-  obj: unknown,
-  messageType: string | null,
-  target: string,
-): Payload {
+export function toDisplayFormat(obj: unknown, messageType: string | null, target: string): Payload {
   if (!isRecord(obj)) {
     return { display: {}, wire: {} }
   }

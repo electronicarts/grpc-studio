@@ -34,9 +34,7 @@ export function AlertPanel({
         <AlertCircle className={cn('mt-0.5 size-6 flex-shrink-0', t.text, iconClassName)} />
         <div className="flex-1">
           <div className="flex items-start justify-between gap-3">
-            <h3 className={cn('mb-2 text-lg font-semibold', t.text, titleClassName)}>
-              {title}
-            </h3>
+            <h3 className={cn('mb-2 text-lg font-semibold', t.text, titleClassName)}>{title}</h3>
             {action}
           </div>
           {children}

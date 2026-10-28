@@ -48,10 +48,9 @@ const FormField: React.FC<FormFieldProps> = ({
 
   return (
     <div className={cn('space-y-1', className)}>
-      <label className={cn(
-        'flex flex-wrap items-baseline gap-x-1 text-sm font-medium text-foreground/90',
-        labelClassName
-      )}>
+      <label
+        className={cn('flex flex-wrap items-baseline gap-x-1 text-sm font-medium text-foreground/90', labelClassName)}
+      >
         <span className="break-all">
           {label}
           {required && <span className="ml-1 text-danger">*</span>}
@@ -61,13 +60,9 @@ const FormField: React.FC<FormFieldProps> = ({
 
       {children}
 
-      {hint && !error && (
-        <p className="text-xs text-muted-foreground">{hint}</p>
-      )}
+      {hint && !error && <p className="text-xs text-muted-foreground">{hint}</p>}
 
-      {error && (
-        <p className="text-xs text-danger">{error}</p>
-      )}
+      {error && <p className="text-xs text-danger">{error}</p>}
     </div>
   )
 }

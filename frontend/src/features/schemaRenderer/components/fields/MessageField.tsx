@@ -2,10 +2,10 @@
 
 import React from 'react'
 import type { DescField } from '@bufbuild/protobuf'
-import { renderWellKnownType } from '../shared/WellKnownTypeRenderer'
-import MessageRenderer from '../core/MessageRenderer'
-import MessageFieldFrame from '../shared/MessageFieldFrame'
-import type { FieldPresence } from '../shared/fieldPresence'
+import { renderWellKnownType } from '@/features/schemaRenderer/components/shared/WellKnownTypeRenderer'
+import MessageRenderer from '@/features/schemaRenderer/components/core/MessageRenderer'
+import MessageFieldFrame from '@/features/schemaRenderer/components/shared/MessageFieldFrame'
+import type { FieldPresence } from '@/features/schemaRenderer/components/shared/fieldPresence'
 
 interface MessageFieldProps {
   field: DescField & { fieldKind: 'message' }

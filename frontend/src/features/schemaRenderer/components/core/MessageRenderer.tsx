@@ -2,12 +2,12 @@
 
 import React from 'react'
 import type { DescMessage } from '@bufbuild/protobuf'
-import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
-import { setFieldValue } from '../../utils'
-import { getFieldValue } from '../../utils/fieldOperations'
-import { filterMembers } from '../../utils/fieldFiltering'
-import FieldRenderer from './FieldRenderer'
-import OneOfField from '../fields/OneOfField'
+import { useProtoMessageRendererContext } from '@/features/schemaRenderer/stores/schemaRendererContext'
+import { setFieldValue } from '@/features/schemaRenderer/utils'
+import { getFieldValue } from '@/features/schemaRenderer/utils/fieldOperations'
+import { filterMembers } from '@/features/schemaRenderer/utils/fieldFiltering'
+import FieldRenderer from '@/features/schemaRenderer/components/core/FieldRenderer'
+import OneOfField from '@/features/schemaRenderer/components/fields/OneOfField'
 
 interface MessageRendererProps {
   schema: DescMessage
@@ -22,14 +22,14 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({
   value,
   onChange,
   basePath = '',
-  isRoot = false
+  isRoot = false,
 }) => {
   const { searchQuery, hideEmptyFields } = useProtoMessageRendererContext()
 
   const members = filterMembers(schema, value, {
     searchQuery,
     hideEmptyFields,
-    isRoot
+    isRoot,
   })
 
   return (
@@ -51,15 +51,11 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({
       ))}
 
       {isRoot && searchQuery && members.length === 0 && (
-        <div className="py-4 text-center text-sm italic text-muted-foreground">
-          No fields matching "{searchQuery}"
-        </div>
+        <div className="py-4 text-center text-sm italic text-muted-foreground">No fields matching "{searchQuery}"</div>
       )}
-      
+
       {isRoot && hideEmptyFields && !searchQuery && members.length === 0 && (
-        <div className="py-4 text-center text-sm italic text-muted-foreground">
-          No populated fields in response
-        </div>
+        <div className="py-4 text-center text-sm italic text-muted-foreground">No populated fields in response</div>
       )}
     </div>
   )

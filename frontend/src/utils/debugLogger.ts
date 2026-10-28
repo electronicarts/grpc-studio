@@ -8,66 +8,66 @@
 const isDev = (): boolean => {
   try {
     // Vite injects this at build time
-    return !!import.meta.env?.DEV;
+    return !!import.meta.env?.DEV
   } catch {
-    return false;
+    return false
   }
-};
+}
 
-const DEBUG_ENABLED = isDev() || 
-  (typeof window !== 'undefined' && window.localStorage?.getItem('DEBUG_MODE') === 'true');
+const DEBUG_ENABLED =
+  isDev() || (typeof window !== 'undefined' && window.localStorage?.getItem('DEBUG_MODE') === 'true')
 
 interface LoggerOptions {
-  prefix?: string;
-  enabled?: boolean;
+  prefix?: string
+  enabled?: boolean
 }
 
 class DebugLogger {
-  private prefix: string;
-  private enabled: boolean;
+  private prefix: string
+  private enabled: boolean
 
   constructor(options: LoggerOptions = {}) {
-    this.prefix = options.prefix || '';
-    this.enabled = options.enabled ?? DEBUG_ENABLED;
+    this.prefix = options.prefix || ''
+    this.enabled = options.enabled ?? DEBUG_ENABLED
   }
 
   private formatMessage(...args: unknown[]): unknown[] {
-    const timestamp = new Date().toISOString().split('T')[1].slice(0, -1);
-    const prefix = this.prefix ? `[${this.prefix}]` : '';
-    return [`[${timestamp}]${prefix}`, ...args];
+    const timestamp = new Date().toISOString().split('T')[1].slice(0, -1)
+    const prefix = this.prefix ? `[${this.prefix}]` : ''
+    return [`[${timestamp}]${prefix}`, ...args]
   }
 
   debug(...args: unknown[]): void {
     if (this.enabled) {
-      console.debug(...this.formatMessage(...args));
+      console.debug(...this.formatMessage(...args))
     }
   }
 
   info(...args: unknown[]): void {
     if (this.enabled) {
-      console.info(...this.formatMessage(...args));
+      console.info(...this.formatMessage(...args))
     }
   }
 
   warn(...args: unknown[]): void {
     if (this.enabled) {
-      console.warn(...this.formatMessage(...args));
+      console.warn(...this.formatMessage(...args))
     }
   }
 
   error(...args: unknown[]): void {
-    console.error(...this.formatMessage(...args));
+    console.error(...this.formatMessage(...args))
   }
 
   group(label: string): void {
     if (this.enabled) {
-      console.group(this.prefix ? `[${this.prefix}] ${label}` : label);
+      console.group(this.prefix ? `[${this.prefix}] ${label}` : label)
     }
   }
 
   groupEnd(): void {
     if (this.enabled) {
-      console.groupEnd();
+      console.groupEnd()
     }
   }
 
@@ -77,23 +77,22 @@ class DebugLogger {
   child(prefix: string): DebugLogger {
     return new DebugLogger({
       prefix: this.prefix ? `${this.prefix}:${prefix}` : prefix,
-      enabled: this.enabled
-    });
+      enabled: this.enabled,
+    })
   }
 
   /**
    * Temporarily enable/disable logging
    */
   setEnabled(enabled: boolean): void {
-    this.enabled = enabled;
+    this.enabled = enabled
   }
 }
 
 export const createLogger = (prefix?: string): DebugLogger => {
-  return new DebugLogger({ prefix });
-};
+  return new DebugLogger({ prefix })
+}
 
-export const formLogger = createLogger('Form');
-export const schemaLogger = createLogger('Schema');
-export const wsLogger = createLogger('WebSocket');
-
+export const formLogger = createLogger('Form')
+export const schemaLogger = createLogger('Schema')
+export const wsLogger = createLogger('WebSocket')

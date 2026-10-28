@@ -4,10 +4,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import React from 'react'
-import { useConnectionStatus } from '../useConnectionStatus'
-import { fetchConnectionStatus } from '../../api/fetchConnectionStatus'
+import { useConnectionStatus } from '@/features/connectionValidator/hooks/useConnectionStatus'
+import { fetchConnectionStatus } from '@/features/connectionValidator/api/fetchConnectionStatus'
 
-vi.mock('../../api/fetchConnectionStatus')
+vi.mock('@/features/connectionValidator/api/fetchConnectionStatus')
 
 function wrapper({ children }: { children: React.ReactNode }) {
   const queryClient = new QueryClient({

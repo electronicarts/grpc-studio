@@ -2,8 +2,8 @@
 
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { loadSchemas } from '../api'
-import type { ApiServer, GrpcService } from '../../../types/grpc'
+import { loadSchemas } from '@/features/schemaLoader/api'
+import type { ApiServer, GrpcService } from '@/types/grpc'
 
 /** Shared React Query key — the single source of truth for discovered servers. */
 export const SCHEMA_QUERY_KEY = ['schemas'] as const
@@ -23,7 +23,11 @@ const EMPTY_SERVERS: ApiServer[] = []
  * Every consumer shares one query (by key), so this never re-fetches.
  */
 export function useSchemas(): UseSchemasResult {
-  const { data, isPending: loading, error } = useQuery({
+  const {
+    data,
+    isPending: loading,
+    error,
+  } = useQuery({
     queryKey: SCHEMA_QUERY_KEY,
     queryFn: loadSchemas,
     retry: 1,

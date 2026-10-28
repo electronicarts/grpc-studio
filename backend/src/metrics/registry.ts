@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import { Registry, Counter, Gauge, Histogram, collectDefaultMetrics } from 'prom-client'
-import logger from '../utils/logger.js'
+import logger from '#src/utils/logger.js'
 
 const observabilityLogger = logger.child({ module: 'observability' })
 

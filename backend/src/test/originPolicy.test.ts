@@ -2,7 +2,7 @@
 
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { evaluateOriginPolicy } from '../security/originPolicy.js'
+import { evaluateOriginPolicy } from '#src/security/originPolicy.js'
 
 describe('origin policy', () => {
   it('allows configured origins', () => {
@@ -10,7 +10,7 @@ describe('origin policy', () => {
       evaluateOriginPolicy('http://localhost:3000', {
         origins: ['http://localhost:3000'],
       }),
-      { allowed: true }
+      { allowed: true },
     )
   })
 
@@ -19,7 +19,7 @@ describe('origin policy', () => {
       evaluateOriginPolicy('https://example.com', {
         origins: ['http://localhost:3000'],
       }),
-      { allowed: false, reason: 'origin_not_allowed' }
+      { allowed: false, reason: 'origin_not_allowed' },
     )
   })
 
@@ -29,7 +29,7 @@ describe('origin policy', () => {
         origins: ['http://localhost:3000'],
         allowMissingOrigin: false,
       }),
-      { allowed: false, reason: 'missing_origin' }
+      { allowed: false, reason: 'missing_origin' },
     )
   })
 
@@ -39,14 +39,14 @@ describe('origin policy', () => {
         enabled: false,
         origins: ['http://localhost:3000'],
       }),
-      { allowed: true }
+      { allowed: true },
     )
   })
 
   it('rejects wildcard origins when credentials are enabled', () => {
     assert.throws(
       () => evaluateOriginPolicy('https://example.com', { origins: ['*'], credentials: true }),
-      /wildcard origin/
+      /wildcard origin/,
     )
   })
 })

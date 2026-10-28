@@ -4,7 +4,7 @@ import React from 'react'
 import { X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/utils/cn'
-import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
+import { useProtoMessageRendererContext } from '@/features/schemaRenderer/stores/schemaRendererContext'
 
 interface RemoveButtonProps {
   /** What gets removed, used for the accessible name "Remove <label>". */

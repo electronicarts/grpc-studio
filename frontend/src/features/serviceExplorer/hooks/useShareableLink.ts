@@ -1,9 +1,9 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import { useEffect, useRef } from 'react'
-import { GrpcService, ApiServer } from '../../../types/grpc'
-import { parseShareableUrl, clearShareFragment, SharedRequestState } from '../../../utils/shareableLink'
-import type { PendingShare } from '../types'
+import { GrpcService, ApiServer } from '@/types/grpc'
+import { parseShareableUrl, clearShareFragment, SharedRequestState } from '@/utils/shareableLink'
+import type { PendingShare } from '@/features/serviceExplorer/types'
 
 // ---------------------------------------------------------------------------
 // Restore shareable link state once services are available

@@ -1,6 +1,6 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-import { GrpcService, GrpcMethod, ApiServer } from '../../../types/grpc'
+import { GrpcService, GrpcMethod, ApiServer } from '@/types/grpc'
 import type { RequestMetadata } from '@grpc-studio/shared'
 
 // ---------------------------------------------------------------------------

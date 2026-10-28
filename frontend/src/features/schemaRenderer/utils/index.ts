@@ -6,31 +6,23 @@
  */
 
 // Field operations (get/set)
-export {  setFieldValue,  } from './fieldOperations'
+export { setFieldValue } from '@/features/schemaRenderer/utils/fieldOperations'
 
 // OneOf detection
-export { detectOneOfSelections } from './oneOfDetection'
+export { detectOneOfSelections } from '@/features/schemaRenderer/utils/oneOfDetection'
 
 // Scalar type utilities
 
-
 // Search utilities
-
 
 // Path analysis
 
-
 // Field filtering
-
 
 // Descriptor traversal
 
-
 // Collection mutation helpers
-
 
 // Map utilities
 
-
 // Struct utilities (google.protobuf.Struct)
-

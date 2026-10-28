@@ -1,15 +1,16 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-import { removeArrayItem, replaceArrayItem } from '../../utils/collectionMutation'
-import AddButton from '../shared/AddButton'
-import { StructValue } from './StructValue'
+import React from 'react'
+import { removeArrayItem, replaceArrayItem } from '@/features/schemaRenderer/utils/collectionMutation'
+import AddButton from '@/features/schemaRenderer/components/shared/AddButton'
+import StructValue from '@/features/schemaRenderer/components/struct/StructValue'
 
 interface StructArrayItemsProps {
   value: unknown[]
   onChange: (value: unknown[]) => void
 }
 
-export function StructArrayItems({ value, onChange }: StructArrayItemsProps) {
+const StructArrayItems: React.FC<StructArrayItemsProps> = ({ value, onChange }) => {
   const updateItem = (index: number, nextValue: unknown) => {
     onChange(replaceArrayItem(value, index, nextValue))
   }
@@ -25,16 +26,16 @@ export function StructArrayItems({ value, onChange }: StructArrayItemsProps) {
           key={index}
           label={`Item ${index + 1}`}
           value={item}
-          onChange={(nextValue) => updateItem(index, nextValue)}
+          onChange={nextValue => updateItem(index, nextValue)}
           onRemove={() => removeItem(index)}
         />
       ))}
 
-      {value.length === 0 && (
-        <div className="text-sm italic text-muted-foreground">No items</div>
-      )}
+      {value.length === 0 && <div className="text-sm italic text-muted-foreground">No items</div>}
 
       <AddButton noun="item" onClick={() => onChange([...value, ''])} testId="structField-addItemButton" />
     </div>
   )
 }
+
+export default StructArrayItems

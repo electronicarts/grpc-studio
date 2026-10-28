@@ -4,32 +4,42 @@ import { describe, expect, it } from 'vitest'
 import { fromJson, type DescField } from '@bufbuild/protobuf'
 import { file_google_protobuf_timestamp } from '@bufbuild/protobuf/wkt'
 import { L, T, enumField, field, fileRegistry, messageField } from '@/test/descriptors'
-import { defaultFieldValue, defaultElementValue } from '../fieldDefaults'
+import { defaultFieldValue, defaultElementValue } from '@/features/schemaRenderer/utils/fieldDefaults'
 
 const registry = fileRegistry(file_google_protobuf_timestamp.proto, {
   name: 'legacy.proto',
   package: 'legacy',
   syntax: 'proto2',
   dependency: ['google/protobuf/timestamp.proto'],
-  enumType: [{ name: 'Color', value: [{ name: 'COLOR_BLUE', number: 0 }, { name: 'COLOR_RED', number: 1 }] }],
-  messageType: [{
-    name: 'Settings',
-    oneofDecl: [{ name: 'when' }],
-    field: [
-      field({ name: 'count', number: 1, type: T.INT32, defaultValue: '7' }),
-      field({ name: 'big', number: 2, type: T.INT64, defaultValue: '9007199254740993' }),
-      enumField('color', 3, '.legacy.Color', { defaultValue: 'COLOR_RED' }),
-      field({ name: 'blob', number: 4, type: T.BYTES, defaultValue: 'hi' }),
-      field({ name: 'ratio', number: 5, type: T.DOUBLE, defaultValue: 'inf' }),
-      field({ name: 'plain', number: 6, type: T.INT32 }),
-      enumField('plain_color', 7, '.legacy.Color'),
-      field({ name: 'counts', number: 8, type: T.INT32, label: L.REPEATED }),
-      enumField('colors', 9, '.legacy.Color', { label: L.REPEATED }),
-      messageField('times', 10, '.google.protobuf.Timestamp', { label: L.REPEATED }),
-      field({ name: 'bigs', number: 11, type: T.INT64, label: L.REPEATED }),
-      messageField('at', 12, '.google.protobuf.Timestamp', { oneofIndex: 0 }),
-    ],
-  }],
+  enumType: [
+    {
+      name: 'Color',
+      value: [
+        { name: 'COLOR_BLUE', number: 0 },
+        { name: 'COLOR_RED', number: 1 },
+      ],
+    },
+  ],
+  messageType: [
+    {
+      name: 'Settings',
+      oneofDecl: [{ name: 'when' }],
+      field: [
+        field({ name: 'count', number: 1, type: T.INT32, defaultValue: '7' }),
+        field({ name: 'big', number: 2, type: T.INT64, defaultValue: '9007199254740993' }),
+        enumField('color', 3, '.legacy.Color', { defaultValue: 'COLOR_RED' }),
+        field({ name: 'blob', number: 4, type: T.BYTES, defaultValue: 'hi' }),
+        field({ name: 'ratio', number: 5, type: T.DOUBLE, defaultValue: 'inf' }),
+        field({ name: 'plain', number: 6, type: T.INT32 }),
+        enumField('plain_color', 7, '.legacy.Color'),
+        field({ name: 'counts', number: 8, type: T.INT32, label: L.REPEATED }),
+        enumField('colors', 9, '.legacy.Color', { label: L.REPEATED }),
+        messageField('times', 10, '.google.protobuf.Timestamp', { label: L.REPEATED }),
+        field({ name: 'bigs', number: 11, type: T.INT64, label: L.REPEATED }),
+        messageField('at', 12, '.google.protobuf.Timestamp', { oneofIndex: 0 }),
+      ],
+    },
+  ],
 })
 
 const settings = registry.getMessage('legacy.Settings')!

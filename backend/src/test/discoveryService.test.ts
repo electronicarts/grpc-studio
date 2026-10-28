@@ -2,9 +2,9 @@
 
 import { describe, it, mock } from 'node:test'
 import assert from 'node:assert/strict'
-import { DiscoveryService } from '../services/discoveryService.js'
-import type { ReflectionSchemaRepository } from '../repositories/reflectionSchemaRepository.js'
-import * as protoFixtures from './protoFixtures.js'
+import { DiscoveryService } from '#src/services/discoveryService.js'
+import type { ReflectionSchemaRepository } from '#src/repositories/reflectionSchemaRepository.js'
+import * as protoFixtures from '#src/test/protoFixtures.js'
 
 const TEST_TARGET = 'test-target'
 
@@ -18,24 +18,28 @@ interface MethodSpec {
 
 /** A repository serving a real registry with one service, as reflection would. Messages are declared as needed. */
 function repositoryWithService(pkg: string, serviceName: string, methods: (string | MethodSpec)[]) {
-  const specs = methods.map(m => typeof m === 'string' ? { name: m } : m)
+  const specs = methods.map(m => (typeof m === 'string' ? { name: m } : m))
   const messageNames = [...new Set(specs.flatMap(m => [m.input ?? 'Request', m.output ?? 'Response']))]
-  const qualify = (message: string) => pkg ? `.${pkg}.${message}` : `.${message}`
-  const registry = protoFixtures.fileRegistry(protoFixtures.fileDescriptor({
-    name: 'service.proto',
-    package: pkg,
-    messageType: messageNames.map(name => ({ name })),
-    service: [{
-      name: serviceName,
-      method: specs.map(m => ({
-        name: m.name,
-        inputType: qualify(m.input ?? 'Request'),
-        outputType: qualify(m.output ?? 'Response'),
-        clientStreaming: m.clientStreaming,
-        serverStreaming: m.serverStreaming,
-      })),
-    }],
-  }))
+  const qualify = (message: string) => (pkg ? `.${pkg}.${message}` : `.${message}`)
+  const registry = protoFixtures.fileRegistry(
+    protoFixtures.fileDescriptor({
+      name: 'service.proto',
+      package: pkg,
+      messageType: messageNames.map(name => ({ name })),
+      service: [
+        {
+          name: serviceName,
+          method: specs.map(m => ({
+            name: m.name,
+            inputType: qualify(m.input ?? 'Request'),
+            outputType: qualify(m.output ?? 'Response'),
+            clientStreaming: m.clientStreaming,
+            serverStreaming: m.serverStreaming,
+          })),
+        },
+      ],
+    }),
+  )
   const getFileRegistry = mock.fn(async (_target: string, _service: string) => registry)
   return { repository: { getFileRegistry } as unknown as ReflectionSchemaRepository, getFileRegistry }
 }
@@ -44,7 +48,7 @@ describe('DiscoveryService', () => {
   describe('listServices', () => {
     it('should list all available services', async () => {
       const mockSchemaRepository = {
-        listServices: mock.fn(async () => ['service1', 'service2', 'service3'])
+        listServices: mock.fn(async () => ['service1', 'service2', 'service3']),
       } as unknown as ReflectionSchemaRepository
 
       const service = new DiscoveryService(mockSchemaRepository)
@@ -56,7 +60,7 @@ describe('DiscoveryService', () => {
 
     it('should return empty array when no services available', async () => {
       const mockSchemaRepository = {
-        listServices: mock.fn(async () => [])
+        listServices: mock.fn(async () => []),
       } as unknown as ReflectionSchemaRepository
 
       const service = new DiscoveryService(mockSchemaRepository)
@@ -69,18 +73,15 @@ describe('DiscoveryService', () => {
       const mockSchemaRepository = {
         listServices: mock.fn(async () => {
           throw new Error('Repository unavailable')
-        })
+        }),
       } as unknown as ReflectionSchemaRepository
 
       const service = new DiscoveryService(mockSchemaRepository)
 
-      await assert.rejects(
-        async () => await service.listServices(TEST_TARGET),
-        {
-          name: 'Error',
-          message: 'Repository unavailable'
-        }
-      )
+      await assert.rejects(async () => await service.listServices(TEST_TARGET), {
+        name: 'Error',
+        message: 'Repository unavailable',
+      })
     })
   })
 
@@ -127,15 +128,17 @@ describe('DiscoveryService', () => {
         async () => await new DiscoveryService(repository).describeService(TEST_TARGET, 'NonExistentService'),
         {
           name: 'Error',
-          message: 'Service NonExistentService not found in descriptor'
-        }
+          message: 'Service NonExistentService not found in descriptor',
+        },
       )
     })
 
     it('should take the service name from its descriptor', async () => {
       const packaged = repositoryWithService('com.example.v1', 'MyService', ['Method1'])
-      const qualified = await new DiscoveryService(packaged.repository)
-        .describeService(TEST_TARGET, 'com.example.v1.MyService')
+      const qualified = await new DiscoveryService(packaged.repository).describeService(
+        TEST_TARGET,
+        'com.example.v1.MyService',
+      )
       assert.strictEqual(qualified.name, 'MyService')
       assert.strictEqual(qualified.fullName, 'com.example.v1.MyService')
       assert.strictEqual(qualified.methods[0].inputType, 'com.example.v1.Request')
@@ -158,18 +161,15 @@ describe('DiscoveryService', () => {
       const mockSchemaRepository = {
         getFileRegistry: mock.fn(async () => {
           throw new Error('Failed to fetch registry')
-        })
+        }),
       } as unknown as ReflectionSchemaRepository
 
       const service = new DiscoveryService(mockSchemaRepository)
 
-      await assert.rejects(
-        async () => await service.describeService(TEST_TARGET, 'TestService'),
-        {
-          name: 'Error',
-          message: 'Failed to fetch registry'
-        }
-      )
+      await assert.rejects(async () => await service.describeService(TEST_TARGET, 'TestService'), {
+        name: 'Error',
+        message: 'Failed to fetch registry',
+      })
     })
 
     it('should preserve method metadata accurately', async () => {

@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import React, { useId, useState } from 'react'
-import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
+import { useProtoMessageRendererContext } from '@/features/schemaRenderer/stores/schemaRendererContext'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/utils/cn'
 
@@ -83,7 +83,11 @@ const KeyInput: React.FC<KeyInputProps> = ({
         autoFocus={autoFocus}
         className={cn('h-8 font-mono text-sm', error && 'border-danger')}
       />
-      {error && <p id={errorId} className="text-xs text-danger">{error}</p>}
+      {error && (
+        <p id={errorId} className="text-xs text-danger">
+          {error}
+        </p>
+      )}
     </div>
   )
 }

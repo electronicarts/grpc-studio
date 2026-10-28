@@ -2,9 +2,9 @@
 
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { instrumentUnaryCall, instrumentStreamCall } from '../grpc/instrumentation/grpcInstrumentation.js'
-import { metricsRegistry } from '../metrics/registry.js'
-import type { StreamCallbacks, StreamHandle, UnaryResult } from '../types/index.js'
+import { instrumentUnaryCall, instrumentStreamCall } from '#src/grpc/instrumentation/grpcInstrumentation.js'
+import { metricsRegistry } from '#src/metrics/registry.js'
+import type { StreamCallbacks, StreamHandle, UnaryResult } from '#src/types/index.js'
 
 // Each test uses a unique service name so its metric label combination is isolated
 // from every other test's counters/gauges in the shared registry.
@@ -15,9 +15,7 @@ async function counterValue(metric: string, labels: Record<string, string>): Pro
   for (const entry of json) {
     const values = entry.values as Array<{ value: number; metricName?: string; labels: Record<string, string> }>
     const match = values.find(
-      (v) =>
-        (v.metricName ?? entry.name) === metric &&
-        Object.entries(labels).every(([k, val]) => v.labels[k] === val)
+      v => (v.metricName ?? entry.name) === metric && Object.entries(labels).every(([k, val]) => v.labels[k] === val),
     )
     if (match) return match.value
   }
@@ -41,16 +39,21 @@ describe('grpcInstrumentation', () => {
       assert.equal(result.success, true)
       assert.equal(
         await counterValue('grpc_studio_grpc_requests_total', {
-          service, method: 'Get', rpc_type: 'unary', status: 'success',
+          service,
+          method: 'Get',
+          rpc_type: 'unary',
+          status: 'success',
         }),
-        1
+        1,
       )
       // Duration histogram records one observation (its _count series).
       assert.equal(
         await counterValue('grpc_studio_grpc_request_duration_seconds_count', {
-          service, method: 'Get', rpc_type: 'unary',
+          service,
+          method: 'Get',
+          rpc_type: 'unary',
         }),
-        1
+        1,
       )
     })
 
@@ -64,9 +67,12 @@ describe('grpcInstrumentation', () => {
 
       assert.equal(
         await counterValue('grpc_studio_grpc_requests_total', {
-          service, method: 'Get', rpc_type: 'unary', status: 'error',
+          service,
+          method: 'Get',
+          rpc_type: 'unary',
+          status: 'error',
         }),
-        1
+        1,
       )
     })
 
@@ -76,14 +82,17 @@ describe('grpcInstrumentation', () => {
         instrumentUnaryCall(service, 'Get', async () => {
           throw new Error('network down')
         }),
-        /network down/
+        /network down/,
       )
 
       assert.equal(
         await counterValue('grpc_studio_grpc_requests_total', {
-          service, method: 'Get', rpc_type: 'unary', status: 'error',
+          service,
+          method: 'Get',
+          rpc_type: 'unary',
+          status: 'error',
         }),
-        1
+        1,
       )
     })
   })
@@ -94,7 +103,7 @@ describe('grpcInstrumentation', () => {
       const labels = { service, method: 'List', rpc_type: 'server_streaming' }
       let wrapped: StreamCallbacks | null = null
 
-      const handle = await instrumentStreamCall(service, 'List', 'server_streaming', noopCallbacks(), async (cb) => {
+      const handle = await instrumentStreamCall(service, 'List', 'server_streaming', noopCallbacks(), async cb => {
         wrapped = cb
         // While the stream is open, the active gauge should read 1.
         assert.equal(await counterValue('grpc_studio_grpc_active_streams', labels), 1)
@@ -107,13 +116,14 @@ describe('grpcInstrumentation', () => {
 
       assert.equal(await counterValue('grpc_studio_grpc_active_streams', labels), 0, 'active streams returns to 0')
       assert.equal(
-        await counterValue('grpc_studio_grpc_stream_messages_total', { service, method: 'List', direction: 'received' }),
-        1
+        await counterValue('grpc_studio_grpc_stream_messages_total', {
+          service,
+          method: 'List',
+          direction: 'received',
+        }),
+        1,
       )
-      assert.equal(
-        await counterValue('grpc_studio_grpc_requests_total', { ...labels, status: 'success' }),
-        1
-      )
+      assert.equal(await counterValue('grpc_studio_grpc_requests_total', { ...labels, status: 'success' }), 1)
       void handle
     })
 
@@ -122,7 +132,7 @@ describe('grpcInstrumentation', () => {
       const labels = { service, method: 'List', rpc_type: 'server_streaming' }
       let wrapped: StreamCallbacks | null = null
 
-      await instrumentStreamCall(service, 'List', 'server_streaming', noopCallbacks(), async (cb) => {
+      await instrumentStreamCall(service, 'List', 'server_streaming', noopCallbacks(), async cb => {
         wrapped = cb
         return { cancel: () => {} }
       })
@@ -130,10 +140,7 @@ describe('grpcInstrumentation', () => {
       wrapped!.onError({ formatted: 'gRPC UNAVAILABLE: down' })
 
       assert.equal(await counterValue('grpc_studio_grpc_active_streams', labels), 0)
-      assert.equal(
-        await counterValue('grpc_studio_grpc_requests_total', { ...labels, status: 'error' }),
-        1
-      )
+      assert.equal(await counterValue('grpc_studio_grpc_requests_total', { ...labels, status: 'error' }), 1)
     })
 
     it('decrements active streams exactly once when the handle is cancelled', async () => {
@@ -157,7 +164,7 @@ describe('grpcInstrumentation', () => {
         instrumentStreamCall(service, 'List', 'server_streaming', noopCallbacks(), async () => {
           throw new Error('cannot open')
         }),
-        /cannot open/
+        /cannot open/,
       )
 
       assert.equal(await counterValue('grpc_studio_grpc_active_streams', labels), 0, 'gauge not leaked on open failure')

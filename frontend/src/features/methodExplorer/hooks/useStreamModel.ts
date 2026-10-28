@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import { useState, useRef, useCallback } from 'react'
-import type { StreamModel } from '../types'
+import type { StreamModel } from '@/features/methodExplorer/types'
 import type { TabStreamSnapshot } from '@/stores'
 
 export function useStreamModel(restored?: TabStreamSnapshot): StreamModel {
@@ -49,9 +49,7 @@ export function useStreamModel(restored?: TabStreamSnapshot): StreamModel {
 
   const currentRequest = useCallback(() => requestRef.current, [])
   const currentMessages = useCallback(() => messagesRef.current, [])
-  const durationMs = useCallback(() => (
-    startTimeRef.current ? Date.now() - startTimeRef.current : undefined
-  ), [])
+  const durationMs = useCallback(() => (startTimeRef.current ? Date.now() - startTimeRef.current : undefined), [])
   const deactivate = useCallback(() => setActive(false), [])
   const complete = useCallback(() => {
     setActive(false)
@@ -70,7 +68,20 @@ export function useStreamModel(restored?: TabStreamSnapshot): StreamModel {
   }, [])
 
   return {
-    active, completed, messages, sentMessages, isStreamingResponse,
-    begin, start, appendReceived, addSent, currentRequest, currentMessages, durationMs, deactivate, complete, reset,
+    active,
+    completed,
+    messages,
+    sentMessages,
+    isStreamingResponse,
+    begin,
+    start,
+    appendReceived,
+    addSent,
+    currentRequest,
+    currentMessages,
+    durationMs,
+    deactivate,
+    complete,
+    reset,
   }
 }

@@ -2,9 +2,9 @@
 
 import React from 'react'
 import type { DescMessage } from '@bufbuild/protobuf'
-import { isRecord } from '../../../../utils/jsonUtils'
-import { renderWellKnownType } from '../shared/WellKnownTypeRenderer'
-import MessageRenderer from '../core/MessageRenderer'
+import { isRecord } from '@/utils/jsonUtils'
+import { renderWellKnownType } from '@/features/schemaRenderer/components/shared/WellKnownTypeRenderer'
+import MessageRenderer from '@/features/schemaRenderer/components/core/MessageRenderer'
 
 interface MessageValueProps {
   schema: DescMessage

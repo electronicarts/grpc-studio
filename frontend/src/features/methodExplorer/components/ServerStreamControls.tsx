@@ -3,7 +3,7 @@
 import React from 'react'
 import { Button } from '@/components/ui/button'
 import { Loader2, StopCircle } from 'lucide-react'
-import type { MethodInvocation, StreamModel } from '../types'
+import type { MethodInvocation, StreamModel } from '@/features/methodExplorer/types'
 
 interface ServerStreamControlsProps {
   execution: MethodInvocation
@@ -14,9 +14,7 @@ const ServerStreamControls: React.FC<ServerStreamControlsProps> = ({ execution, 
   <div className="flex items-center gap-3 rounded-md border border-brand/30 bg-brand/10 p-3">
     <Loader2 className="size-5 animate-spin text-brand" />
     <div className="flex-1">
-      <div className="text-sm font-medium text-brand">
-        Streaming in progress...
-      </div>
+      <div className="text-sm font-medium text-brand">Streaming in progress...</div>
       <div className="text-xs text-brand">
         {stream.messages.length} message{stream.messages.length !== 1 ? 's' : ''} received
       </div>

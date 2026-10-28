@@ -15,7 +15,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import SchemaRenderer from '../components/core/SchemaRenderer'
+import SchemaRenderer from '@/features/schemaRenderer/components/core/SchemaRenderer'
 import {
   enumSchema,
   oneofBasicSchema,
@@ -36,7 +36,7 @@ import { latestCall } from '@/test/latestCall'
 // Mocks
 // ---------------------------------------------------------------------------
 
-vi.mock('../../schemaLoader/lib/schemaCache', async () => {
+vi.mock('@/features/schemaLoader/lib/schemaCache', async () => {
   const { schemaCacheModule } = await import('@/test/schemaCacheMock')
   const { schemaCache } = await import('@/test/protoMessageRenderer.fixtures')
   return schemaCacheModule(schemaCache)
@@ -62,11 +62,7 @@ vi.mock('@/components/ui/mui-datetime-picker', () => ({
         disabled={disabled}
         onChange={e => onChange(e.target.value || undefined)}
       />
-      <button
-        data-testid="timestamp-clear"
-        type="button"
-        onClick={() => onChange(undefined)}
-      />
+      <button data-testid="timestamp-clear" type="button" onClick={() => onChange(undefined)} />
     </>
   ),
 }))
@@ -100,7 +96,7 @@ describe('EnumField onChange', () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
     render(
-      <SchemaRenderer schema={enumSchema} data={{ status: 'STATUS_ACTIVE' }} onChange={onChange} readOnly={false} />
+      <SchemaRenderer schema={enumSchema} data={{ status: 'STATUS_ACTIVE' }} onChange={onChange} readOnly={false} />,
     )
 
     // A set enum has no blank option; it is unset through its checkbox
@@ -116,7 +112,7 @@ describe('EnumField onChange', () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
     render(
-      <SchemaRenderer schema={enumSchema} data={{ status: 'STATUS_ACTIVE' }} onChange={onChange} readOnly={false} />
+      <SchemaRenderer schema={enumSchema} data={{ status: 'STATUS_ACTIVE' }} onChange={onChange} readOnly={false} />,
     )
 
     await user.selectOptions(screen.getByRole('combobox'), 'STATUS_INACTIVE')
@@ -156,7 +152,7 @@ describe('TimestampField onChange', () => {
         data={{ createdAt: '2025-01-01T00:00:00.000Z' }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
 
     await user.click(screen.getByTestId('timestamp-clear'))
@@ -175,7 +171,7 @@ describe('TimestampField onChange', () => {
         data={{ createdAt: '2025-01-01T00:00:00.000Z' }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
 
     // Clear current value and type a new date
@@ -213,7 +209,7 @@ describe('DurationField onChange', () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
     render(
-      <SchemaRenderer schema={durationMessageSchema} data={{ dur: '86400s' }} onChange={onChange} readOnly={false} />
+      <SchemaRenderer schema={durationMessageSchema} data={{ dur: '86400s' }} onChange={onChange} readOnly={false} />,
     )
 
     await user.clear(screen.getByDisplayValue('86400s'))
@@ -227,7 +223,7 @@ describe('DurationField onChange', () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
     render(
-      <SchemaRenderer schema={durationMessageSchema} data={{ dur: '86400s' }} onChange={onChange} readOnly={false} />
+      <SchemaRenderer schema={durationMessageSchema} data={{ dur: '86400s' }} onChange={onChange} readOnly={false} />,
     )
 
     const input = screen.getByDisplayValue('86400s')
@@ -281,7 +277,7 @@ describe('FieldMaskField onChange', () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
     render(
-      <SchemaRenderer schema={fieldMaskMessageSchema} data={{ mask: 'name' }} onChange={onChange} readOnly={false} />
+      <SchemaRenderer schema={fieldMaskMessageSchema} data={{ mask: 'name' }} onChange={onChange} readOnly={false} />,
     )
 
     await user.click(screen.getByTestId('fieldMask-addButton'))
@@ -301,7 +297,7 @@ describe('FieldMaskField onChange', () => {
         data={{ mask: 'displayName' }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
 
     await user.click(screen.getByRole('button', { name: 'Remove path displayName' }))
@@ -320,7 +316,7 @@ describe('FieldMaskField onChange', () => {
         data={{ mask: 'name,email,phone' }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
 
     await user.click(screen.getByRole('button', { name: 'Remove path email' }))
@@ -334,7 +330,7 @@ describe('FieldMaskField onChange', () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
     render(
-      <SchemaRenderer schema={fieldMaskMessageSchema} data={{ mask: 'name' }} onChange={onChange} readOnly={false} />
+      <SchemaRenderer schema={fieldMaskMessageSchema} data={{ mask: 'name' }} onChange={onChange} readOnly={false} />,
     )
 
     const countBefore = onChange.mock.calls.length
@@ -384,7 +380,7 @@ describe('AnyField onChange', () => {
     const onChange = vi.fn()
     const initial = { '@type': 'type.googleapis.com/test.AllScalars', stringField: 'hi' }
     render(
-      <SchemaRenderer schema={anyMessageSchema} data={{ payload: initial }} onChange={onChange} readOnly={false} />
+      <SchemaRenderer schema={anyMessageSchema} data={{ payload: initial }} onChange={onChange} readOnly={false} />,
     )
 
     await user.selectOptions(screen.getByTestId('anyField-typeSelect'), '')
@@ -417,7 +413,7 @@ describe('AnyField onChange', () => {
     const onChange = vi.fn()
     const initial = { '@type': 'type.googleapis.com/test.AllScalars', stringField: 'hello' }
     render(
-      <SchemaRenderer schema={anyMessageSchema} data={{ payload: initial }} onChange={onChange} readOnly={false} />
+      <SchemaRenderer schema={anyMessageSchema} data={{ payload: initial }} onChange={onChange} readOnly={false} />,
     )
 
     await user.clear(screen.getByDisplayValue('hello'))
@@ -446,7 +442,7 @@ describe('AnyField onChange', () => {
     const onChange = vi.fn()
     const initial = { '@type': 'type.googleapis.com/test.AllScalars', stringField: 'hello' }
     render(
-      <SchemaRenderer schema={anyMessageSchema} data={{ payload: initial }} onChange={onChange} readOnly={false} />
+      <SchemaRenderer schema={anyMessageSchema} data={{ payload: initial }} onChange={onChange} readOnly={false} />,
     )
 
     // Switch to a different type — field data from old type must be gone
@@ -514,7 +510,7 @@ describe('AnyField onChange', () => {
     const onChange = vi.fn()
     const initial = { '@type': 'type.googleapis.com/google.protobuf.StringValue', value: 'pre-filled' }
     render(
-      <SchemaRenderer schema={anyMessageSchema} data={{ payload: initial }} onChange={onChange} readOnly={false} />
+      <SchemaRenderer schema={anyMessageSchema} data={{ payload: initial }} onChange={onChange} readOnly={false} />,
     )
 
     // Check that the input shows the pre-filled value
@@ -542,7 +538,7 @@ describe('AnyField onChange', () => {
     const onChange = vi.fn()
     const initial = { '@type': 'type.googleapis.com/google.protobuf.StringValue', value: 'existing' }
     render(
-      <SchemaRenderer schema={anyMessageSchema} data={{ payload: initial }} onChange={onChange} readOnly={false} />
+      <SchemaRenderer schema={anyMessageSchema} data={{ payload: initial }} onChange={onChange} readOnly={false} />,
     )
 
     // Clear the value
@@ -570,7 +566,7 @@ describe('OneOfField onChange', () => {
         data={{ id: 'x', stringOption: 'old', intOption: 5 }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
 
     await user.selectOptions(screen.getByRole('combobox'), 'stringOption')
@@ -630,7 +626,7 @@ describe('OneOfField onChange', () => {
         data={{ messageOption: { name: 'existing' } }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
 
     await user.clear(screen.getByDisplayValue('existing'))
@@ -652,7 +648,7 @@ describe('OneOfField onChange', () => {
         data={{ id: 'y', stringOption: 'hello' }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
 
     await user.selectOptions(screen.getByRole('combobox'), '')
@@ -690,7 +686,7 @@ describe('OneOfField onChange', () => {
         data={{ stringOption: 'original' }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
 
     // The field is already populated and the select should reflect stringOption
@@ -736,7 +732,7 @@ describe('ListField (scalar items) onChange', () => {
         data={{ repeatedString: ['alpha', 'beta', 'gamma'] }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
 
     const betaInput = screen.getByDisplayValue('beta')
@@ -760,7 +756,7 @@ describe('ListField (scalar items) onChange', () => {
         data={{ repeatedString: ['alpha', 'beta'] }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
 
     await user.clear(screen.getByDisplayValue('beta'))
@@ -782,7 +778,7 @@ describe('ListField (scalar items) onChange', () => {
         data={{ repeatedString: ['alpha', 'beta', 'gamma'] }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
 
     const xButtons = screen.getAllByRole('button').filter(b => b.querySelector('svg'))
@@ -809,12 +805,7 @@ describe('MapField (scalar values) onChange', () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
     render(
-      <SchemaRenderer
-        schema={mapFieldsSchema}
-        data={{ stringToString: {} }}
-        onChange={onChange}
-        readOnly={false}
-      />
+      <SchemaRenderer schema={mapFieldsSchema} data={{ stringToString: {} }} onChange={onChange} readOnly={false} />,
     )
 
     await user.click(screen.getByTestId('mapField-addEntryButton'))
@@ -834,12 +825,7 @@ describe('MapField (scalar values) onChange', () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
     render(
-      <SchemaRenderer
-        schema={mapFieldsSchema}
-        data={{ stringToString: {} }}
-        onChange={onChange}
-        readOnly={false}
-      />
+      <SchemaRenderer schema={mapFieldsSchema} data={{ stringToString: {} }} onChange={onChange} readOnly={false} />,
     )
 
     await user.click(screen.getByTestId('mapField-addEntryButton'))
@@ -866,7 +852,7 @@ describe('MapField (scalar values) onChange', () => {
         data={{ stringToString: { a: '1', b: '2' } }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
 
     const keyInput = screen.getByDisplayValue('a')
@@ -875,7 +861,10 @@ describe('MapField (scalar values) onChange', () => {
 
     await waitFor(() => {
       const map = latestCall(onChange).stringToString as Record<string, string>
-      expect(Object.entries(map)).toEqual([['z', '1'], ['b', '2']])
+      expect(Object.entries(map)).toEqual([
+        ['z', '1'],
+        ['b', '2'],
+      ])
     })
   })
 
@@ -888,7 +877,7 @@ describe('MapField (scalar values) onChange', () => {
         data={{ stringToString: { a: '1', b: '2' } }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
 
     const keyInput = screen.getByDisplayValue('a')
@@ -908,12 +897,7 @@ describe('MapField (scalar values) onChange', () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
     render(
-      <SchemaRenderer
-        schema={mapFieldsSchema}
-        data={{ stringToString: {} }}
-        onChange={onChange}
-        readOnly={false}
-      />
+      <SchemaRenderer schema={mapFieldsSchema} data={{ stringToString: {} }} onChange={onChange} readOnly={false} />,
     )
 
     await user.click(screen.getByTestId('mapField-addEntryButton'))
@@ -935,7 +919,7 @@ describe('MapField (scalar values) onChange', () => {
         data={{ stringToString: { color: 'blue', size: 'large' } }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
 
     const colorInput = screen.getByDisplayValue('blue')
@@ -958,7 +942,7 @@ describe('MapField (scalar values) onChange', () => {
         data={{ stringToString: { color: 'blue' } }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
 
     await user.clear(screen.getByDisplayValue('blue'))
@@ -979,12 +963,12 @@ describe('MapField (scalar values) onChange', () => {
         data={{ stringToString: { color: 'blue', size: 'large' } }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
 
-    const removeButtons = screen.getAllByRole('button').filter(
-      b => b.closest('[class*="border-l-2"]') && b.querySelector('svg')
-    )
+    const removeButtons = screen
+      .getAllByRole('button')
+      .filter(b => b.closest('[class*="border-l-2"]') && b.querySelector('svg'))
     await user.click(removeButtons[0])
 
     await waitFor(() => {
@@ -1003,9 +987,7 @@ describe('StructObjectFields onChange', () => {
   it('adding a new field emits the struct with the key initialised to empty string', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
-    render(
-      <SchemaRenderer schema={structMessageSchema} data={{ metadata: {} }} onChange={onChange} readOnly={false} />
-    )
+    render(<SchemaRenderer schema={structMessageSchema} data={{ metadata: {} }} onChange={onChange} readOnly={false} />)
 
     await user.click(screen.getByTestId('structField-addButton'))
     await user.keyboard('priority{Enter}')
@@ -1026,9 +1008,8 @@ describe('StructObjectFields onChange', () => {
         data={{ metadata: { priority: 'high' } }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
-
 
     // Wait for initial render to stabilise
     await waitFor(() => expect(screen.getByTestId('structField-addButton')).toBeInTheDocument())
@@ -1056,7 +1037,7 @@ describe('StructArrayItems onChange', () => {
         data={{ metadata: { items: ['a', 'b'] } }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
 
     await user.click(screen.getByTestId('structField-addItemButton'))
@@ -1078,7 +1059,7 @@ describe('StructArrayItems onChange', () => {
         data={{ metadata: { items: ['only'] } }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
 
     // Two remove buttons: [0] = outer (remove 'items' key), [1] = inner (remove items[0])
@@ -1101,7 +1082,7 @@ describe('StructArrayItems onChange', () => {
         data={{ metadata: { items: ['original', 'second'] } }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
 
     const originalInput = screen.getByDisplayValue('original')
@@ -1130,7 +1111,7 @@ describe('StructObjectFields (existing field) onChange', () => {
         data={{ metadata: { label: 'old-label', count: 5 } }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
 
     const labelInput = screen.getByDisplayValue('old-label')
@@ -1153,9 +1134,8 @@ describe('StructObjectFields (existing field) onChange', () => {
         data={{ metadata: { score: 42 } }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
-
 
     // Verify kind is number before editing
     const kindSelect = screen.getByTestId('structField-kindSelect')
@@ -1183,9 +1163,8 @@ describe('StructObjectFields (existing field) onChange', () => {
         data={{ metadata: { active: true } }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
-
 
     // Verify kind is bool
     const kindSelect = screen.getByTestId('structField-kindSelect')
@@ -1225,7 +1204,7 @@ describe('StructValue kind selector onChange', () => {
         data={{ metadata: { field: initialValue } }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
     return { user, onChange, kindSelect: screen.getByTestId('structField-kindSelect') }
   }
@@ -1351,7 +1330,7 @@ describe('ListField (message items) onChange', () => {
         data={{ items: [{ label: 'first' }, { label: 'second' }] }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
 
     const firstInput = screen.getByDisplayValue('first')
@@ -1374,7 +1353,7 @@ describe('ListField (message items) onChange', () => {
         data={{ items: [{ label: 'hello' }] }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
 
     await user.clear(screen.getByDisplayValue('hello'))
@@ -1394,10 +1373,12 @@ describe('ListField (message items) onChange', () => {
         data={{ items: [{ label: 'first' }, { label: 'second' }] }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
 
-    const xButtons = screen.getAllByRole('button').filter(b => b.closest('[class*="border-l-2"]') && b.querySelector('svg'))
+    const xButtons = screen
+      .getAllByRole('button')
+      .filter(b => b.closest('[class*="border-l-2"]') && b.querySelector('svg'))
     await user.click(xButtons[0])
 
     await waitFor(() => {
@@ -1441,7 +1422,7 @@ describe('MapField (message values) onChange', () => {
         data={{ entries: { alpha: { label: 'a' }, beta: { label: 'b' } } }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
 
     const aInput = screen.getByDisplayValue('a')
@@ -1464,7 +1445,7 @@ describe('MapField (message values) onChange', () => {
         data={{ entries: { item: { label: 'hello' } } }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
 
     await user.clear(screen.getByDisplayValue('hello'))
@@ -1484,12 +1465,12 @@ describe('MapField (message values) onChange', () => {
         data={{ entries: { keep: { label: 'keep' }, drop: { label: 'drop' } } }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
 
-    const removeButtons = screen.getAllByRole('button').filter(
-      b => b.closest('[class*="border-l-2"]') && b.querySelector('svg')
-    )
+    const removeButtons = screen
+      .getAllByRole('button')
+      .filter(b => b.closest('[class*="border-l-2"]') && b.querySelector('svg'))
     await user.click(removeButtons[0])
 
     await waitFor(() => {
@@ -1509,7 +1490,7 @@ describe('Typed collection items', () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
     render(
-      <SchemaRenderer schema={typedCollectionsSchema} data={{ counts: {} }} onChange={onChange} readOnly={false} />
+      <SchemaRenderer schema={typedCollectionsSchema} data={{ counts: {} }} onChange={onChange} readOnly={false} />,
     )
 
     await user.click(screen.getByTestId('mapField-addEntryButton'))
@@ -1526,12 +1507,7 @@ describe('Typed collection items', () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
     render(
-      <SchemaRenderer
-        schema={typedCollectionsSchema}
-        data={{ statuses: {} }}
-        onChange={onChange}
-        readOnly={false}
-      />
+      <SchemaRenderer schema={typedCollectionsSchema} data={{ statuses: {} }} onChange={onChange} readOnly={false} />,
     )
 
     await user.click(screen.getByTestId('mapField-addEntryButton'))
@@ -1546,7 +1522,12 @@ describe('Typed collection items', () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
     render(
-      <SchemaRenderer schema={typedCollectionsSchema} data={{ flags: { on: false } }} onChange={onChange} readOnly={false} />
+      <SchemaRenderer
+        schema={typedCollectionsSchema}
+        data={{ flags: { on: false } }}
+        onChange={onChange}
+        readOnly={false}
+      />,
     )
 
     await user.selectOptions(screen.getByRole('combobox', { name: 'flags value' }), 'true')
@@ -1576,7 +1557,7 @@ describe('Typed collection items', () => {
         data={{ counts: { a: 1 }, times: [] }}
         onChange={vi.fn()}
         readOnly
-      />
+      />,
     )
     expect(screen.queryByRole('button', { name: /^Add / })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /^Remove / })).not.toBeInTheDocument()

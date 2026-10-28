@@ -2,20 +2,20 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import type { DescMessage } from '@bufbuild/protobuf'
-import type { GrpcMethod } from '../../../types/grpc'
-import { schemaCache } from '../../schemaLoader/lib/schemaCache'
-import { canonicalizeProtoJson } from '../utils/payload'
-import type { RequestModel } from '../types'
+import type { GrpcMethod } from '@/types/grpc'
+import { schemaCache } from '@/features/schemaLoader/lib/schemaCache'
+import { canonicalizeProtoJson } from '@/features/methodExplorer/utils/payload'
+import type { RequestModel } from '@/features/methodExplorer/types'
 import type { TabRequestSnapshot } from '@/stores'
 
 export function useRequestModel(
   selectedTarget: string,
   selectedMethod: GrpcMethod | null,
   initialRequestBody?: Record<string, unknown> | null,
-  restored?: TabRequestSnapshot
+  restored?: TabRequestSnapshot,
 ): RequestModel {
   const [body, setBody] = useState<string>(
-    restored?.body ?? (initialRequestBody ? JSON.stringify(initialRequestBody, null, 2) : '{}')
+    restored?.body ?? (initialRequestBody ? JSON.stringify(initialRequestBody, null, 2) : '{}'),
   )
   const [formData, setFormData] = useState<Record<string, unknown>>(restored?.formData ?? initialRequestBody ?? {})
   const [formKey, setFormKey] = useState(restored?.formKey ?? 0)
@@ -31,15 +31,21 @@ export function useRequestModel(
   const restoredOnMountRef = useRef(restored != null)
 
   // The JSON view holds exactly the fields ticked in the form, so the two always agree key for key.
-  const canonicalizeRequestData = useCallback((data: Record<string, unknown>) => {
-    return canonicalizeProtoJson(data, schema, selectedTarget, 'present')
-  }, [schema, selectedTarget])
+  const canonicalizeRequestData = useCallback(
+    (data: Record<string, unknown>) => {
+      return canonicalizeProtoJson(data, schema, selectedTarget, 'present')
+    },
+    [schema, selectedTarget],
+  )
 
-  const loadData = useCallback((data: Record<string, unknown>) => {
-    const canonical = canonicalizeRequestData(data)
-    setFormData(canonical)
-    setBody(JSON.stringify(canonical, null, 2))
-  }, [canonicalizeRequestData])
+  const loadData = useCallback(
+    (data: Record<string, unknown>) => {
+      const canonical = canonicalizeRequestData(data)
+      setFormData(canonical)
+      setBody(JSON.stringify(canonical, null, 2))
+    },
+    [canonicalizeRequestData],
+  )
 
   const firstSchemaLoadRef = useRef(true)
   useEffect(() => {
@@ -90,26 +96,29 @@ export function useRequestModel(
     }
   }, [canonicalizeRequestData, formData])
 
-  const toggleMode = useCallback((checked: boolean) => {
-    if (checked && !isFormMode) {
-      try {
-        const sanitized = body.trim().replace(/[\u200B-\u200D\uFEFF]/g, '')
-        const parsed = JSON.parse(sanitized)
-        const canonical = canonicalizeRequestData({ ...parsed })
-        setFormData(canonical)
-        setBody(JSON.stringify(canonical, null, 2))
-        setFormKey(prev => prev + 1)
-        setValidationError(null)
-      } catch (error) {
-        setFormData({})
-        setFormKey(prev => prev + 1)
-        setValidationError(error instanceof Error ? error.message : 'Invalid request JSON')
+  const toggleMode = useCallback(
+    (checked: boolean) => {
+      if (checked && !isFormMode) {
+        try {
+          const sanitized = body.trim().replace(/[\u200B-\u200D\uFEFF]/g, '')
+          const parsed = JSON.parse(sanitized)
+          const canonical = canonicalizeRequestData({ ...parsed })
+          setFormData(canonical)
+          setBody(JSON.stringify(canonical, null, 2))
+          setFormKey(prev => prev + 1)
+          setValidationError(null)
+        } catch (error) {
+          setFormData({})
+          setFormKey(prev => prev + 1)
+          setValidationError(error instanceof Error ? error.message : 'Invalid request JSON')
+        }
+      } else if (!checked && isFormMode) {
+        syncFormToJson()
       }
-    } else if (!checked && isFormMode) {
-      syncFormToJson()
-    }
-    setIsFormMode(checked)
-  }, [isFormMode, body, canonicalizeRequestData, syncFormToJson])
+      setIsFormMode(checked)
+    },
+    [isFormMode, body, canonicalizeRequestData, syncFormToJson],
+  )
 
   const reset = useCallback(() => {
     setBody('{}')
@@ -127,7 +136,18 @@ export function useRequestModel(
   }, [])
 
   return {
-    body, formData, formKey, isFormMode, schema, loadingSchema, validationError,
-    setBody, setFormData, loadData, toggleMode, reset, clear,
+    body,
+    formData,
+    formKey,
+    isFormMode,
+    schema,
+    loadingSchema,
+    validationError,
+    setBody,
+    setFormData,
+    loadData,
+    toggleMode,
+    reset,
+    clear,
   }
 }

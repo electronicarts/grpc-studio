@@ -1,4 +1,3 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-export { useConnectionStatus } from './hooks/useConnectionStatus'
-
+export { useConnectionStatus } from '@/features/connectionValidator/hooks/useConnectionStatus'

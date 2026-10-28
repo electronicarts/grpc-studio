@@ -5,10 +5,10 @@ import { ScalarType } from '@bufbuild/protobuf'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
-import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
-import { getInputType, parseValue } from '../../utils/scalarTypeUtils'
-import { scalarTypeName } from '../../../../utils/descUtils'
-import { FormField } from '../../../../components/shared'
+import { useProtoMessageRendererContext } from '@/features/schemaRenderer/stores/schemaRendererContext'
+import { getInputType, parseValue } from '@/features/schemaRenderer/utils/scalarTypeUtils'
+import { scalarTypeName } from '@/utils/descUtils'
+import { FormField } from '@/components/shared'
 
 interface ScalarFieldProps {
   name: string
@@ -69,9 +69,7 @@ const ScalarField: React.FC<ScalarFieldProps> = ({ name, scalar, value, onChange
         disabled={readOnly}
         className="w-full"
       />
-      {isBytes && (
-        <span className="text-xs text-muted-foreground">base64 encoded</span>
-      )}
+      {isBytes && <span className="text-xs text-muted-foreground">base64 encoded</span>}
     </FormField>
   )
 }

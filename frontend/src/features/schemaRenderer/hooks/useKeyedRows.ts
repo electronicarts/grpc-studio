@@ -1,7 +1,11 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import { useRef, useState } from 'react'
-import { removeObjectEntry, renameObjectEntry, setObjectEntry } from '../utils/collectionMutation'
+import {
+  removeObjectEntry,
+  renameObjectEntry,
+  setObjectEntry,
+} from '@/features/schemaRenderer/utils/collectionMutation'
 
 /** One editable entry of a keyed collection. */
 export interface KeyedRow<V> {

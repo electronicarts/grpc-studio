@@ -3,14 +3,14 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import type { Request, Response, NextFunction } from 'express'
-import { validate, isNonEmptyString, isMethodKind } from '../middlewares/validateMiddleware.js'
-import { AppError } from '../errors/AppError.js'
+import { validate, isNonEmptyString, isMethodKind } from '#src/middlewares/validateMiddleware.js'
+import { AppError } from '#src/errors/AppError.js'
 
 function createMockRequest(body?: unknown, params?: unknown, query?: unknown): Partial<Request> {
   return {
     body: body || {},
     params: (params || {}) as Request['params'],
-    query: (query || {}) as Request['query']
+    query: (query || {}) as Request['query'],
   }
 }
 
@@ -20,18 +20,22 @@ describe('Validation Middleware', () => {
       const middleware = validate({
         body: {
           name: isNonEmptyString('name'),
-          type: isMethodKind('type')
-        }
+          type: isMethodKind('type'),
+        },
       })
 
       const req = createMockRequest({ name: 'test', type: 'unary' }) as Request
       let nextCalled = false
       let nextError: any = undefined
 
-      middleware(req, {} as Response, ((err?: any) => {
-        nextCalled = true
-        nextError = err
-      }) as NextFunction)
+      middleware(
+        req,
+        {} as Response,
+        ((err?: any) => {
+          nextCalled = true
+          nextError = err
+        }) as NextFunction,
+      )
 
       assert.equal(nextCalled, true)
       assert.equal(nextError, undefined)
@@ -40,16 +44,20 @@ describe('Validation Middleware', () => {
     it('should call next with AppError when validation fails', () => {
       const middleware = validate({
         body: {
-          name: isNonEmptyString('name')
-        }
+          name: isNonEmptyString('name'),
+        },
       })
 
       const req = createMockRequest({ name: '' }) as Request
       let capturedError: any = null
 
-      middleware(req, {} as Response, ((err?: any) => {
-        capturedError = err
-      }) as NextFunction)
+      middleware(
+        req,
+        {} as Response,
+        ((err?: any) => {
+          capturedError = err
+        }) as NextFunction,
+      )
 
       assert.ok(capturedError instanceof AppError)
       assert.equal(capturedError.statusCode, 400)
@@ -60,16 +68,20 @@ describe('Validation Middleware', () => {
     it('should validate request body', () => {
       const middleware = validate({
         body: {
-          email: (v) => typeof v === 'string' && v.includes('@') ? true : 'email must be valid'
-        }
+          email: v => (typeof v === 'string' && v.includes('@') ? true : 'email must be valid'),
+        },
       })
 
       const req = createMockRequest({ email: 'invalid' }) as Request
       let capturedError: any = null
 
-      middleware(req, {} as Response, ((err?: any) => {
-        capturedError = err
-      }) as NextFunction)
+      middleware(
+        req,
+        {} as Response,
+        ((err?: any) => {
+          capturedError = err
+        }) as NextFunction,
+      )
 
       assert.ok(capturedError instanceof AppError)
       assert.ok(capturedError.message.includes('email'))
@@ -78,16 +90,20 @@ describe('Validation Middleware', () => {
     it('should validate request params', () => {
       const middleware = validate({
         params: {
-          id: (v) => typeof v === 'string' && v.length > 0 ? true : 'id is required'
-        }
+          id: v => (typeof v === 'string' && v.length > 0 ? true : 'id is required'),
+        },
       })
 
       const req = createMockRequest(undefined, { id: '' }) as Request
       let capturedError: any = null
 
-      middleware(req, {} as Response, ((err?: any) => {
-        capturedError = err
-      }) as NextFunction)
+      middleware(
+        req,
+        {} as Response,
+        ((err?: any) => {
+          capturedError = err
+        }) as NextFunction,
+      )
 
       assert.ok(capturedError instanceof AppError)
       assert.ok(capturedError.message.includes('params.id'))
@@ -96,16 +112,20 @@ describe('Validation Middleware', () => {
     it('should validate request query', () => {
       const middleware = validate({
         query: {
-          page: (v) => !isNaN(Number(v)) ? true : 'page must be a number'
-        }
+          page: v => (!isNaN(Number(v)) ? true : 'page must be a number'),
+        },
       })
 
       const req = createMockRequest(undefined, undefined, { page: 'abc' }) as Request
       let capturedError: any = null
 
-      middleware(req, {} as Response, ((err?: any) => {
-        capturedError = err
-      }) as NextFunction)
+      middleware(
+        req,
+        {} as Response,
+        ((err?: any) => {
+          capturedError = err
+        }) as NextFunction,
+      )
 
       assert.ok(capturedError instanceof AppError)
       assert.ok(capturedError.message.includes('query.page'))
@@ -115,16 +135,20 @@ describe('Validation Middleware', () => {
       const middleware = validate({
         body: {
           name: isNonEmptyString('name'),
-          email: (v) => typeof v === 'string' && v.includes('@') ? true : 'email invalid'
-        }
+          email: v => (typeof v === 'string' && v.includes('@') ? true : 'email invalid'),
+        },
       })
 
       const req = createMockRequest({ name: '', email: 'invalid' }) as Request
       let capturedError: any = null
 
-      middleware(req, {} as Response, ((err?: any) => {
-        capturedError = err
-      }) as NextFunction)
+      middleware(
+        req,
+        {} as Response,
+        ((err?: any) => {
+          capturedError = err
+        }) as NextFunction,
+      )
 
       assert.ok(capturedError instanceof AppError)
       assert.ok(capturedError.message.includes('name'))
@@ -135,19 +159,19 @@ describe('Validation Middleware', () => {
       const middleware = validate({
         body: { name: isNonEmptyString('name') },
         params: { id: isNonEmptyString('id') },
-        query: { type: isNonEmptyString('type') }
+        query: { type: isNonEmptyString('type') },
       })
 
-      const req = createMockRequest(
-        { name: 'test' },
-        { id: '123' },
-        { type: 'admin' }
-      ) as Request
+      const req = createMockRequest({ name: 'test' }, { id: '123' }, { type: 'admin' }) as Request
       let nextCalled = false
 
-      middleware(req, {} as Response, (() => {
-        nextCalled = true
-      }) as NextFunction)
+      middleware(
+        req,
+        {} as Response,
+        (() => {
+          nextCalled = true
+        }) as NextFunction,
+      )
 
       assert.equal(nextCalled, true)
     })
@@ -155,21 +179,25 @@ describe('Validation Middleware', () => {
     it('should skip validation for undefined schema sections', () => {
       const middleware = validate({
         body: {
-          name: isNonEmptyString('name')
-        }
+          name: isNonEmptyString('name'),
+        },
         // No params or query validation
       })
 
       const req = createMockRequest(
         { name: 'test' },
         { invalidParam: '' }, // This should be ignored
-        { invalidQuery: '' }  // This should be ignored
+        { invalidQuery: '' }, // This should be ignored
       ) as Request
       let nextCalled = false
 
-      middleware(req, {} as Response, (() => {
-        nextCalled = true
-      }) as NextFunction)
+      middleware(
+        req,
+        {} as Response,
+        (() => {
+          nextCalled = true
+        }) as NextFunction,
+      )
 
       assert.equal(nextCalled, true)
     })
@@ -177,16 +205,20 @@ describe('Validation Middleware', () => {
     it('should handle missing fields gracefully', () => {
       const middleware = validate({
         body: {
-          optionalField: (v) => v === undefined || typeof v === 'string' ? true : 'must be string'
-        }
+          optionalField: v => (v === undefined || typeof v === 'string' ? true : 'must be string'),
+        },
       })
 
       const req = createMockRequest({}) as Request
       let nextCalled = false
 
-      middleware(req, {} as Response, (() => {
-        nextCalled = true
-      }) as NextFunction)
+      middleware(
+        req,
+        {} as Response,
+        (() => {
+          nextCalled = true
+        }) as NextFunction,
+      )
 
       assert.equal(nextCalled, true)
     })
@@ -280,22 +312,25 @@ describe('Validation Middleware', () => {
 
   describe('custom validators', () => {
     it('should support custom validation logic', () => {
-      const isPositiveNumber = (v: unknown) =>
-        typeof v === 'number' && v > 0 ? true : 'must be positive number'
+      const isPositiveNumber = (v: unknown) => (typeof v === 'number' && v > 0 ? true : 'must be positive number')
 
       const middleware = validate({
         body: {
-          age: isPositiveNumber
-        }
+          age: isPositiveNumber,
+        },
       })
 
       // Valid
       const req1 = createMockRequest({ age: 25 }) as Request
       let nextCalled = false
 
-      middleware(req1, {} as Response, (() => {
-        nextCalled = true
-      }) as NextFunction)
+      middleware(
+        req1,
+        {} as Response,
+        (() => {
+          nextCalled = true
+        }) as NextFunction,
+      )
 
       assert.equal(nextCalled, true)
 
@@ -303,9 +338,13 @@ describe('Validation Middleware', () => {
       const req2 = createMockRequest({ age: -5 }) as Request
       let capturedError: any = null
 
-      middleware(req2, {} as Response, ((err?: any) => {
-        capturedError = err
-      }) as NextFunction)
+      middleware(
+        req2,
+        {} as Response,
+        ((err?: any) => {
+          capturedError = err
+        }) as NextFunction,
+      )
 
       assert.ok(capturedError instanceof AppError)
     })
@@ -319,15 +358,19 @@ describe('Validation Middleware', () => {
       }
 
       const middleware = validate({
-        body: { email: isValidEmail }
+        body: { email: isValidEmail },
       })
 
       const req = createMockRequest({ email: 'a@' }) as Request
       let capturedError: any = null
 
-      middleware(req, {} as Response, ((err?: any) => {
-        capturedError = err
-      }) as NextFunction)
+      middleware(
+        req,
+        {} as Response,
+        ((err?: any) => {
+          capturedError = err
+        }) as NextFunction,
+      )
 
       assert.ok(capturedError instanceof AppError)
       assert.ok(capturedError.message.includes('too short'))
@@ -339,16 +382,20 @@ describe('Validation Middleware', () => {
       const middleware = validate({
         body: {
           name: isNonEmptyString('name'),
-          type: isMethodKind('type')
-        }
+          type: isMethodKind('type'),
+        },
       })
 
       const req = createMockRequest({ name: '', type: 'invalid' }) as Request
       let capturedError: any = null
 
-      middleware(req, {} as Response, ((err?: any) => {
-        capturedError = err
-      }) as NextFunction)
+      middleware(
+        req,
+        {} as Response,
+        ((err?: any) => {
+          capturedError = err
+        }) as NextFunction,
+      )
 
       assert.ok(capturedError instanceof AppError)
       assert.ok(capturedError.message.includes('name'))
@@ -358,15 +405,19 @@ describe('Validation Middleware', () => {
 
     it('should include field path in error message', () => {
       const middleware = validate({
-        params: { id: isNonEmptyString('id') }
+        params: { id: isNonEmptyString('id') },
       })
 
       const req = createMockRequest(undefined, { id: '' }) as Request
       let capturedError: any = null
 
-      middleware(req, {} as Response, ((err?: any) => {
-        capturedError = err
-      }) as NextFunction)
+      middleware(
+        req,
+        {} as Response,
+        ((err?: any) => {
+          capturedError = err
+        }) as NextFunction,
+      )
 
       assert.ok(capturedError.message.includes('params.id'))
     })

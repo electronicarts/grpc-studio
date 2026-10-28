@@ -5,9 +5,9 @@
  * Returns DescMessage instances parsed from base64 FileDescriptorSet binaries.
  */
 import type { DescMessage } from '@bufbuild/protobuf'
-import { apiClient } from '../../../lib/http/apiClient'
-import { schemaLogger } from '../../../utils/debugLogger'
-import { parseDescriptorIntoMap } from '../../../utils/descUtils'
+import { apiClient } from '@/lib/http/apiClient'
+import { schemaLogger } from '@/utils/debugLogger'
+import { parseDescriptorIntoMap } from '@/utils/descUtils'
 import type { DescriptorSetRequest, DescriptorSetResponse } from '@grpc-studio/shared'
 
 export async function fetchDescriptorSet(

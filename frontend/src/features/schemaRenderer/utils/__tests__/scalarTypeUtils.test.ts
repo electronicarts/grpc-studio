@@ -2,7 +2,7 @@
 
 import { describe, it, expect } from 'vitest'
 import { ScalarType } from '@bufbuild/protobuf'
-import { getInputType, parseValue, isEmpty, jsonZeroValue } from '../scalarTypeUtils'
+import { getInputType, parseValue, isEmpty, jsonZeroValue } from '@/features/schemaRenderer/utils/scalarTypeUtils'
 
 describe('scalarTypeUtils', () => {
   describe('getInputType', () => {

@@ -3,10 +3,10 @@
 import React from 'react'
 import { Button } from '@/components/ui/button'
 import { Clock, Trash2, CheckCircle2, XCircle, Timer, HardDrive } from 'lucide-react'
-import { RequestHistoryItem } from '../types'
-import { getValuePreview } from '../utils/messagePreview'
-import { formatBytes } from '../../../utils/bytesUtils'
-import { formatDateTime } from '../../../utils/dateFormatters'
+import { RequestHistoryItem } from '@/features/methodExplorer/types'
+import { getValuePreview } from '@/features/methodExplorer/utils/messagePreview'
+import { formatBytes } from '@/utils/bytesUtils'
+import { formatDateTime } from '@/utils/dateFormatters'
 
 interface HistoryPanelProps {
   historyItems: RequestHistoryItem[]
@@ -15,12 +15,7 @@ interface HistoryPanelProps {
   onClearAll: () => void
 }
 
-const HistoryPanel: React.FC<HistoryPanelProps> = ({
-  historyItems,
-  onLoadHistory,
-  onDeleteItem,
-  onClearAll
-}) => {
+const HistoryPanel: React.FC<HistoryPanelProps> = ({ historyItems, onLoadHistory, onDeleteItem, onClearAll }) => {
   if (historyItems.length === 0) return null
 
   return (
@@ -43,17 +38,23 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({
         )}
       </div>
       <div className="max-h-60 space-y-2 overflow-y-auto">
-        {historyItems.map((item) => {
-          const data = item.formData || (typeof item.requestBody === 'string' ? JSON.parse(item.requestBody || '{}') : item.requestBody)
+        {historyItems.map(item => {
+          const data =
+            item.formData ||
+            (typeof item.requestBody === 'string' ? JSON.parse(item.requestBody || '{}') : item.requestBody)
           const dataKeys = Object.keys(data || {})
-          const preview = dataKeys.length > 0 
-            ? dataKeys.slice(0, 4).map(key => {
-                const value = data[key]
-                const valueStr = getValuePreview(value)
-                return `${key}: ${valueStr}`
-              }).join(', ')
-            : 'Empty request'
-          
+          const preview =
+            dataKeys.length > 0
+              ? dataKeys
+                  .slice(0, 4)
+                  .map(key => {
+                    const value = data[key]
+                    const valueStr = getValuePreview(value)
+                    return `${key}: ${valueStr}`
+                  })
+                  .join(', ')
+              : 'Empty request'
+
           return (
             <div
               key={item.id}
@@ -63,11 +64,9 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({
               <div className="flex-1">
                 <div className="mb-1 flex items-center gap-2">
                   <Clock className="size-3 text-muted-foreground" />
-                  <span className="text-xs text-muted-foreground">
-                    {formatDateTime(item.timestamp)}
-                  </span>
-                  {item.responseStatus && (
-                    item.responseStatus.ok ? (
+                  <span className="text-xs text-muted-foreground">{formatDateTime(item.timestamp)}</span>
+                  {item.responseStatus &&
+                    (item.responseStatus.ok ? (
                       <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-1.5 py-0.5 text-xs font-medium text-success">
                         <CheckCircle2 className="size-3" />
                         OK
@@ -80,8 +79,7 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({
                         <XCircle className="size-3 flex-shrink-0" />
                         {item.responseStatus.code ?? 'Error'}
                       </span>
-                    )
-                  )}
+                    ))}
                   {item.responseStatus?.responseTimeMs != null && (
                     <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                       <Timer className="size-3" />
@@ -95,23 +93,17 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({
                     </span>
                   )}
                 </div>
-                {item.label && (
-                  <div className="mb-1 text-sm font-medium">{item.label}</div>
-                )}
-                <div className="font-mono text-xs text-muted-foreground">
-                  {preview}
-                </div>
+                {item.label && <div className="mb-1 text-sm font-medium">{item.label}</div>}
+                <div className="font-mono text-xs text-muted-foreground">{preview}</div>
                 {dataKeys.length > 4 && (
-                  <div className="mt-1 text-xs text-muted-foreground">
-                    +{dataKeys.length - 4} more fields
-                  </div>
+                  <div className="mt-1 text-xs text-muted-foreground">+{dataKeys.length - 4} more fields</div>
                 )}
               </div>
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
-                onClick={(e) => {
+                onClick={e => {
                   e.stopPropagation()
                   onDeleteItem(item.id)
                 }}

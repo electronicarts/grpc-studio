@@ -5,7 +5,7 @@ import assert from 'node:assert/strict'
 import { createServer, type Server as HttpServer } from 'node:http'
 import WebSocket from 'ws'
 import type { AddressInfo } from 'node:net'
-import { createWebSocketServer, closeWebSocketServer } from '../websocket/websocketServer.js'
+import { createWebSocketServer, closeWebSocketServer } from '#src/websocket/websocketServer.js'
 
 describe('WebSocket Server', () => {
   let httpServer: HttpServer
@@ -21,14 +21,14 @@ describe('WebSocket Server', () => {
     httpServer.headersTimeout = 0
 
     // Track all connections so we can destroy them
-    httpServer.on('connection', (socket) => {
+    httpServer.on('connection', socket => {
       activeSockets.add(socket)
       socket.on('close', () => {
         activeSockets.delete(socket)
       })
     })
 
-    await new Promise<void>((resolve) => {
+    await new Promise<void>(resolve => {
       httpServer.listen(0, () => {
         port = (httpServer.address() as AddressInfo).port
         resolve()
@@ -79,7 +79,7 @@ describe('WebSocket Server', () => {
 
     // Close HTTP server
     if (!httpServerClosed) {
-      await new Promise<void>((resolve) => {
+      await new Promise<void>(resolve => {
         httpServer.close(() => resolve())
         // Force resolve after timeout
         setTimeout(resolve, 100)
@@ -90,7 +90,7 @@ describe('WebSocket Server', () => {
   describe('connection acceptance', () => {
     it('should accept connections from allowed origins', async () => {
       const ws = new WebSocket(`ws://localhost:${port}/ws/grpc`, {
-        headers: { origin: 'http://localhost:3000' }
+        headers: { origin: 'http://localhost:3000' },
       })
       activeConnections.push(ws)
 
@@ -105,11 +105,11 @@ describe('WebSocket Server', () => {
 
     it('should reject connections from disallowed origins', async () => {
       const ws = new WebSocket(`ws://localhost:${port}/ws/grpc`, {
-        headers: { origin: 'http://evil.com' }
+        headers: { origin: 'http://evil.com' },
       })
 
       let errorOccurred = false
-      await new Promise<void>((resolve) => {
+      await new Promise<void>(resolve => {
         ws.on('error', () => {
           errorOccurred = true
           resolve()
@@ -128,7 +128,7 @@ describe('WebSocket Server', () => {
       const ws = new WebSocket(`ws://localhost:${port}/ws/grpc`)
 
       let errorOccurred = false
-      await new Promise<void>((resolve) => {
+      await new Promise<void>(resolve => {
         ws.on('error', () => {
           errorOccurred = true
           resolve()
@@ -145,7 +145,7 @@ describe('WebSocket Server', () => {
 
     it('should connect to correct path /ws/grpc', async () => {
       const ws = new WebSocket(`ws://localhost:${port}/ws/grpc`, {
-        headers: { origin: 'http://localhost:3000' }
+        headers: { origin: 'http://localhost:3000' },
       })
       activeConnections.push(ws)
 
@@ -160,11 +160,11 @@ describe('WebSocket Server', () => {
 
     it('should reject connections to wrong path', async () => {
       const ws = new WebSocket(`ws://localhost:${port}/wrong/path`, {
-        headers: { origin: 'http://localhost:3000' }
+        headers: { origin: 'http://localhost:3000' },
       })
 
       let errorOccurred = false
-      await new Promise<void>((resolve) => {
+      await new Promise<void>(resolve => {
         ws.on('error', () => {
           errorOccurred = true
           resolve()
@@ -185,7 +185,7 @@ describe('WebSocket Server', () => {
       // Open 2 connections (under typical limit)
       for (let i = 0; i < 2; i++) {
         const ws = new WebSocket(`ws://localhost:${port}/ws/grpc`, {
-          headers: { origin: 'http://localhost:3000' }
+          headers: { origin: 'http://localhost:3000' },
         })
 
         await new Promise<void>((resolve, reject) => {
@@ -203,7 +203,7 @@ describe('WebSocket Server', () => {
 
     it('should close connection immediately after close event', async () => {
       const ws = new WebSocket(`ws://localhost:${port}/ws/grpc`, {
-        headers: { origin: 'http://localhost:3000' }
+        headers: { origin: 'http://localhost:3000' },
       })
       activeConnections.push(ws)
 
@@ -213,7 +213,7 @@ describe('WebSocket Server', () => {
         setTimeout(() => reject(new Error('Timeout')), 2000)
       })
 
-      const closePromise = new Promise<void>((resolve) => {
+      const closePromise = new Promise<void>(resolve => {
         ws.on('close', () => resolve())
       })
 
@@ -227,7 +227,7 @@ describe('WebSocket Server', () => {
   describe('heartbeat mechanism', () => {
     it('should respond to ping with pong', async () => {
       const ws = new WebSocket(`ws://localhost:${port}/ws/grpc`, {
-        headers: { origin: 'http://localhost:3000' }
+        headers: { origin: 'http://localhost:3000' },
       })
       activeConnections.push(ws)
 
@@ -237,7 +237,7 @@ describe('WebSocket Server', () => {
         setTimeout(() => reject(new Error('Timeout')), 2000)
       })
 
-      const pongReceived = new Promise<boolean>((resolve) => {
+      const pongReceived = new Promise<boolean>(resolve => {
         ws.on('pong', () => resolve(true))
         setTimeout(() => resolve(false), 2000)
       })
@@ -251,7 +251,7 @@ describe('WebSocket Server', () => {
   describe('message handling', () => {
     it('should receive messages sent by server', async () => {
       const ws = new WebSocket(`ws://localhost:${port}/ws/grpc`, {
-        headers: { origin: 'http://localhost:3000' }
+        headers: { origin: 'http://localhost:3000' },
       })
       activeConnections.push(ws)
 
@@ -267,7 +267,7 @@ describe('WebSocket Server', () => {
 
     it('should handle client sending messages', async () => {
       const ws = new WebSocket(`ws://localhost:${port}/ws/grpc`, {
-        headers: { origin: 'http://localhost:3000' }
+        headers: { origin: 'http://localhost:3000' },
       })
       activeConnections.push(ws)
 
@@ -278,8 +278,8 @@ describe('WebSocket Server', () => {
       })
 
       // Send a test message; the callback surfaces any write error (null/undefined = ok).
-      const sendError = await new Promise<Error | null | undefined>((resolve) => {
-        ws.send(JSON.stringify({ type: 'ping' }), (err) => resolve(err))
+      const sendError = await new Promise<Error | null | undefined>(resolve => {
+        ws.send(JSON.stringify({ type: 'ping' }), err => resolve(err))
       })
 
       assert.ok(sendError == null, `Sending a message should not error (got ${sendError})`)
@@ -292,7 +292,7 @@ describe('WebSocket Server', () => {
       // Open multiple connections
       for (let i = 0; i < 3; i++) {
         const ws = new WebSocket(`ws://localhost:${port}/ws/grpc`, {
-          headers: { origin: 'http://localhost:3000' }
+          headers: { origin: 'http://localhost:3000' },
         })
 
         await new Promise<void>((resolve, reject) => {
@@ -313,15 +313,18 @@ describe('WebSocket Server', () => {
 
       // Wait for connections to close
       await Promise.all(
-        activeConnections.map(ws => new Promise<void>(resolve => {
-          if (ws.readyState === WebSocket.CLOSED) {
-            resolve()
-          } else {
-            ws.on('close', () => resolve())
-            // Timeout in case close event doesn't fire
-            setTimeout(() => resolve(), 1000)
-          }
-        }))
+        activeConnections.map(
+          ws =>
+            new Promise<void>(resolve => {
+              if (ws.readyState === WebSocket.CLOSED) {
+                resolve()
+              } else {
+                ws.on('close', () => resolve())
+                // Timeout in case close event doesn't fire
+                setTimeout(() => resolve(), 1000)
+              }
+            }),
+        ),
       )
 
       // Verify all closed
@@ -334,18 +337,18 @@ describe('WebSocket Server', () => {
 
       // Close HTTP server too
       httpServerClosed = true
-      await new Promise<void>((resolve) => {
+      await new Promise<void>(resolve => {
         httpServer.close(() => resolve())
         setTimeout(resolve, 100)
       })
 
       // Try to connect after close - should fail with ECONNREFUSED
       const ws = new WebSocket(`ws://localhost:${port}/ws/grpc`, {
-        headers: { origin: 'http://localhost:3000' }
+        headers: { origin: 'http://localhost:3000' },
       })
 
       let errorOccurred = false
-      await new Promise<void>((resolve) => {
+      await new Promise<void>(resolve => {
         ws.on('error', () => {
           errorOccurred = true
           resolve()
@@ -360,7 +363,7 @@ describe('WebSocket Server', () => {
   describe('error handling', () => {
     it('should handle client disconnect gracefully', async () => {
       const ws = new WebSocket(`ws://localhost:${port}/ws/grpc`, {
-        headers: { origin: 'http://localhost:3000' }
+        headers: { origin: 'http://localhost:3000' },
       })
       activeConnections.push(ws)
 
@@ -373,7 +376,7 @@ describe('WebSocket Server', () => {
       // Abruptly terminate the connection and confirm the client observes closure.
       // (The server-side cleanup is exercised via the metrics gauge test; here we just
       // assert the terminate path resolves without hanging or throwing.)
-      const closed = new Promise<void>((resolve) => {
+      const closed = new Promise<void>(resolve => {
         if (ws.readyState === WebSocket.CLOSED) return resolve()
         ws.on('close', () => resolve())
         setTimeout(() => resolve(), 2000)
@@ -386,7 +389,7 @@ describe('WebSocket Server', () => {
 
     it('should handle oversized messages', async () => {
       const ws = new WebSocket(`ws://localhost:${port}/ws/grpc`, {
-        headers: { origin: 'http://localhost:3000' }
+        headers: { origin: 'http://localhost:3000' },
       })
       activeConnections.push(ws)
 
@@ -401,9 +404,9 @@ describe('WebSocket Server', () => {
 
       // Wait for the actual rejection signal (error or a close) rather than a fixed
       // sleep, so the test resolves as soon as the server reacts and can't race.
-      const rejected = new Promise<boolean>((resolve) => {
+      const rejected = new Promise<boolean>(resolve => {
         ws.on('error', () => resolve(true))
-        ws.on('close', (code) => resolve(code === 1009 || code !== 1000))
+        ws.on('close', code => resolve(code === 1009 || code !== 1000))
         setTimeout(() => resolve(ws.readyState !== WebSocket.OPEN), 2000)
       })
 
@@ -421,7 +424,7 @@ describe('WebSocket Server', () => {
       // Open 5 connections simultaneously
       for (let i = 0; i < 5; i++) {
         const ws = new WebSocket(`ws://localhost:${port}/ws/grpc`, {
-          headers: { origin: 'http://localhost:3000' }
+          headers: { origin: 'http://localhost:3000' },
         })
 
         connectionPromises.push(
@@ -429,7 +432,7 @@ describe('WebSocket Server', () => {
             ws.on('open', () => resolve())
             ws.on('error', reject)
             setTimeout(() => reject(new Error('Timeout')), 2000)
-          })
+          }),
         )
 
         activeConnections.push(ws)
@@ -454,7 +457,7 @@ describe('WebSocket Server', () => {
 
       for (let i = 0; i < testLimit; i++) {
         const ws = new WebSocket(`ws://localhost:${port}/ws/grpc`, {
-          headers: { origin: 'http://localhost:3000' }
+          headers: { origin: 'http://localhost:3000' },
         })
 
         connectionPromises.push(
@@ -462,7 +465,7 @@ describe('WebSocket Server', () => {
             ws.on('open', () => resolve())
             ws.on('error', reject)
             setTimeout(() => reject(new Error('Timeout')), 2000)
-          })
+          }),
         )
 
         activeConnections.push(ws)
@@ -483,7 +486,7 @@ describe('WebSocket Server', () => {
     it('should accept connections after capacity frees up', async () => {
       // Create a connection
       const ws1 = new WebSocket(`ws://localhost:${port}/ws/grpc`, {
-        headers: { origin: 'http://localhost:3000' }
+        headers: { origin: 'http://localhost:3000' },
       })
       activeConnections.push(ws1)
 
@@ -497,14 +500,14 @@ describe('WebSocket Server', () => {
 
       // Close the connection
       ws1.close()
-      await new Promise<void>((resolve) => {
+      await new Promise<void>(resolve => {
         ws1.on('close', () => resolve())
         setTimeout(() => resolve(), 1000)
       })
 
       // Create another connection (should succeed as capacity freed up)
       const ws2 = new WebSocket(`ws://localhost:${port}/ws/grpc`, {
-        headers: { origin: 'http://localhost:3000' }
+        headers: { origin: 'http://localhost:3000' },
       })
       activeConnections.push(ws2)
 
@@ -521,7 +524,7 @@ describe('WebSocket Server', () => {
   describe('heartbeat mechanism', () => {
     it('should respond to ping with pong', async () => {
       const ws = new WebSocket(`ws://localhost:${port}/ws/grpc`, {
-        headers: { origin: 'http://localhost:3000' }
+        headers: { origin: 'http://localhost:3000' },
       })
       activeConnections.push(ws)
 
@@ -540,7 +543,7 @@ describe('WebSocket Server', () => {
       ws.ping()
 
       // Wait for pong response
-      await new Promise<void>((resolve) => {
+      await new Promise<void>(resolve => {
         const checkInterval = setInterval(() => {
           if (pongReceived) {
             clearInterval(checkInterval)
@@ -558,7 +561,7 @@ describe('WebSocket Server', () => {
 
     it('should keep connection alive through heartbeat', async () => {
       const ws = new WebSocket(`ws://localhost:${port}/ws/grpc`, {
-        headers: { origin: 'http://localhost:3000' }
+        headers: { origin: 'http://localhost:3000' },
       })
       activeConnections.push(ws)
 

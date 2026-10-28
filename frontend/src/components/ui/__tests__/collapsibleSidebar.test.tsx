@@ -2,7 +2,7 @@
 
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
-import { CollapsibleSidebar } from '../collapsibleSidebar'
+import { CollapsibleSidebar } from '@/components/ui/collapsibleSidebar'
 
 function renderSidebar(overrides: Partial<React.ComponentProps<typeof CollapsibleSidebar>> = {}) {
   const onExpand = vi.fn()

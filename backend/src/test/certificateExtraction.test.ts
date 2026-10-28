@@ -12,7 +12,7 @@
 
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { extractRemoteServerCertificate } from '../utils/certificateUtils.js'
+import { extractRemoteServerCertificate } from '#src/utils/certificateUtils.js'
 
 describe('extractRemoteServerCertificate input validation', () => {
   const maliciousHosts = [

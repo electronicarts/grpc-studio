@@ -3,19 +3,19 @@
 import React from 'react'
 import { Badge } from '@/components/ui/badge'
 import type { DescField } from '@bufbuild/protobuf'
-import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
-import { useKeyedRows, type KeyedRow } from '../../hooks/useKeyedRows'
-import { filterMapEntries } from '../../utils/mapUtils'
-import { fieldTypeName } from '../../../../utils/descUtils'
-import EnumField from './EnumField'
-import ScalarField from './ScalarField'
-import MessageValue from './MessageValue'
-import { defaultElementValue } from '../../utils/fieldDefaults'
-import MessageFieldFrame from '../shared/MessageFieldFrame'
-import type { FieldPresence } from '../shared/fieldPresence'
-import AddButton from '../shared/AddButton'
-import RemoveButton from '../shared/RemoveButton'
-import KeyInput from '../shared/KeyInput'
+import { useProtoMessageRendererContext } from '@/features/schemaRenderer/stores/schemaRendererContext'
+import { useKeyedRows, type KeyedRow } from '@/features/schemaRenderer/hooks/useKeyedRows'
+import { filterMapEntries } from '@/features/schemaRenderer/utils/mapUtils'
+import { fieldTypeName } from '@/utils/descUtils'
+import EnumField from '@/features/schemaRenderer/components/fields/EnumField'
+import ScalarField from '@/features/schemaRenderer/components/fields/ScalarField'
+import MessageValue from '@/features/schemaRenderer/components/fields/MessageValue'
+import { defaultElementValue } from '@/features/schemaRenderer/utils/fieldDefaults'
+import MessageFieldFrame from '@/features/schemaRenderer/components/shared/MessageFieldFrame'
+import type { FieldPresence } from '@/features/schemaRenderer/components/shared/fieldPresence'
+import AddButton from '@/features/schemaRenderer/components/shared/AddButton'
+import RemoveButton from '@/features/schemaRenderer/components/shared/RemoveButton'
+import KeyInput from '@/features/schemaRenderer/components/shared/KeyInput'
 
 interface MapFieldProps {
   field: DescField & { fieldKind: 'map' }
@@ -29,7 +29,7 @@ const MapField: React.FC<MapFieldProps> = ({ field, value, onChange, path, prese
   const { searchQuery } = useProtoMessageRendererContext()
 
   const isMapObject = value !== null && typeof value === 'object' && !Array.isArray(value)
-  const mapValue = isMapObject ? value as Record<string, unknown> : {}
+  const mapValue = isMapObject ? (value as Record<string, unknown>) : {}
 
   const { allEntries, entries, countDisplay } = filterMapEntries({ mapValue, searchQuery })
   const { rows, addRow, keys } = useKeyedRows<unknown>(
@@ -81,11 +81,11 @@ const MapField: React.FC<MapFieldProps> = ({ field, value, onChange, path, prese
       presence={presence}
       className="border-info/30 bg-info/10"
       bodyClassName="ml-6 space-y-3"
-      meta={(
+      meta={
         <Badge variant="secondary" className="ml-auto bg-info/10">
           {countDisplay} {countDisplay === '1' ? 'entry' : 'entries'}
         </Badge>
-      )}
+      }
     >
       {rows.map(row => (
         <div key={row.id} className="flex items-start gap-2 border-l-2 border-l-info pl-3">
@@ -108,9 +108,7 @@ const MapField: React.FC<MapFieldProps> = ({ field, value, onChange, path, prese
 
       {rows.length === 0 && (
         <div className="text-sm italic text-muted-foreground">
-          {searchQuery && allEntries.length > 0
-            ? `No entries matching "${searchQuery}"`
-            : 'No entries'}
+          {searchQuery && allEntries.length > 0 ? `No entries matching "${searchQuery}"` : 'No entries'}
         </div>
       )}
 

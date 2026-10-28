@@ -58,7 +58,11 @@ export function sanitizeRequestMetadata(input: unknown): RequestMetadataValidati
     }
 
     if (!METADATA_KEY_RE.test(key)) {
-      return { ok: false, metadata: {}, error: `invalid metadata key "${rawKey}": only letters, digits, and -_. are allowed` }
+      return {
+        ok: false,
+        metadata: {},
+        error: `invalid metadata key "${rawKey}": only letters, digits, and -_. are allowed`,
+      }
     }
 
     if (isBinaryMetadataKey(key)) {
@@ -66,7 +70,11 @@ export function sanitizeRequestMetadata(input: unknown): RequestMetadataValidati
     }
 
     if (!METADATA_VALUE_RE.test(rawValue)) {
-      return { ok: false, metadata: {}, error: `invalid metadata value for "${rawKey}": only printable ASCII is allowed` }
+      return {
+        ok: false,
+        metadata: {},
+        error: `invalid metadata value for "${rawKey}": only printable ASCII is allowed`,
+      }
     }
 
     metadata[key] = rawValue

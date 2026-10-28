@@ -1,12 +1,12 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import React from 'react'
-import { FormField } from '../../../../components/shared'
-import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
-import { useKeyedRows } from '../../hooks/useKeyedRows'
-import AddButton from '../shared/AddButton'
-import KeyInput from '../shared/KeyInput'
-import RemoveButton from '../shared/RemoveButton'
+import { FormField } from '@/components/shared'
+import { useProtoMessageRendererContext } from '@/features/schemaRenderer/stores/schemaRendererContext'
+import { useKeyedRows } from '@/features/schemaRenderer/hooks/useKeyedRows'
+import AddButton from '@/features/schemaRenderer/components/shared/AddButton'
+import KeyInput from '@/features/schemaRenderer/components/shared/KeyInput'
+import RemoveButton from '@/features/schemaRenderer/components/shared/RemoveButton'
 
 interface FieldMaskFieldProps {
   name: string
@@ -28,9 +28,13 @@ interface FieldMaskFieldProps {
 const FieldMaskField: React.FC<FieldMaskFieldProps> = ({ name, value, onChange }) => {
   const { readOnly } = useProtoMessageRendererContext()
 
-  const paths = typeof value === 'string' && value
-    ? value.split(',').map(p => p.trim()).filter(Boolean)
-    : []
+  const paths =
+    typeof value === 'string' && value
+      ? value
+          .split(',')
+          .map(p => p.trim())
+          .filter(Boolean)
+      : []
 
   // Paths are unique keys without values, so they reuse the keyed-row editing of maps.
   const { rows, addRow, keys } = useKeyedRows<null>(
@@ -47,32 +51,32 @@ const FieldMaskField: React.FC<FieldMaskFieldProps> = ({ name, value, onChange }
   return (
     <FormField label={name} labelMeta={typeMeta}>
       <div className="space-y-2">
-        {readOnly ? (
-          paths.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {paths.map(path => (
-                <span key={path} className="rounded-md border bg-muted px-2 py-0.5 font-mono text-sm">{path}</span>
-              ))}
-            </div>
-          )
-        ) : rows.map(row => (
-          <div key={row.id} className="flex items-start gap-2">
-            <KeyInput
-              value={row.key}
-              existingKeys={keys}
-              onCommit={row.commitKey}
-              placeholder="lowerCamelCase path, e.g. owner.displayName"
-              aria-label={`${name} path`}
-              autoFocus={row.isPending}
-              className="flex-1"
-            />
-            <RemoveButton label={row.key ? `path ${row.key}` : 'new path'} onClick={row.remove} />
-          </div>
-        ))}
+        {readOnly
+          ? paths.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {paths.map(path => (
+                  <span key={path} className="rounded-md border bg-muted px-2 py-0.5 font-mono text-sm">
+                    {path}
+                  </span>
+                ))}
+              </div>
+            )
+          : rows.map(row => (
+              <div key={row.id} className="flex items-start gap-2">
+                <KeyInput
+                  value={row.key}
+                  existingKeys={keys}
+                  onCommit={row.commitKey}
+                  placeholder="lowerCamelCase path, e.g. owner.displayName"
+                  aria-label={`${name} path`}
+                  autoFocus={row.isPending}
+                  className="flex-1"
+                />
+                <RemoveButton label={row.key ? `path ${row.key}` : 'new path'} onClick={row.remove} />
+              </div>
+            ))}
 
-        {rows.length === 0 && (
-          <p className="text-sm italic text-muted-foreground">No paths</p>
-        )}
+        {rows.length === 0 && <p className="text-sm italic text-muted-foreground">No paths</p>}
 
         <AddButton noun="path" onClick={addRow} testId="fieldMask-addButton" />
 

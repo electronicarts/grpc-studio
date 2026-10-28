@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { ChevronDown, ChevronUp } from 'lucide-react'
-import MessageCard from './MessageCard'
+import MessageCard from '@/features/methodExplorer/components/MessageCard'
 import type { DescMessage } from '@bufbuild/protobuf'
 import { usePersistentHeight } from '@/hooks/usePersistentHeight'
 
@@ -101,9 +101,15 @@ const MessageList: React.FC<MessageListProps> = ({
         <div className="flex justify-end">
           <Button variant="ghost" size="sm" onClick={toggleAll} className="h-7 px-2 text-xs">
             {expandAll ? (
-              <><ChevronUp className="mr-1 size-3" />Collapse All</>
+              <>
+                <ChevronUp className="mr-1 size-3" />
+                Collapse All
+              </>
             ) : (
-              <><ChevronDown className="mr-1 size-3" />Expand All</>
+              <>
+                <ChevronDown className="mr-1 size-3" />
+                Expand All
+              </>
             )}
           </Button>
         </div>

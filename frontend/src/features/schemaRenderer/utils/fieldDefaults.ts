@@ -1,8 +1,8 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import type { DescEnum, DescField, DescMessage } from '@bufbuild/protobuf'
-import { jsonZeroValue, scalarToJson } from './scalarTypeUtils'
-import { wellKnownType } from './wellKnownTypes'
+import { jsonZeroValue, scalarToJson } from '@/features/schemaRenderer/utils/scalarTypeUtils'
+import { wellKnownType } from '@/features/schemaRenderer/utils/wellKnownTypes'
 
 /**
  * The value a field takes when it is ticked to be sent before anything is entered, in form-data representation:

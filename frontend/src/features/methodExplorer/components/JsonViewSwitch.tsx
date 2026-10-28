@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { SegmentedControl, SegmentedControlItem } from '@/components/ui/segmentedControl'
-import type { JsonView } from '../types'
+import type { JsonView } from '@/features/methodExplorer/types'
 
 interface JsonViewSwitchProps {
   view: JsonView

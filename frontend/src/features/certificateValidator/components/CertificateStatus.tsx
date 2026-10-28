@@ -4,17 +4,15 @@ import React, { useState } from 'react'
 import { Loader2 } from 'lucide-react'
 import { cn } from '@/utils/cn'
 import { TONES } from '@/utils/tones'
-import { useCertificateStatus } from '../hooks/useCertificateStatus'
-import { statusIcons } from '../constants/statusIcons'
-import { CertificateDetails } from './CertificateDetails'
+import { useCertificateStatus } from '@/features/certificateValidator/hooks/useCertificateStatus'
+import { statusIcons } from '@/features/certificateValidator/constants/statusIcons'
+import { CertificateDetails } from '@/features/certificateValidator/components/CertificateDetails'
 
 interface CertificateStatusProps {
   className?: string
 }
 
-const CertificateStatus: React.FC<CertificateStatusProps> = ({ 
-  className = ''
-}) => {
+const CertificateStatus: React.FC<CertificateStatusProps> = ({ className = '' }) => {
   const {
     loading,
     configured,
@@ -28,7 +26,10 @@ const CertificateStatus: React.FC<CertificateStatusProps> = ({
 
   if (loading) {
     return (
-      <div className={cn('flex items-center gap-2 text-muted-foreground', className)} data-testid="certificateStatus-loading">
+      <div
+        className={cn('flex items-center gap-2 text-muted-foreground', className)}
+        data-testid="certificateStatus-loading"
+      >
         <Loader2 className="size-4 animate-spin" />
         <span className="text-xs">Checking cert...</span>
       </div>
@@ -56,9 +57,7 @@ const CertificateStatus: React.FC<CertificateStatusProps> = ({
         data-testid="certificateStatus-triggerButton"
       >
         <Icon className="size-4" />
-        <span className="text-xs font-medium">
-          {getShortDisplay()}
-        </span>
+        <span className="text-xs font-medium">{getShortDisplay()}</span>
       </button>
 
       {expanded && certInfo && (

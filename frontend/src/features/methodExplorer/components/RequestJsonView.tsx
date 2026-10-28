@@ -1,11 +1,11 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import React from 'react'
-import { useMethodExplorerContext } from '../stores'
+import { useMethodExplorerContext } from '@/features/methodExplorer/stores'
 import { usePersistentHeight } from '@/hooks/usePersistentHeight'
-import { toWireJson } from '../utils/payload'
-import { useJsonView } from '../hooks/useJsonView'
-import JsonViewSwitch from './JsonViewSwitch'
+import { toWireJson } from '@/features/methodExplorer/utils/payload'
+import { useJsonView } from '@/features/methodExplorer/hooks/useJsonView'
+import JsonViewSwitch from '@/features/methodExplorer/components/JsonViewSwitch'
 
 /**
  * The request's JSON tab. "Request" is the editable JSON, holding exactly the fields ticked in the form.
@@ -15,9 +15,8 @@ import JsonViewSwitch from './JsonViewSwitch'
 const RequestJsonView: React.FC = () => {
   const { selectedTarget, request } = useMethodExplorerContext()
   const jsonInput = usePersistentHeight<HTMLTextAreaElement>('grpc-studio-request-json-height', '10rem')
-  const json = useJsonView(
-    request.schema !== null,
-    () => toWireJson(JSON.parse(request.body), request.schema, selectedTarget),
+  const json = useJsonView(request.schema !== null, () =>
+    toWireJson(JSON.parse(request.body), request.schema, selectedTarget),
   )
 
   return (
@@ -36,7 +35,7 @@ const RequestJsonView: React.FC = () => {
           ref={jsonInput.ref}
           style={jsonInput.style}
           value={request.body}
-          onChange={(e) => request.setBody(e.target.value)}
+          onChange={e => request.setBody(e.target.value)}
           aria-label="Request JSON"
           className="min-h-40 w-full resize-y rounded-md border bg-background p-4 font-mono text-sm"
           placeholder="Enter your gRPC request as JSON..."

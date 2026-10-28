@@ -2,16 +2,14 @@
 
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
-import MessageCard from '../MessageCard'
-import {
-  allScalarsSchema,
-} from '@/test/protoMessageRenderer.fixtures'
+import MessageCard from '@/features/methodExplorer/components/MessageCard'
+import { allScalarsSchema } from '@/test/protoMessageRenderer.fixtures'
 
-vi.mock('../../stores', () => ({
+vi.mock('@/features/methodExplorer/stores', () => ({
   useMethodExplorerContext: () => ({ selectedTarget: 'test-target' }),
 }))
 
-vi.mock('../../../schemaLoader/lib/schemaCache', async () => {
+vi.mock('@/features/schemaLoader/lib/schemaCache', async () => {
   const { schemaCacheModule } = await import('@/test/schemaCacheMock')
   const { schemaCache } = await import('@/test/protoMessageRenderer.fixtures')
   return schemaCacheModule(schemaCache)
@@ -28,7 +26,7 @@ const renderCard = (props: Partial<React.ComponentProps<typeof MessageCard>> = {
       isFormMode={false}
       onToggle={vi.fn()}
       {...props}
-    />
+    />,
   )
 
 describe('MessageCard JSON view', () => {

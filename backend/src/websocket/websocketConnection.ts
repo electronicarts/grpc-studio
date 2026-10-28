@@ -1,14 +1,22 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import type { RawData, WebSocket } from 'ws'
-import { MethodKind, type InvokeStreamClientMessage, type InvokeStreamStartPayload, type JsonValue, type RequestMetadata } from '@grpc-studio/shared'
-import configManager from '../config/configManager.js'
-import * as userContextMiddleware from '../middlewares/userContextMiddleware.js'
-import defaultGrpcMethodInvokerService, { type GrpcMethodInvokerService } from '../services/grpcMethodInvokerService.js'
-import type { FormattedGrpcError, StreamCallbacks, StreamHandle, UserContext } from '../types/index.js'
-import logger from '../utils/logger.js'
-import { StreamRequestQueue } from './streamRequestQueue.js'
-import * as websocketProtocol from './websocketProtocol.js'
+import {
+  MethodKind,
+  type InvokeStreamClientMessage,
+  type InvokeStreamStartPayload,
+  type JsonValue,
+  type RequestMetadata,
+} from '@grpc-studio/shared'
+import configManager from '#src/config/configManager.js'
+import * as userContextMiddleware from '#src/middlewares/userContextMiddleware.js'
+import defaultGrpcMethodInvokerService, {
+  type GrpcMethodInvokerService,
+} from '#src/services/grpcMethodInvokerService.js'
+import type { FormattedGrpcError, StreamCallbacks, StreamHandle, UserContext } from '#src/types/index.js'
+import logger from '#src/utils/logger.js'
+import { StreamRequestQueue } from '#src/websocket/streamRequestQueue.js'
+import * as websocketProtocol from '#src/websocket/websocketProtocol.js'
 
 const connectionLogger = logger.child({ module: 'websocket-connection' })
 
@@ -60,8 +68,8 @@ export class WebSocketConnection {
   }
 
   open(): void {
-    this.ws.on('message', (rawFrame) => {
-      this.receiveClientFrame(rawFrame).catch((error) => {
+    this.ws.on('message', rawFrame => {
+      this.receiveClientFrame(rawFrame).catch(error => {
         connectionLogger.error('Uncaught error in message handler', {
           connectionId: this.connectionId,
           error: error instanceof Error ? error.message : String(error),
@@ -112,9 +120,8 @@ export class WebSocketConnection {
 
       const messageUserContext = this.getMessageUserContext(parseResult.message)
       try {
-        await userContextMiddleware.runWithUserContext(
-          messageUserContext,
-          () => this.handleClientMessage(parseResult.message)
+        await userContextMiddleware.runWithUserContext(messageUserContext, () =>
+          this.handleClientMessage(parseResult.message),
         )
       } catch (userContextError) {
         connectionLogger.error('Failed to establish user context', {
@@ -199,7 +206,7 @@ export class WebSocketConnection {
           stream.method,
           stream.request,
           callbacks,
-          stream.metadata
+          stream.metadata,
         )
 
       case MethodKind.CLIENT_STREAMING:
@@ -209,7 +216,7 @@ export class WebSocketConnection {
           stream.method,
           stream.requests,
           callbacks,
-          stream.metadata
+          stream.metadata,
         )
 
       case MethodKind.BIDI_STREAMING:
@@ -219,7 +226,7 @@ export class WebSocketConnection {
           stream.method,
           stream.requests,
           callbacks,
-          stream.metadata
+          stream.metadata,
         )
     }
   }
@@ -261,7 +268,7 @@ export class WebSocketConnection {
 
   private createBackendResponseHandlers(stream: ActiveStream): StreamCallbacks {
     return {
-      onData: (data) => {
+      onData: data => {
         if (this.activeStream === stream) {
           websocketProtocol.sendResponse(this.ws, data)
         }
@@ -272,7 +279,7 @@ export class WebSocketConnection {
         }
         this.finishStream(stream)
       },
-      onError: (error) => {
+      onError: error => {
         if (this.activeStream === stream) {
           websocketProtocol.sendError(this.ws, formatGrpcError(error))
         }

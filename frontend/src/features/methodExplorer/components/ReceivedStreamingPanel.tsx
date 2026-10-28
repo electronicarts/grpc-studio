@@ -1,8 +1,8 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-import StreamingMessageDisplay from './StreamingMessageDisplay'
-import ProtoViewer from './ProtoViewer'
-import { useMethodExplorerContext } from '../stores'
+import StreamingMessageDisplay from '@/features/methodExplorer/components/StreamingMessageDisplay'
+import ProtoViewer from '@/features/methodExplorer/components/ProtoViewer'
+import { useMethodExplorerContext } from '@/features/methodExplorer/stores'
 
 const ReceivedStreamingPanel: React.FC = () => {
   const { selectedTarget, selectedService, selectedMethod, response, stream } = useMethodExplorerContext()
@@ -20,7 +20,15 @@ const ReceivedStreamingPanel: React.FC = () => {
       methodName={selectedMethod?.name}
       time={response.time}
       size={response.size}
-      schemaNode={<ProtoViewer selectedTarget={selectedTarget} selectedService={selectedService} selectedMethod={selectedMethod} inline outputOnly />}
+      schemaNode={
+        <ProtoViewer
+          selectedTarget={selectedTarget}
+          selectedService={selectedService}
+          selectedMethod={selectedMethod}
+          inline
+          outputOnly
+        />
+      }
     />
   )
 }

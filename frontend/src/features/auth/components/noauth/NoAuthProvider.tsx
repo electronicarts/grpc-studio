@@ -1,8 +1,8 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-import { ReactNode } from 'react';
-import type { AuthContextType } from '../../types';
-import { AuthContext } from '../../stores/authContext';
+import { ReactNode } from 'react'
+import type { AuthContextType } from '@/features/auth/types'
+import { AuthContext } from '@/features/auth/stores/authContext'
 
 export function NoAuthProvider({ children }: { children: ReactNode }) {
   const value: AuthContextType = {
@@ -14,11 +14,7 @@ export function NoAuthProvider({ children }: { children: ReactNode }) {
     logout: async () => {},
     getAccessToken: async () => null,
     isSsoEnabled: false,
-  };
+  }
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

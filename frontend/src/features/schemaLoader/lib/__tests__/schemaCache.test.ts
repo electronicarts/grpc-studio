@@ -2,10 +2,10 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import type { DescMessage } from '@bufbuild/protobuf'
-import { schemaCache } from '../schemaCache'
+import { schemaCache } from '@/features/schemaLoader/lib/schemaCache'
 
 // Stands in for the backend: each request loads one real message type for its target
-vi.mock('../descriptorSetFetcher', async () => {
+vi.mock('@/features/schemaLoader/lib/descriptorSetFetcher', async () => {
   const { fileRegistry } = await import('@/test/descriptors')
   const registry = fileRegistry({
     name: 'pkg.proto',
@@ -58,7 +58,12 @@ describe('schemaCache', () => {
       await schemaCache.getSchema('AB', 'pkg.Beta')
       await schemaCache.getSchema('A', 'pkg.Gamma')
 
-      expect(schemaCache.getTargetSchemas('A').map(d => d.typeName).sort()).toEqual(['pkg.Alpha', 'pkg.Gamma'])
+      expect(
+        schemaCache
+          .getTargetSchemas('A')
+          .map(d => d.typeName)
+          .sort(),
+      ).toEqual(['pkg.Alpha', 'pkg.Gamma'])
       expect(schemaCache.getTargetSchemas('AB').map(d => d.typeName)).toEqual(['pkg.Beta'])
       expect(schemaCache.getTargetSchemas('C')).toEqual([])
     })
@@ -67,7 +72,9 @@ describe('schemaCache', () => {
   describe('subscription and notifications', () => {
     it('notifies subscribers on cache clear', () => {
       let notified = false
-      const unsubscribe = schemaCache.subscribe(() => { notified = true })
+      const unsubscribe = schemaCache.subscribe(() => {
+        notified = true
+      })
 
       schemaCache.clearCache()
       expect(notified).toBe(true)
@@ -77,7 +84,9 @@ describe('schemaCache', () => {
 
     it('does not notify after unsubscribe', () => {
       let callCount = 0
-      const unsubscribe = schemaCache.subscribe(() => { callCount++ })
+      const unsubscribe = schemaCache.subscribe(() => {
+        callCount++
+      })
 
       schemaCache.clearCache()
       expect(callCount).toBe(1)

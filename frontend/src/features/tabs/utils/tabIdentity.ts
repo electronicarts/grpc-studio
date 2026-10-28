@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import type { GrpcMethod, GrpcService } from '@/types/grpc'
-import type { MethodTab } from '../types'
+import type { MethodTab } from '@/features/tabs/types'
 
 /**
  * A tab's identity is (target, service, method) — the same method on two

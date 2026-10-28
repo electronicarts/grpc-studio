@@ -3,9 +3,9 @@
 import React from 'react'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import { cn } from '@/utils/cn'
-import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
-import PresenceCheckbox from './PresenceCheckbox'
-import type { FieldPresence } from './fieldPresence'
+import { useProtoMessageRendererContext } from '@/features/schemaRenderer/stores/schemaRendererContext'
+import PresenceCheckbox from '@/features/schemaRenderer/components/shared/PresenceCheckbox'
+import type { FieldPresence } from '@/features/schemaRenderer/components/shared/fieldPresence'
 
 interface MessageFieldFrameProps {
   name: string
@@ -35,8 +35,9 @@ const MessageFieldFrame: React.FC<MessageFieldFrameProps> = ({
   presence,
 }) => {
   const { expanded, toggleExpand, readOnly } = useProtoMessageRendererContext()
-  const isOpen = readOnly ? expanded.has(path) : presence?.isSet ?? true
-  const headerMeta = meta ?? (typeName ? <span className="break-all text-xs text-muted-foreground">({typeName})</span> : null)
+  const isOpen = readOnly ? expanded.has(path) : (presence?.isSet ?? true)
+  const headerMeta =
+    meta ?? (typeName ? <span className="break-all text-xs text-muted-foreground">({typeName})</span> : null)
 
   const title = (
     <span className="flex min-w-0 flex-wrap items-baseline gap-x-2">
@@ -54,9 +55,11 @@ const MessageFieldFrame: React.FC<MessageFieldFrameProps> = ({
           onClick={() => toggleExpand(path)}
           className="flex w-full items-start gap-2 text-left"
         >
-          {isOpen
-            ? <ChevronDown className="mt-0.5 size-4 flex-shrink-0" />
-            : <ChevronRight className="mt-0.5 size-4 flex-shrink-0" />}
+          {isOpen ? (
+            <ChevronDown className="mt-0.5 size-4 flex-shrink-0" />
+          ) : (
+            <ChevronRight className="mt-0.5 size-4 flex-shrink-0" />
+          )}
           {title}
         </button>
       ) : (
@@ -66,11 +69,7 @@ const MessageFieldFrame: React.FC<MessageFieldFrameProps> = ({
         </label>
       )}
 
-      {isOpen && (
-        <div className={cn('ml-4 border-t border-border pt-2', bodyClassName)}>
-          {children}
-        </div>
-      )}
+      {isOpen && <div className={cn('ml-4 border-t border-border pt-2', bodyClassName)}>{children}</div>}
     </div>
   )
 }

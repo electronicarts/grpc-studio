@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import { describe, it, expect } from 'vitest'
-import { getFieldValue, setFieldValue, getNestedValue } from '../fieldOperations'
+import { getFieldValue, setFieldValue, getNestedValue } from '@/features/schemaRenderer/utils/fieldOperations'
 
 describe('fieldOperations', () => {
   describe('getFieldValue', () => {
@@ -79,10 +79,10 @@ describe('fieldOperations', () => {
         request: {
           user: {
             profile: {
-              bio: 'Developer'
-            }
-          }
-        }
+              bio: 'Developer',
+            },
+          },
+        },
       }
       expect(getNestedValue(obj, 'request.user.profile.bio')).toBe('Developer')
     })
@@ -104,8 +104,8 @@ describe('fieldOperations', () => {
       const obj = {
         users: [
           { name: 'Alice', age: 30 },
-          { name: 'Bob', age: 25 }
-        ]
+          { name: 'Bob', age: 25 },
+        ],
       }
       expect(getNestedValue(obj, 'users[0].name')).toBe('Alice')
       expect(getNestedValue(obj, 'users[1].age')).toBe(25)
@@ -115,8 +115,8 @@ describe('fieldOperations', () => {
       const obj = {
         metadata: {
           key1: 'value1',
-          key2: 'value2'
-        }
+          key2: 'value2',
+        },
       }
       expect(getNestedValue(obj, 'metadata[key1]')).toBe('value1')
       expect(getNestedValue(obj, 'metadata[key2]')).toBe('value2')
@@ -139,11 +139,11 @@ describe('fieldOperations', () => {
             {
               addresses: [
                 { street: '123 Main', city: 'NYC' },
-                { street: '456 Oak', city: 'LA' }
-              ]
-            }
-          ]
-        }
+                { street: '456 Oak', city: 'LA' },
+              ],
+            },
+          ],
+        },
       }
       expect(getNestedValue(obj, 'request.users[0].addresses[1].city')).toBe('LA')
     })

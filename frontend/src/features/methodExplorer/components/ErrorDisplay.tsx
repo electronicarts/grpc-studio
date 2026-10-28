@@ -19,20 +19,13 @@ const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ error, onDismiss }) => {
       className="animate-in fade-in rounded-md p-4 duration-200"
       titleClassName="text-sm mb-1"
       iconClassName="w-5 h-5"
-      action={(
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onDismiss}
-          className="size-6 p-0 text-danger hover:text-danger/80"
-        >
+      action={
+        <Button variant="ghost" size="sm" onClick={onDismiss} className="size-6 p-0 text-danger hover:text-danger/80">
           <XCircle className="size-4" />
         </Button>
-      )}
+      }
     >
-      <div className="mt-1 whitespace-pre-wrap text-sm text-danger">
-        {error}
-      </div>
+      <div className="mt-1 whitespace-pre-wrap text-sm text-danger">{error}</div>
     </AlertPanel>
   )
 }

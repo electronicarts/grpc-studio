@@ -5,5 +5,5 @@
  * Replaces the repeated `error instanceof Error ? error.message : String(error)` idiom.
  */
 export function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
+  return error instanceof Error ? error.message : String(error)
 }

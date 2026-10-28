@@ -8,9 +8,7 @@ import { base64Encode } from '@bufbuild/protobuf/wire'
  * Check if a scalar type is numeric (needs number input).
  */
 function isNumeric(scalar: ScalarType): boolean {
-  return scalar !== ScalarType.STRING &&
-         scalar !== ScalarType.BYTES &&
-         scalar !== ScalarType.BOOL
+  return scalar !== ScalarType.STRING && scalar !== ScalarType.BYTES && scalar !== ScalarType.BOOL
 }
 
 /**
@@ -24,8 +22,12 @@ function isFloat(scalar: ScalarType): boolean {
  * 64-bit integers are strings in proto JSON, since JS numbers can't hold them exactly.
  */
 function is64Bit(scalar: ScalarType): boolean {
-  return scalar === ScalarType.INT64 || scalar === ScalarType.SINT64 || scalar === ScalarType.SFIXED64
-    || isUnsigned64Bit(scalar)
+  return (
+    scalar === ScalarType.INT64 ||
+    scalar === ScalarType.SINT64 ||
+    scalar === ScalarType.SFIXED64 ||
+    isUnsigned64Bit(scalar)
+  )
 }
 
 function isUnsigned64Bit(scalar: ScalarType): boolean {

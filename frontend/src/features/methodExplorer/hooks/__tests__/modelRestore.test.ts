@@ -2,8 +2,8 @@
 
 import { describe, it, expect } from 'vitest'
 import { renderHook } from '@testing-library/react'
-import { useResponseModel } from '../useResponseModel'
-import { useStreamModel } from '../useStreamModel'
+import { useResponseModel } from '@/features/methodExplorer/hooks/useResponseModel'
+import { useStreamModel } from '@/features/methodExplorer/hooks/useStreamModel'
 import type { TabResponseSnapshot, TabStreamSnapshot } from '@/stores'
 
 describe('model rehydration from a restored snapshot', () => {

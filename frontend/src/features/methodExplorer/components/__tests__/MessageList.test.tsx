@@ -2,11 +2,11 @@
 
 import { render } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
-import MessageList from '../MessageList'
+import MessageList from '@/features/methodExplorer/components/MessageList'
 
 // MessageCard reads the method-explorer context for the target; stub it so the
 // list can render standalone.
-vi.mock('../../stores', () => ({
+vi.mock('@/features/methodExplorer/stores', () => ({
   useMethodExplorerContext: () => ({ selectedTarget: null }),
 }))
 
@@ -26,9 +26,7 @@ function messageContainer(container: HTMLElement): HTMLElement {
 
 describe('MessageList height', () => {
   it('applies the fixed maxHeight when not resizable', () => {
-    const { container } = render(
-      <MessageList messages={[{ a: 1 }]} maxHeight="max-h-80" />
-    )
+    const { container } = render(<MessageList messages={[{ a: 1 }]} maxHeight="max-h-80" />)
     const el = scrollContainer(container)
     expect(el.className).toContain('max-h-80')
     // No native resize affordance on fixed lists.
@@ -36,9 +34,7 @@ describe('MessageList height', () => {
   })
 
   it('opens tall and is user-draggable when resizable', () => {
-    const { container } = render(
-      <MessageList messages={[{ a: 1 }]} maxHeight="max-h-80" resizable />
-    )
+    const { container } = render(<MessageList messages={[{ a: 1 }]} maxHeight="max-h-80" resizable />)
     const el = scrollContainer(container)
     // Native vertical drag-resize with a floor and a viewport-relative ceiling,
     // ignoring the fixed compact cap.
@@ -51,9 +47,7 @@ describe('MessageList height', () => {
   })
 
   it('grows to fit with no scrollbar or resize when scrollable is false', () => {
-    const { container } = render(
-      <MessageList messages={[{ a: 1 }]} resizable scrollable={false} />
-    )
+    const { container } = render(<MessageList messages={[{ a: 1 }]} resizable scrollable={false} />)
     const el = messageContainer(container)
     // No inner scroll, no cap, no drag handle — the page scrolls instead.
     expect(el.className).not.toContain('overflow-y-auto')

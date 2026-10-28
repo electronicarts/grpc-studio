@@ -7,9 +7,9 @@
 
 import React from 'react'
 import type { DescMessage } from '@bufbuild/protobuf'
-import { renderWellKnownType } from '../shared/WellKnownTypeRenderer'
-import SchemaRenderer from '../core/SchemaRenderer'
-import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
+import { renderWellKnownType } from '@/features/schemaRenderer/components/shared/WellKnownTypeRenderer'
+import SchemaRenderer from '@/features/schemaRenderer/components/core/SchemaRenderer'
+import { useProtoMessageRendererContext } from '@/features/schemaRenderer/stores/schemaRendererContext'
 
 interface AnyContentRendererProps {
   schema: DescMessage
@@ -51,7 +51,7 @@ const AnyContentRenderer: React.FC<AnyContentRendererProps> = ({ schema, formDat
     fieldName: 'value',
     value: wktValue,
     onChange: handleWktChange,
-    path: ''
+    path: '',
   })
 
   if (wktComponent) {

@@ -11,8 +11,10 @@
 
 import { toBinary } from '@bufbuild/protobuf'
 import { FileDescriptorSetSchema } from '@bufbuild/protobuf/wkt'
-import reflectionSchemaRepository, { type ReflectionSchemaRepository } from '../repositories/reflectionSchemaRepository.js'
-import logger from '../utils/logger.js'
+import reflectionSchemaRepository, {
+  type ReflectionSchemaRepository,
+} from '#src/repositories/reflectionSchemaRepository.js'
+import logger from '#src/utils/logger.js'
 const descriptorSetLogger = logger.child({ module: 'descriptor-set-service' })
 
 export class DescriptorSetService {
@@ -32,7 +34,11 @@ export class DescriptorSetService {
       const binary = toBinary(FileDescriptorSetSchema, fileDescriptorSet)
       const descriptorSetBase64 = Buffer.from(binary).toString('base64')
 
-      descriptorSetLogger.info('Serialized descriptor set', { target, messageType, bytes: Math.round(descriptorSetBase64.length * 0.75) })
+      descriptorSetLogger.info('Serialized descriptor set', {
+        target,
+        messageType,
+        bytes: Math.round(descriptorSetBase64.length * 0.75),
+      })
       return descriptorSetBase64
     } catch (error) {
       descriptorSetLogger.error('Failed to serialize descriptor set', {
@@ -43,7 +49,6 @@ export class DescriptorSetService {
       throw error
     }
   }
-
 }
 
 export default new DescriptorSetService()

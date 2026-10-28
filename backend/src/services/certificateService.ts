@@ -9,11 +9,11 @@ import type {
   CertificateNotConfiguredResponse,
   CertificateResponse,
 } from '@grpc-studio/shared'
-import configManager from '../config/configManager.js'
-import certificateRepository, { type CertificateRepository } from '../repositories/certificateRepository.js'
-import type { CertCheckResult } from '../types/index.js'
-import logger from '../utils/logger.js'
-import { buildCertificateInfo, checkCertificateMetadata } from '../utils/certificateStatus.js'
+import configManager from '#src/config/configManager.js'
+import certificateRepository, { type CertificateRepository } from '#src/repositories/certificateRepository.js'
+import type { CertCheckResult } from '#src/types/index.js'
+import logger from '#src/utils/logger.js'
+import { buildCertificateInfo, checkCertificateMetadata } from '#src/utils/certificateStatus.js'
 
 const certLogger = logger.child({ module: 'certificate-service' })
 
@@ -79,7 +79,7 @@ function getConfiguredCertificatePath(): string | null {
   certLogger.warn('Certificate service only checks first mTLS target in multi-server mode', {
     target: mtlsTarget.name,
     totalTargets: targets.length,
-    mtlsTargets: targets.filter(t => t.mode === 'mtls').length
+    mtlsTargets: targets.filter(t => t.mode === 'mtls').length,
   })
 
   return mtlsTarget.security.clientCertPath

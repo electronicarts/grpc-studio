@@ -14,7 +14,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import SchemaRenderer from '../components/core/SchemaRenderer'
+import SchemaRenderer from '@/features/schemaRenderer/components/core/SchemaRenderer'
 import { petSchema } from '@/test/petstore.fixtures'
 import {
   structMessageSchema,
@@ -31,14 +31,7 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
       const user = userEvent.setup()
       const onChange = vi.fn()
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={{}}
-          onChange={onChange}
-          readOnly={false}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={{}} onChange={onChange} readOnly={false} />)
 
       // Fill in string scalar (pet.name is the first name field)
       const nameInputs = screen.getAllByPlaceholderText(/Enter name/i)
@@ -96,14 +89,7 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
       const user = userEvent.setup()
       const onChange = vi.fn()
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={{}}
-          onChange={onChange}
-          readOnly={false}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={{}} onChange={onChange} readOnly={false} />)
 
       // A nested message is ticked to be sent before its fields show
       await user.click(screen.getByRole('checkbox', { name: 'Send owner' }))
@@ -152,14 +138,7 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
       const user = userEvent.setup()
       const onChange = vi.fn()
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={{}}
-          onChange={onChange}
-          readOnly={false}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={{}} onChange={onChange} readOnly={false} />)
 
       // Tick the list to send it, then add the first nickname
       await user.click(screen.getByRole('checkbox', { name: 'Send nicknames' }))
@@ -193,14 +172,7 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
       const user = userEvent.setup()
       const onChange = vi.fn()
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={{}}
-          onChange={onChange}
-          readOnly={false}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={{}} onChange={onChange} readOnly={false} />)
 
       // Tick the list to send it, then add the first vaccination
       await user.click(screen.getByRole('checkbox', { name: 'Send vaccinations' }))
@@ -233,14 +205,7 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
         },
       }
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={dataWithMap}
-          onChange={onChange}
-          readOnly={false}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={dataWithMap} onChange={onChange} readOnly={false} />)
 
       // Map field should be visible and show the entry
       const tagsSection = screen.getByText('tags')
@@ -265,14 +230,7 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
         weight_kg: 32.5,
       }
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={initialData}
-          onChange={onChange}
-          readOnly={false}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={initialData} onChange={onChange} readOnly={false} />)
 
       // Untick the name field
       await user.click(screen.getByRole('checkbox', { name: 'Send name' }))
@@ -307,14 +265,7 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
         },
       }
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={initialData}
-          onChange={onChange}
-          readOnly={false}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={initialData} onChange={onChange} readOnly={false} />)
 
       // Unset owner.email
       await user.click(screen.getByRole('checkbox', { name: 'Send email' }))
@@ -353,14 +304,7 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
         },
       }
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={initialData}
-          onChange={onChange}
-          readOnly={false}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={initialData} onChange={onChange} readOnly={false} />)
 
       // Unset city
       await user.click(screen.getByRole('checkbox', { name: 'Send city' }))
@@ -388,14 +332,7 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
         },
       }
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={initialData}
-          onChange={onChange}
-          readOnly={false}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={initialData} onChange={onChange} readOnly={false} />)
 
       // The second "Send name" checkbox is owner.name (the first is the pet's own name)
       await user.click(screen.getAllByRole('checkbox', { name: 'Send name' })[1])
@@ -421,14 +358,7 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
         },
       }
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={initialData}
-          onChange={onChange}
-          readOnly={false}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={initialData} onChange={onChange} readOnly={false} />)
 
       await user.click(screen.getByRole('checkbox', { name: 'Send owner' }))
 
@@ -443,14 +373,7 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
       const user = userEvent.setup()
       const onChange = vi.fn()
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={{ name: 'Max' }}
-          onChange={onChange}
-          readOnly={false}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={{ name: 'Max' }} onChange={onChange} readOnly={false} />)
 
       const ownerCheckbox = screen.getByRole('checkbox', { name: 'Send owner' })
       expect(ownerCheckbox).not.toBeChecked()
@@ -468,14 +391,7 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
       const user = userEvent.setup()
       const onChange = vi.fn()
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={{ name: 'Max' }}
-          onChange={onChange}
-          readOnly={false}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={{ name: 'Max' }} onChange={onChange} readOnly={false} />)
 
       const select = screen.getByRole('combobox', { name: 'is_neutered' })
       expect(select).toHaveValue('')
@@ -500,14 +416,7 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
         is_neutered: true,
       }
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={initialData}
-          onChange={onChange}
-          readOnly={false}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={initialData} onChange={onChange} readOnly={false} />)
 
       // Set boolean to false
       await user.selectOptions(screen.getByRole('combobox', { name: 'is_neutered' }), 'false')
@@ -530,14 +439,7 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
         age_months: 5,
       }
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={initialData}
-          onChange={onChange}
-          readOnly={false}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={initialData} onChange={onChange} readOnly={false} />)
 
       // Set age to zero
       const ageInput = screen.getByDisplayValue('5')
@@ -562,14 +464,7 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
         id: 'pet-123',
       }
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={initialData}
-          onChange={onChange}
-          readOnly={false}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={initialData} onChange={onChange} readOnly={false} />)
 
       // Clear id to empty string
       const idInput = screen.getByDisplayValue('pet-123')
@@ -592,14 +487,7 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
         nicknames: ['Maxy', 'Good Boy', 'Buddy'],
       }
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={initialData}
-          onChange={onChange}
-          readOnly={false}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={initialData} onChange={onChange} readOnly={false} />)
 
       // Find remove buttons (using accessible name or aria-label)
       // The X button should be within the nicknames section
@@ -638,14 +526,7 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
         },
       }
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={initialData}
-          onChange={onChange}
-          readOnly={false}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={initialData} onChange={onChange} readOnly={false} />)
 
       // Find X buttons for map entries
       const allButtons = screen.getAllByRole('button')
@@ -688,14 +569,7 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
         },
       }
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={existingPet}
-          onChange={onChange}
-          readOnly={false}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={existingPet} onChange={onChange} readOnly={false} />)
 
       // Edit name
       const nameInput = screen.getByDisplayValue('Max')
@@ -738,14 +612,7 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
         },
       }
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={existingPet}
-          onChange={onChange}
-          readOnly={false}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={existingPet} onChange={onChange} readOnly={false} />)
 
       // Remove the whole owner message in one go
       await user.click(screen.getByRole('checkbox', { name: 'Send owner' }))
@@ -764,14 +631,7 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
       const user = userEvent.setup()
       const onChange = vi.fn()
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={{}}
-          onChange={onChange}
-          readOnly={false}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={{}} onChange={onChange} readOnly={false} />)
 
       // Type, clear, type again rapidly
       const nameInput = screen.getByPlaceholderText(/Enter name/i)
@@ -807,14 +667,7 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
         is_neutered: true,
       }
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={initialData}
-          onChange={onChange}
-          readOnly={false}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={initialData} onChange={onChange} readOnly={false} />)
 
       // Edit multiple fields
       await user.clear(screen.getByDisplayValue('Max'))
@@ -905,7 +758,7 @@ describe('SchemaRenderer - Struct field write path', () => {
         data={{ metadata: { priority: 42 } }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
 
     // Expand to reveal the struct field
@@ -940,7 +793,7 @@ describe('SchemaRenderer - Struct field write path', () => {
         data={{ metadata: { priority: 42, label: 'urgent' } }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
 
     const numberInput = screen.getByDisplayValue('42')
@@ -950,7 +803,7 @@ describe('SchemaRenderer - Struct field write path', () => {
       const latest = latestCall(onChange)
       const metadata = latest.metadata as Record<string, unknown>
       expect(typeof metadata.priority).toBe('number') // still number kind, reset to 0
-      expect(metadata.label).toBe('urgent')           // other field unaffected
+      expect(metadata.label).toBe('urgent') // other field unaffected
     })
   })
 })
@@ -984,37 +837,53 @@ describe('SchemaRenderer - FieldMaskField write path', () => {
   it('appends a second path to the comma-separated string', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
-    render(<SchemaRenderer schema={fieldMaskMessageSchema} data={{ mask: 'name' }} onChange={onChange} readOnly={false} />)
+    render(
+      <SchemaRenderer schema={fieldMaskMessageSchema} data={{ mask: 'name' }} onChange={onChange} readOnly={false} />,
+    )
 
     await user.click(screen.getByTestId('fieldMask-addButton'))
     await user.keyboard('email{Enter}')
 
     await waitFor(() => {
-      expect((latestCall(onChange)).mask).toBe('name,email')
+      expect(latestCall(onChange).mask).toBe('name,email')
     })
   })
 
   it('removes a path chip, deleting the key entirely when the list empties', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
-    render(<SchemaRenderer schema={fieldMaskMessageSchema} data={{ mask: 'displayName' }} onChange={onChange} readOnly={false} />)
+    render(
+      <SchemaRenderer
+        schema={fieldMaskMessageSchema}
+        data={{ mask: 'displayName' }}
+        onChange={onChange}
+        readOnly={false}
+      />,
+    )
 
     await user.click(screen.getByRole('button', { name: 'Remove path displayName' }))
 
     await waitFor(() => {
-      expect('mask' in (latestCall(onChange))).toBe(false)
+      expect('mask' in latestCall(onChange)).toBe(false)
     })
   })
 
   it('removes only the clicked chip, preserving siblings', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
-    render(<SchemaRenderer schema={fieldMaskMessageSchema} data={{ mask: 'name,email,phone' }} onChange={onChange} readOnly={false} />)
+    render(
+      <SchemaRenderer
+        schema={fieldMaskMessageSchema}
+        data={{ mask: 'name,email,phone' }}
+        onChange={onChange}
+        readOnly={false}
+      />,
+    )
 
     await user.click(screen.getByRole('button', { name: 'Remove path email' }))
 
     await waitFor(() => {
-      expect((latestCall(onChange)).mask).toBe('name,phone')
+      expect(latestCall(onChange).mask).toBe('name,phone')
     })
   })
 
@@ -1032,7 +901,6 @@ describe('SchemaRenderer - FieldMaskField write path', () => {
       }
     })
   })
-
 })
 
 // ---------------------------------------------------------------------------
@@ -1062,13 +930,13 @@ describe('SchemaRenderer - DurationField write path', () => {
     const onChange = vi.fn()
 
     render(
-      <SchemaRenderer schema={durationMessageSchema} data={{ dur: '86400s' }} onChange={onChange} readOnly={false} />
+      <SchemaRenderer schema={durationMessageSchema} data={{ dur: '86400s' }} onChange={onChange} readOnly={false} />,
     )
 
     await user.clear(screen.getByDisplayValue('86400s'))
 
     await waitFor(() => {
-      expect('dur' in (latestCall(onChange))).toBe(false)
+      expect('dur' in latestCall(onChange)).toBe(false)
     })
   })
 
@@ -1077,7 +945,7 @@ describe('SchemaRenderer - DurationField write path', () => {
     const onChange = vi.fn()
 
     render(
-      <SchemaRenderer schema={durationMessageSchema} data={{ dur: '3600s' }} onChange={onChange} readOnly={false} />
+      <SchemaRenderer schema={durationMessageSchema} data={{ dur: '3600s' }} onChange={onChange} readOnly={false} />,
     )
 
     const input = screen.getByDisplayValue('3600s')

@@ -5,39 +5,34 @@
  * Application health and readiness checks
  */
 
-import type { Request, Response, NextFunction } from 'express';
-import * as version from '../utils/version.js';
-import configManager from '../config/configManager.js';
-import {
-  HealthStatus,
-  type HealthResponse,
-  type LivenessResponse,
-  type ReadinessResponse,
-} from '@grpc-studio/shared';
+import type { Request, Response, NextFunction } from 'express'
+import * as version from '#src/utils/version.js'
+import configManager from '#src/config/configManager.js'
+import { HealthStatus, type HealthResponse, type LivenessResponse, type ReadinessResponse } from '@grpc-studio/shared'
 
-const READY_PATH = '/ready';
-const LIVE_PATH = '/live';
+const READY_PATH = '/ready'
+const LIVE_PATH = '/live'
 
 /**
  * Health check middleware
  * Responds to /health endpoint with application status
  */
 export const healthCheck = (req: Request, res: Response, next: NextFunction): void => {
-  const healthConfig = configManager.getHealthConfig();
+  const healthConfig = configManager.getHealthConfig()
 
   if (healthConfig.enabled && req.path === healthConfig.endpoint) {
     const responseBody: HealthResponse = {
       status: HealthStatus.HEALTHY,
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
-      version: version.APP_VERSION || undefined
-    };
+      version: version.APP_VERSION || undefined,
+    }
 
-    res.json(responseBody);
-    return;
+    res.json(responseBody)
+    return
   }
-  next();
-};
+  next()
+}
 
 /**
  * Readiness check middleware
@@ -46,16 +41,16 @@ export const healthCheck = (req: Request, res: Response, next: NextFunction): vo
  */
 export const readinessCheck = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   if (req.path !== READY_PATH) {
-    return next();
+    return next()
   }
 
   const responseBody: ReadinessResponse = {
     status: HealthStatus.READY,
     timestamp: new Date().toISOString(),
-  };
+  }
 
-  res.json(responseBody);
-};
+  res.json(responseBody)
+}
 
 /**
  * Liveness check middleware
@@ -66,10 +61,10 @@ export const livenessCheck = (req: Request, res: Response, next: NextFunction): 
     const responseBody: LivenessResponse = {
       status: HealthStatus.ALIVE,
       timestamp: new Date().toISOString(),
-    };
+    }
 
-    res.json(responseBody);
-    return;
+    res.json(responseBody)
+    return
   }
-  next();
-};
+  next()
+}

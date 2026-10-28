@@ -5,8 +5,8 @@ import assert from 'node:assert/strict'
 import { createServer, type Server as HttpServer } from 'node:http'
 import WebSocket from 'ws'
 import type { AddressInfo } from 'node:net'
-import { createWebSocketServer, closeWebSocketServer } from '../websocket/websocketServer.js'
-import { metricsRegistry } from '../metrics/registry.js'
+import { createWebSocketServer, closeWebSocketServer } from '#src/websocket/websocketServer.js'
+import { metricsRegistry } from '#src/metrics/registry.js'
 
 // These are real-socket integration tests, so time can't be virtualized — but instead
 // of sleeping a fixed duration and hoping the async metric update landed, we POLL the
@@ -16,7 +16,7 @@ import { metricsRegistry } from '../metrics/registry.js'
 const POLL_TIMEOUT_MS = 2000
 const POLL_INTERVAL_MS = 10
 
-const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
+const sleep = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms))
 
 async function currentValue(metricSelector: string): Promise<number> {
   return parseMetricValue(await metricsRegistry.getMetrics(), metricSelector)
@@ -26,7 +26,7 @@ async function currentValue(metricSelector: string): Promise<number> {
 async function waitForMetric(
   metricSelector: string,
   predicate: (value: number) => boolean,
-  message: string
+  message: string,
 ): Promise<number> {
   const deadline = Date.now() + POLL_TIMEOUT_MS
   let last = await currentValue(metricSelector)
@@ -61,14 +61,14 @@ describe('WebSocket Metrics', () => {
     httpServer.keepAliveTimeout = 0
     httpServer.headersTimeout = 0
 
-    httpServer.on('connection', (socket) => {
+    httpServer.on('connection', socket => {
       activeSockets.add(socket)
       socket.on('close', () => {
         activeSockets.delete(socket)
       })
     })
 
-    await new Promise<void>((resolve) => {
+    await new Promise<void>(resolve => {
       httpServer.listen(0, () => {
         port = (httpServer.address() as AddressInfo).port
         resolve()
@@ -113,7 +113,7 @@ describe('WebSocket Metrics', () => {
     }
     activeSockets.clear()
 
-    await new Promise<void>((resolve) => {
+    await new Promise<void>(resolve => {
       httpServer.close(() => resolve())
       setTimeout(resolve, 100)
     })
@@ -126,7 +126,7 @@ describe('WebSocket Metrics', () => {
     const ws = await openConnection(port)
     activeConnections.push(ws)
 
-    const after = await waitForMetric(selector, (v) => v >= before + 1, 'Accepted counter should increment by 1')
+    const after = await waitForMetric(selector, v => v >= before + 1, 'Accepted counter should increment by 1')
     assert.equal(after, before + 1)
   })
 
@@ -134,16 +134,20 @@ describe('WebSocket Metrics', () => {
     // verifyClient rejects a bad origin before upgrade; the late-check reason must NOT
     // be what fires here — we only assert the server stays healthy and the origin_late_check
     // series is not spuriously incremented (that path is a defense-in-depth backstop).
-    const lateBefore = await currentValue('grpc_studio_ws_connections_total{status="rejected",reason="origin_late_check"}')
+    const lateBefore = await currentValue(
+      'grpc_studio_ws_connections_total{status="rejected",reason="origin_late_check"}',
+    )
 
     const ws = new WebSocket(`ws://localhost:${port}/ws/grpc`, { headers: { origin: 'http://evil.com' } })
-    await new Promise<void>((resolve) => {
+    await new Promise<void>(resolve => {
       ws.on('error', () => resolve())
       ws.on('unexpected-response', () => resolve())
       setTimeout(() => resolve(), POLL_TIMEOUT_MS)
     })
 
-    const lateAfter = await currentValue('grpc_studio_ws_connections_total{status="rejected",reason="origin_late_check"}')
+    const lateAfter = await currentValue(
+      'grpc_studio_ws_connections_total{status="rejected",reason="origin_late_check"}',
+    )
     assert.equal(lateAfter, lateBefore, 'a normal verifyClient rejection must not hit the late-origin-check backstop')
   })
 
@@ -152,21 +156,21 @@ describe('WebSocket Metrics', () => {
 
     const ws1 = await openConnection(port)
     activeConnections.push(ws1)
-    const active1 = await waitForMetric(gauge, (v) => v >= 1, 'gauge should be >= 1 after first open')
+    const active1 = await waitForMetric(gauge, v => v >= 1, 'gauge should be >= 1 after first open')
 
     const ws2 = await openConnection(port)
     activeConnections.push(ws2)
-    await waitForMetric(gauge, (v) => v > active1, 'gauge should increase after second open')
+    await waitForMetric(gauge, v => v > active1, 'gauge should increase after second open')
     const active2 = await currentValue(gauge)
 
     ws1.close()
-    await new Promise<void>((resolve) => {
+    await new Promise<void>(resolve => {
       ws1.on('close', () => resolve())
       setTimeout(() => resolve(), POLL_TIMEOUT_MS)
     })
 
     // Poll (don't sleep) until the close-driven decrement lands.
-    await waitForMetric(gauge, (v) => v < active2, 'gauge should decrease after close')
+    await waitForMetric(gauge, v => v < active2, 'gauge should decrease after close')
   })
 
   it('records a connection-duration observation (count increments) on close', async () => {
@@ -177,13 +181,13 @@ describe('WebSocket Metrics', () => {
     activeConnections.push(ws)
 
     ws.close()
-    await new Promise<void>((resolve) => {
+    await new Promise<void>(resolve => {
       ws.on('close', () => resolve())
       setTimeout(() => resolve(), POLL_TIMEOUT_MS)
     })
 
     // The histogram's _count series must increment by at least one observation.
-    await waitForMetric(countSelector, (v) => v >= before + 1, 'duration histogram should record an observation')
+    await waitForMetric(countSelector, v => v >= before + 1, 'duration histogram should record an observation')
   })
 
   it('increments the received-messages counter when a client sends a message', async () => {
@@ -195,7 +199,7 @@ describe('WebSocket Metrics', () => {
 
     ws.send(JSON.stringify({ type: 'ping' }))
 
-    await waitForMetric(selector, (v) => v >= before + 1, 'received-messages counter should increment')
+    await waitForMetric(selector, v => v >= before + 1, 'received-messages counter should increment')
   })
 })
 

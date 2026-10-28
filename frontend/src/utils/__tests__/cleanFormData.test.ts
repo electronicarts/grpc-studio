@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import { describe, it, expect } from 'vitest'
-import { cleanFormData } from '../cleanFormData'
+import { cleanFormData } from '@/utils/cleanFormData'
 
 describe('cleanFormData', () => {
   it('removes undefined values from flat objects', () => {
@@ -123,11 +123,7 @@ describe('cleanFormData', () => {
     const result = cleanFormData(input)
 
     expect(result).toEqual({
-      users: [
-        { name: 'Alice', age: 30 },
-        { name: 'Bob' },
-        { age: 25 },
-      ],
+      users: [{ name: 'Alice', age: 30 }, { name: 'Bob' }, { age: 25 }],
     })
   })
 
@@ -220,14 +216,14 @@ describe('cleanFormData', () => {
     })
 
     it('preserves Any when it has @type and data fields', () => {
-      const input = { '@type': 'type.googleapis.com/google.protobuf.StringValue', 'value': 'hello' }
+      const input = { '@type': 'type.googleapis.com/google.protobuf.StringValue', value: 'hello' }
       expect(cleanFormData(input)).toEqual(input)
     })
 
     it('omits parent fields containing Any-with-only-@type', () => {
       const input = {
         name: 'test',
-        extra_info: { '@type': 'type.googleapis.com/google.protobuf.BytesValue' }
+        extra_info: { '@type': 'type.googleapis.com/google.protobuf.BytesValue' },
       }
       expect(cleanFormData(input)).toEqual({ name: 'test' })
     })
@@ -237,8 +233,8 @@ describe('cleanFormData', () => {
         name: 'test',
         extra_info: {
           '@type': 'type.googleapis.com/google.protobuf.StringValue',
-          'value': 'metadata'
-        }
+          value: 'metadata',
+        },
       }
       expect(cleanFormData(input)).toEqual(input)
     })

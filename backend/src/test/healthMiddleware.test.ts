@@ -3,7 +3,7 @@
 import { describe, it, beforeEach, afterEach, mock } from 'node:test'
 import assert from 'node:assert/strict'
 import type { Request, Response, NextFunction } from 'express'
-import { healthCheck, readinessCheck, livenessCheck } from '../middlewares/healthMiddleware.js'
+import { healthCheck, readinessCheck, livenessCheck } from '#src/middlewares/healthMiddleware.js'
 import { HealthStatus } from '@grpc-studio/shared'
 
 function createMockRequest(path: string): Partial<Request> {
@@ -16,7 +16,7 @@ function createMockResponse() {
     json: (data: unknown) => {
       state.jsonData = data
       return res as Response
-    }
+    },
   }
   return { res, getState: () => ({ ...state }) }
 }
@@ -39,9 +39,13 @@ describe('Health Middleware', () => {
       const { res, getState } = createMockResponse()
       let nextCalled = false
 
-      healthCheck(req, res as Response, (() => {
-        nextCalled = false
-      }) as NextFunction)
+      healthCheck(
+        req,
+        res as Response,
+        (() => {
+          nextCalled = false
+        }) as NextFunction,
+      )
 
       const state = getState()
       assert.strictEqual(nextCalled, false)
@@ -68,9 +72,13 @@ describe('Health Middleware', () => {
       const { res, getState } = createMockResponse()
       let nextCalled = false
 
-      healthCheck(req, res as Response, (() => {
-        nextCalled = true
-      }) as NextFunction)
+      healthCheck(
+        req,
+        res as Response,
+        (() => {
+          nextCalled = true
+        }) as NextFunction,
+      )
 
       assert.strictEqual(nextCalled, true)
       const state = getState()
@@ -124,9 +132,13 @@ describe('Health Middleware', () => {
       const { res, getState } = createMockResponse()
       let nextCalled = false
 
-      await readinessCheck(req, res as Response, (() => {
-        nextCalled = true
-      }) as NextFunction)
+      await readinessCheck(
+        req,
+        res as Response,
+        (() => {
+          nextCalled = true
+        }) as NextFunction,
+      )
 
       assert.strictEqual(nextCalled, true)
       const state = getState()
@@ -154,9 +166,13 @@ describe('Health Middleware', () => {
       const { res, getState } = createMockResponse()
       let nextCalled = false
 
-      livenessCheck(req, res as Response, (() => {
-        nextCalled = false
-      }) as NextFunction)
+      livenessCheck(
+        req,
+        res as Response,
+        (() => {
+          nextCalled = false
+        }) as NextFunction,
+      )
 
       const state = getState()
       assert.strictEqual(nextCalled, false)
@@ -170,9 +186,13 @@ describe('Health Middleware', () => {
       const { res, getState } = createMockResponse()
       let nextCalled = false
 
-      livenessCheck(req, res as Response, (() => {
-        nextCalled = true
-      }) as NextFunction)
+      livenessCheck(
+        req,
+        res as Response,
+        (() => {
+          nextCalled = true
+        }) as NextFunction,
+      )
 
       assert.strictEqual(nextCalled, true)
       const state = getState()
@@ -199,7 +219,7 @@ describe('Health Middleware', () => {
       const tests = [
         { path: '/health', middleware: healthCheck, expected: HealthStatus.HEALTHY },
         { path: '/ready', middleware: readinessCheck, expected: HealthStatus.READY },
-        { path: '/live', middleware: livenessCheck, expected: HealthStatus.ALIVE }
+        { path: '/live', middleware: livenessCheck, expected: HealthStatus.ALIVE },
       ]
 
       tests.forEach(async ({ path, middleware, expected }) => {
@@ -222,7 +242,7 @@ describe('Health Middleware', () => {
       const tests = [
         { path: '/health/extra', middleware: healthCheck },
         { path: '/ready/check', middleware: readinessCheck },
-        { path: '/live/status', middleware: livenessCheck }
+        { path: '/live/status', middleware: livenessCheck },
       ]
 
       tests.forEach(async ({ path, middleware }) => {
@@ -231,13 +251,21 @@ describe('Health Middleware', () => {
         let nextCalled = false
 
         if (middleware === readinessCheck) {
-          await middleware(req, res as Response, (() => {
-            nextCalled = true
-          }) as NextFunction)
+          await middleware(
+            req,
+            res as Response,
+            (() => {
+              nextCalled = true
+            }) as NextFunction,
+          )
         } else {
-          middleware(req, res as Response, (() => {
-            nextCalled = true
-          }) as NextFunction)
+          middleware(
+            req,
+            res as Response,
+            (() => {
+              nextCalled = true
+            }) as NextFunction,
+          )
         }
 
         assert.strictEqual(nextCalled, true)

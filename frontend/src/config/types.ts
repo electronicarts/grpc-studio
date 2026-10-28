@@ -2,27 +2,27 @@
 
 export interface FrontendConfig {
   api: {
-    baseUrl: string;
+    baseUrl: string
     endpoints: {
-      config: string;
-      discover: string;
-      invoke: string;
-      descriptorSet: string;
-      status: string;
-      health: string;
-    };
-    timeout: number;
-    websocketTimeout?: number;
-  };
+      config: string
+      discover: string
+      invoke: string
+      descriptorSet: string
+      status: string
+      health: string
+    }
+    timeout: number
+    websocketTimeout?: number
+  }
   auth?: {
-    enabled: boolean;
-    provider: string;
+    enabled: boolean
+    provider: string
     entraId?: {
-      tenantId: string;
-      clientId: string;
-      redirectUri?: string;
-      scopes?: string[];
-      cloud?: string;
-    };
-  };
+      tenantId: string
+      clientId: string
+      redirectUri?: string
+      scopes?: string[]
+      cloud?: string
+    }
+  }
 }

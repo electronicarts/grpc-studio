@@ -2,8 +2,8 @@
 
 import React from 'react'
 import type { DescEnum } from '@bufbuild/protobuf'
-import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
-import { FormField } from '../../../../components/shared'
+import { useProtoMessageRendererContext } from '@/features/schemaRenderer/stores/schemaRendererContext'
+import { FormField } from '@/components/shared'
 import { Select } from '@/components/ui/select'
 
 interface EnumFieldProps {
@@ -25,15 +25,13 @@ const EnumField: React.FC<EnumFieldProps> = ({ name, enumDesc, value, onChange }
 
   return (
     <FormField label={name} labelMeta={typeMeta}>
-      <Select
-        value={value || ''}
-        onChange={handleChange}
-        disabled={readOnly}
-      >
+      <Select value={value || ''} onChange={handleChange} disabled={readOnly}>
         {/* Placeholder only; a set field is unset through its checkbox (or the oneof selection). */}
         {!value && <option value="">Select {name}</option>}
-        {enumDesc.values.map((ev) => (
-          <option key={ev.name} value={ev.name}>{ev.name}</option>
+        {enumDesc.values.map(ev => (
+          <option key={ev.name} value={ev.name}>
+            {ev.name}
+          </option>
         ))}
       </Select>
     </FormField>

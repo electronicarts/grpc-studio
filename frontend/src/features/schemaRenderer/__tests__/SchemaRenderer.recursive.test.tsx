@@ -15,18 +15,13 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import SchemaRenderer from '../components/core/SchemaRenderer'
-import { collectExpandablePaths } from '../utils/pathAnalysis'
-import { filterMembers } from '../utils/fieldFiltering'
-import { detectOneOfSelections } from '../utils/oneOfDetection'
-import {
-  recursiveSchema,
-  lineageSchema,
-  recursiveOneofSchema,
-  testData,
-} from '@/test/protoMessageRenderer.fixtures'
+import SchemaRenderer from '@/features/schemaRenderer/components/core/SchemaRenderer'
+import { collectExpandablePaths } from '@/features/schemaRenderer/utils/pathAnalysis'
+import { filterMembers } from '@/features/schemaRenderer/utils/fieldFiltering'
+import { detectOneOfSelections } from '@/features/schemaRenderer/utils/oneOfDetection'
+import { recursiveSchema, lineageSchema, recursiveOneofSchema, testData } from '@/test/protoMessageRenderer.fixtures'
 
-vi.mock('../../schemaLoader/lib/schemaCache', async () => {
+vi.mock('@/features/schemaLoader/lib/schemaCache', async () => {
   const { schemaCacheModule } = await import('@/test/schemaCacheMock')
   const { schemaCache } = await import('@/test/protoMessageRenderer.fixtures')
   return schemaCacheModule(schemaCache)
@@ -128,14 +123,7 @@ describe('cyclic schemas', () => {
     })
 
     it('renders a self-nested response payload', () => {
-      render(
-        <SchemaRenderer
-          schema={recursiveSchema}
-          data={testData.recursive}
-          onChange={vi.fn()}
-          readOnly
-        />
-      )
+      render(<SchemaRenderer schema={recursiveSchema} data={testData.recursive} onChange={vi.fn()} readOnly />)
       expect(screen.getByText('test.Recursive')).toBeInTheDocument()
       expect(screen.getByDisplayValue('root')).toBeInTheDocument()
       // The nested Recursive inside `parent` is expanded because it has data

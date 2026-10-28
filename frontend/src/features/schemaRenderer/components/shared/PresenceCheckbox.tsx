@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { Checkbox } from '@/components/ui/checkbox'
-import type { FieldPresence } from './fieldPresence'
+import type { FieldPresence } from '@/features/schemaRenderer/components/shared/fieldPresence'
 
 interface PresenceCheckboxProps {
   name: string

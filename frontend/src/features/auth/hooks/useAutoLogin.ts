@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import { useEffect, useRef } from 'react'
-import { useAuth } from './useAuth'
+import { useAuth } from '@/features/auth/hooks/useAuth'
 import { createLogger } from '@/utils/debugLogger'
 
 const logger = createLogger('Auth:AutoLogin')
@@ -16,7 +16,7 @@ export function useAutoLogin() {
   useEffect(() => {
     if (isSsoEnabled && !isAuthenticated && !isLoading && !loginAttempted.current) {
       loginAttempted.current = true
-      login().catch((error) => {
+      login().catch(error => {
         logger.error('Auto-login failed:', error)
         loginAttempted.current = false
       })

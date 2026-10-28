@@ -4,11 +4,11 @@
  * Reads client certificate metadata and caches it by certificate path.
  */
 
-import * as certificateMetadataCache from '../cache/certificateMetadataCache.js'
-import configManager from '../config/configManager.js'
-import type { CertificateMetadata } from '../types/index.js'
-import { readLocalCertificateFile } from '../utils/certificateUtils.js'
-import logger from '../utils/logger.js'
+import * as certificateMetadataCache from '#src/cache/certificateMetadataCache.js'
+import configManager from '#src/config/configManager.js'
+import type { CertificateMetadata } from '#src/types/index.js'
+import { readLocalCertificateFile } from '#src/utils/certificateUtils.js'
+import logger from '#src/utils/logger.js'
 
 const certLogger = logger.child({ module: 'certificate-repository' })
 

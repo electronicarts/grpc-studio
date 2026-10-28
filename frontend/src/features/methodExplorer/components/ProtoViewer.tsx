@@ -3,20 +3,34 @@
 import React, { useState, useMemo, useSyncExternalStore } from 'react'
 import { Code, ChevronDown, ChevronRight } from 'lucide-react'
 import { ScalarType } from '@bufbuild/protobuf'
-import { GrpcService, GrpcMethod } from '../../../types/grpc'
-import { scalarTypeName } from '../../../utils/descUtils'
-import { schemaCache } from '../../schemaLoader/lib/schemaCache'
-import { formatMethodProto } from '../utils/protoFormatter'
+import { GrpcService, GrpcMethod } from '@/types/grpc'
+import { scalarTypeName } from '@/utils/descUtils'
+import { schemaCache } from '@/features/schemaLoader/lib/schemaCache'
+import { formatMethodProto } from '@/features/methodExplorer/utils/protoFormatter'
 
 // Proto syntax highlighting via regex tokenisation
 const PROTO_KEYWORDS = new Set([
-  'service', 'rpc', 'returns', 'message', 'enum', 'oneof',
-  'repeated', 'map', 'stream', 'reserved', 'option', 'import', 'syntax', 'package',
+  'service',
+  'rpc',
+  'returns',
+  'message',
+  'enum',
+  'oneof',
+  'repeated',
+  'map',
+  'stream',
+  'reserved',
+  'option',
+  'import',
+  'syntax',
+  'package',
 ])
 
 // Proto scalar type names for syntax highlighting (not type checking), from buf's ScalarType enum
 const PROTO_SCALARS = new Set(
-  Object.values(ScalarType).filter((v): v is ScalarType => typeof v === 'number').map(scalarTypeName),
+  Object.values(ScalarType)
+    .filter((v): v is ScalarType => typeof v === 'number')
+    .map(scalarTypeName),
 )
 
 function highlightProto(text: string): React.ReactNode[] {
@@ -33,22 +47,50 @@ function highlightProto(text: string): React.ReactNode[] {
       if (ws) {
         tokens.push(ws)
       } else if (comment) {
-        tokens.push(<span key={key} className="italic text-muted-foreground">{comment}</span>)
+        tokens.push(
+          <span key={key} className="italic text-muted-foreground">
+            {comment}
+          </span>,
+        )
       } else if (punct) {
-        tokens.push(<span key={key} className="text-muted-foreground">{punct}</span>)
+        tokens.push(
+          <span key={key} className="text-muted-foreground">
+            {punct}
+          </span>,
+        )
       } else if (fieldNum) {
-        tokens.push(<span key={key} className="text-warning">{fieldNum}</span>)
+        tokens.push(
+          <span key={key} className="text-warning">
+            {fieldNum}
+          </span>,
+        )
       } else if (word) {
         if (PROTO_KEYWORDS.has(word)) {
-          tokens.push(<span key={key} className="font-semibold text-brand">{word}</span>)
+          tokens.push(
+            <span key={key} className="font-semibold text-brand">
+              {word}
+            </span>,
+          )
         } else if (PROTO_SCALARS.has(word)) {
-          tokens.push(<span key={key} className="text-info">{word}</span>)
+          tokens.push(
+            <span key={key} className="text-info">
+              {word}
+            </span>,
+          )
         } else if (word[0] === word[0].toUpperCase() && /^[A-Z]/.test(word)) {
           // PascalCase → message/enum type name
-          tokens.push(<span key={key} className="text-syntax-type">{word}</span>)
+          tokens.push(
+            <span key={key} className="text-syntax-type">
+              {word}
+            </span>,
+          )
         } else {
           // field name
-          tokens.push(<span key={key} className="text-foreground">{word}</span>)
+          tokens.push(
+            <span key={key} className="text-foreground">
+              {word}
+            </span>,
+          )
         }
       } else if (other) {
         tokens.push(other)
@@ -72,21 +114,27 @@ interface ProtoViewerProps {
   outputOnly?: boolean
 }
 
-const ProtoViewer: React.FC<ProtoViewerProps> = ({ selectedTarget, selectedService, selectedMethod, inline = false, outputOnly = false }) => {
+const ProtoViewer: React.FC<ProtoViewerProps> = ({
+  selectedTarget,
+  selectedService,
+  selectedMethod,
+  inline = false,
+  outputOnly = false,
+}) => {
   const [expanded, setExpanded] = useState(!inline)
 
   // Re-render when schemas arrive in the cache
   const cacheVersion = useSyncExternalStore(
-    (cb) => schemaCache.subscribe(cb),
-    () => schemaCache.getVersion()
+    cb => schemaCache.subscribe(cb),
+    () => schemaCache.getVersion(),
   )
 
   const protoText = useMemo(() => {
     return formatMethodProto(
       selectedService.name,
       selectedMethod,
-      (type) => schemaCache.getCachedSchema(selectedTarget, type),
-      outputOnly ? { outputOnly: true } : undefined
+      type => schemaCache.getCachedSchema(selectedTarget, type),
+      outputOnly ? { outputOnly: true } : undefined,
     )
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTarget, selectedService.name, selectedMethod, cacheVersion, outputOnly])

@@ -9,8 +9,8 @@
  * them synchronously during render.
  */
 import type { DescMessage } from '@bufbuild/protobuf'
-import { schemaLogger } from '../../../utils/debugLogger'
-import { fetchDescriptorSet } from './descriptorSetFetcher'
+import { schemaLogger } from '@/utils/debugLogger'
+import { fetchDescriptorSet } from '@/features/schemaLoader/lib/descriptorSetFetcher'
 
 type Listener = () => void
 
@@ -28,7 +28,9 @@ class SchemaCache {
 
   subscribe(listener: Listener): () => void {
     this.listeners.add(listener)
-    return () => { this.listeners.delete(listener) }
+    return () => {
+      this.listeners.delete(listener)
+    }
   }
 
   private notify() {
@@ -68,8 +70,11 @@ class SchemaCache {
     if (cached) return cached
 
     if (this.loadingPromises.has(key)) {
-      try { return await this.loadingPromises.get(key)! }
-      catch { return null }
+      try {
+        return await this.loadingPromises.get(key)!
+      } catch {
+        return null
+      }
     }
 
     const promise = fetchDescriptorSet(target, messageType, this.schemas)

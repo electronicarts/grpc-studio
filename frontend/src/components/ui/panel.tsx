@@ -15,17 +15,11 @@ export interface PanelProps extends React.HTMLAttributes<HTMLDivElement> {
   padded?: boolean
 }
 
-export const Panel = React.forwardRef<HTMLDivElement, PanelProps>(
-  ({ className, padded = false, ...props }, ref) => (
-    <div
-      ref={ref}
-      className={cn(
-        'rounded-xl border border-border bg-card shadow-sm',
-        padded && 'p-4',
-        className
-      )}
-      {...props}
-    />
-  )
-)
+export const Panel = React.forwardRef<HTMLDivElement, PanelProps>(({ className, padded = false, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn('rounded-xl border border-border bg-card shadow-sm', padded && 'p-4', className)}
+    {...props}
+  />
+))
 Panel.displayName = 'Panel'

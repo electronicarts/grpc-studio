@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import type { RequestMetadata } from '@grpc-studio/shared'
-import type { MetadataRow } from '../types'
+import type { MetadataRow } from '@/features/methodExplorer/types'
 
 /**
  * Convert editor rows into the wire metadata map: only enabled rows with a
@@ -29,10 +29,7 @@ export function activeRowCount(rows: MetadataRow[]): number {
  * key/value becomes an enabled row. IDs are assigned by the caller-provided
  * generator so they stay unique within the editor.
  */
-export function metadataToRows(
-  metadata: RequestMetadata | undefined | null,
-  nextId: () => string,
-): MetadataRow[] {
+export function metadataToRows(metadata: RequestMetadata | undefined | null, nextId: () => string): MetadataRow[] {
   if (!metadata) return []
   return Object.entries(metadata).map(([key, value]) => ({
     id: nextId(),

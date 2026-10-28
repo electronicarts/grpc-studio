@@ -47,14 +47,17 @@ function parseStructuredError(errorData: Record<string, unknown>, status: number
   }
 
   if (errorData.error) {
-    const errorMessage = typeof errorData.error === 'string'
-      ? errorData.error
-      : (errorData.error as { message?: string })?.message ?? 'Unknown error'
+    const errorMessage =
+      typeof errorData.error === 'string'
+        ? errorData.error
+        : ((errorData.error as { message?: string })?.message ?? 'Unknown error')
 
-    return parseGrpcError(errorMessage, status) ?? {
-      message: errorMessage || 'Unknown error',
-      status,
-    }
+    return (
+      parseGrpcError(errorMessage, status) ?? {
+        message: errorMessage || 'Unknown error',
+        status,
+      }
+    )
   }
 
   const fallbackMessage = errorData.message ?? errorData.details ?? `HTTP ${status}`

@@ -5,16 +5,20 @@ import assert from 'node:assert/strict'
 import { fromJson, toJson } from '@bufbuild/protobuf'
 import { AnySchema } from '@bufbuild/protobuf/wkt'
 import { withWellKnownTypes } from '@grpc-studio/shared'
-import * as protoFixtures from './protoFixtures.js'
+import * as protoFixtures from '#src/test/protoFixtures.js'
 
-const reflected = protoFixtures.fileRegistry(protoFixtures.fileDescriptor({
-  name: 'outer.proto',
-  messageType: [{
-    name: 'Outer',
-    field: [protoFixtures.field('id', 1, protoFixtures.FieldType.STRING)],
-    nestedType: [{ name: 'Inner', field: [protoFixtures.field('label', 1, protoFixtures.FieldType.STRING)] }],
-  }],
-}))
+const reflected = protoFixtures.fileRegistry(
+  protoFixtures.fileDescriptor({
+    name: 'outer.proto',
+    messageType: [
+      {
+        name: 'Outer',
+        field: [protoFixtures.field('id', 1, protoFixtures.FieldType.STRING)],
+        nestedType: [{ name: 'Inner', field: [protoFixtures.field('label', 1, protoFixtures.FieldType.STRING)] }],
+      },
+    ],
+  }),
+)
 
 describe('withWellKnownTypes', () => {
   const registry = withWellKnownTypes(reflected)

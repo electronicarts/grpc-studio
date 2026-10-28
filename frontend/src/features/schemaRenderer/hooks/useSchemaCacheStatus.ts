@@ -2,17 +2,15 @@
 
 import { useEffect, useState, useSyncExternalStore } from 'react'
 import type { DescMessage } from '@bufbuild/protobuf'
-import { schemaCache } from '../../schemaLoader/lib/schemaCache'
+import { schemaCache } from '@/features/schemaLoader/lib/schemaCache'
 
 export interface UseSchemaCacheStatusResult {
   schemasLoaded: boolean
 }
 
-export function useSchemaCacheStatus(
-  schema: DescMessage | null,
-): UseSchemaCacheStatusResult {
+export function useSchemaCacheStatus(schema: DescMessage | null): UseSchemaCacheStatusResult {
   const cacheVersion = useSyncExternalStore(
-    (callback) => schemaCache.subscribe(callback),
+    callback => schemaCache.subscribe(callback),
     () => schemaCache.getVersion(),
   )
 

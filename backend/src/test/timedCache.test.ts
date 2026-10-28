@@ -2,14 +2,14 @@
 
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { TimedCache } from '../cache/timedCache.js'
+import { TimedCache } from '#src/cache/timedCache.js'
 
 describe('TimedCache', () => {
   describe('basic operations', () => {
     it('should store and retrieve values', () => {
       const cache = new TimedCache<string, number>({
         ttlMs: 10000,
-        maxEntries: 100
+        maxEntries: 100,
       })
 
       cache.set('key1', 42)
@@ -19,7 +19,7 @@ describe('TimedCache', () => {
     it('should return undefined for missing keys', () => {
       const cache = new TimedCache<string, number>({
         ttlMs: 10000,
-        maxEntries: 100
+        maxEntries: 100,
       })
 
       assert.equal(cache.get('nonexistent'), undefined)
@@ -28,7 +28,7 @@ describe('TimedCache', () => {
     it('should update existing keys', () => {
       const cache = new TimedCache<string, number>({
         ttlMs: 10000,
-        maxEntries: 100
+        maxEntries: 100,
       })
 
       cache.set('key1', 10)
@@ -40,7 +40,7 @@ describe('TimedCache', () => {
     it('should delete keys', () => {
       const cache = new TimedCache<string, number>({
         ttlMs: 10000,
-        maxEntries: 100
+        maxEntries: 100,
       })
 
       cache.set('key1', 42)
@@ -53,7 +53,7 @@ describe('TimedCache', () => {
     it('should return false when deleting nonexistent keys', () => {
       const cache = new TimedCache<string, number>({
         ttlMs: 10000,
-        maxEntries: 100
+        maxEntries: 100,
       })
 
       const deleted = cache.delete('nonexistent')
@@ -63,7 +63,7 @@ describe('TimedCache', () => {
     it('should clear all entries', () => {
       const cache = new TimedCache<string, number>({
         ttlMs: 10000,
-        maxEntries: 100
+        maxEntries: 100,
       })
 
       cache.set('key1', 1)
@@ -81,7 +81,7 @@ describe('TimedCache', () => {
     it('should track size correctly', () => {
       const cache = new TimedCache<string, number>({
         ttlMs: 10000,
-        maxEntries: 100
+        maxEntries: 100,
       })
 
       assert.equal(cache.size, 0)
@@ -108,7 +108,7 @@ describe('TimedCache', () => {
       assert.equal(keys.length, 3)
 
       // Callers (e.g. ReflectionSchemaRepository.clearCache) delete by target prefix.
-      const targetAKeys = keys.filter((k) => k.startsWith('targetA:'))
+      const targetAKeys = keys.filter(k => k.startsWith('targetA:'))
       assert.deepEqual(targetAKeys.sort(), ['targetA:registry:Foo', 'targetA:service-names'])
 
       for (const key of targetAKeys) cache.delete(key)
@@ -122,7 +122,7 @@ describe('TimedCache', () => {
       const cache = new TimedCache<string, number>({
         ttlMs: 1000,
         maxEntries: 100,
-        nowMs: () => now
+        nowMs: () => now,
       })
 
       cache.set('key1', 42)
@@ -141,7 +141,7 @@ describe('TimedCache', () => {
       const cache = new TimedCache<string, number>({
         ttlMs: 1000,
         maxEntries: 100,
-        nowMs: () => now
+        nowMs: () => now,
       })
 
       cache.set('key1', 42)
@@ -162,7 +162,7 @@ describe('TimedCache', () => {
       const cache = new TimedCache<string, number>({
         ttlMs: () => ttl,
         maxEntries: 100,
-        nowMs: () => now
+        nowMs: () => now,
       })
 
       cache.set('key1', 42)
@@ -183,7 +183,7 @@ describe('TimedCache', () => {
       const cache = new TimedCache<string, number>({
         ttlMs: 1000,
         maxEntries: 100,
-        nowMs: () => now
+        nowMs: () => now,
       })
 
       cache.set('key1', 42)
@@ -212,7 +212,7 @@ describe('TimedCache', () => {
       const cache = new TimedCache<string, number>({
         ttlMs: 10000,
         maxEntries: 3,
-        nowMs: () => now
+        nowMs: () => now,
       })
 
       cache.set('a', 1)
@@ -240,7 +240,7 @@ describe('TimedCache', () => {
       const cache = new TimedCache<string, number>({
         ttlMs: 10000,
         maxEntries: 3,
-        nowMs: () => now
+        nowMs: () => now,
       })
 
       cache.set('a', 1)
@@ -270,7 +270,7 @@ describe('TimedCache', () => {
       const cache = new TimedCache<string, number>({
         ttlMs: 10000,
         maxEntries: 3,
-        nowMs: () => now
+        nowMs: () => now,
       })
 
       cache.set('hot', 999)
@@ -295,7 +295,7 @@ describe('TimedCache', () => {
     it('should not evict when under capacity', () => {
       const cache = new TimedCache<string, number>({
         ttlMs: 10000,
-        maxEntries: 5
+        maxEntries: 5,
       })
 
       cache.set('a', 1)
@@ -313,7 +313,7 @@ describe('TimedCache', () => {
       const cache = new TimedCache<string, number>({
         ttlMs: 10000,
         maxEntries: 3,
-        nowMs: () => now
+        nowMs: () => now,
       })
 
       cache.set('a', 1)
@@ -336,7 +336,7 @@ describe('TimedCache', () => {
 
       const cache = new TimedCache<string, number>({
         ttlMs: 10000,
-        maxEntries: () => maxEntries
+        maxEntries: () => maxEntries,
       })
 
       cache.set('a', 1)
@@ -358,7 +358,7 @@ describe('TimedCache', () => {
     it('should handle zero maxEntries gracefully', () => {
       const cache = new TimedCache<string, number>({
         ttlMs: 10000,
-        maxEntries: 0
+        maxEntries: 0,
       })
 
       // Every set should immediately evict
@@ -375,7 +375,7 @@ describe('TimedCache', () => {
       const cache = new TimedCache<string, number>({
         ttlMs: 10000,
         maxEntries: 1,
-        nowMs: () => now
+        nowMs: () => now,
       })
 
       cache.set('a', 1)
@@ -395,13 +395,13 @@ describe('TimedCache', () => {
 
       const cache = new TimedCache<string, User>({
         ttlMs: 10000,
-        maxEntries: 100
+        maxEntries: 100,
       })
 
       const user: User = {
         id: 1,
         name: 'Alice',
-        metadata: { role: 'admin', active: true }
+        metadata: { role: 'admin', active: true },
       }
 
       cache.set('user:1', user)
@@ -413,7 +413,7 @@ describe('TimedCache', () => {
     it('should handle numeric keys', () => {
       const cache = new TimedCache<number, string>({
         ttlMs: 10000,
-        maxEntries: 100
+        maxEntries: 100,
       })
 
       cache.set(123, 'value1')
@@ -428,7 +428,7 @@ describe('TimedCache', () => {
     it('should handle rapid set/get operations', () => {
       const cache = new TimedCache<string, number>({
         ttlMs: 10000,
-        maxEntries: 1000
+        maxEntries: 1000,
       })
 
       // Rapid writes
@@ -447,7 +447,7 @@ describe('TimedCache', () => {
       const cache = new TimedCache<string, number>({
         ttlMs: 1000,
         maxEntries: 50,
-        nowMs: () => now
+        nowMs: () => now,
       })
 
       // Interleave sets and gets

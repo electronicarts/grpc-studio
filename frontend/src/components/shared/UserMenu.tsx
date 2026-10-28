@@ -26,7 +26,10 @@ function UserMenu() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center space-x-2 px-3 py-1.5 text-sm text-muted-foreground" data-testid="userMenu-loading">
+      <div
+        className="flex items-center space-x-2 px-3 py-1.5 text-sm text-muted-foreground"
+        data-testid="userMenu-loading"
+      >
         <Spinner size={4} tone="primary" />
         <span>Loading...</span>
       </div>
@@ -75,22 +78,15 @@ function UserMenu() {
 
       {isOpen && (
         <>
-          <div 
-            className="fixed inset-0 z-40" 
-            onClick={closeMenu}
-            data-testid="userMenu-backdrop"
-          />
-          
-          <div className="absolute right-0 z-50 mt-2 w-64 rounded-lg border
+          <div className="fixed inset-0 z-40" onClick={closeMenu} data-testid="userMenu-backdrop" />
+
+          <div
+            className="absolute right-0 z-50 mt-2 w-64 rounded-lg border
                           border-input bg-popover shadow-lg"
           >
             <div className="border-b border-border px-4 py-3">
-              <p className="text-sm font-medium text-foreground">
-                {user?.name || 'User'}
-              </p>
-              <p className="truncate text-xs text-muted-foreground">
-                {user?.email}
-              </p>
+              <p className="text-sm font-medium text-foreground">{user?.name || 'User'}</p>
+              <p className="truncate text-xs text-muted-foreground">{user?.email}</p>
             </div>
 
             <div className="py-1">

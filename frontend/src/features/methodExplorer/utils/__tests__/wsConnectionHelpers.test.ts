@@ -1,7 +1,11 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { scheduleReconnect, startHeartbeat, waitForConnection } from '../wsConnectionHelpers'
+import {
+  scheduleReconnect,
+  startHeartbeat,
+  waitForConnection,
+} from '@/features/methodExplorer/utils/wsConnectionHelpers'
 
 describe('wsConnectionHelpers', () => {
   afterEach(() => {

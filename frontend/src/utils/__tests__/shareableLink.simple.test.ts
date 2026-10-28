@@ -1,10 +1,12 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import { afterEach, describe, it, expect } from 'vitest'
-import { buildShareableUrl, parseShareableUrl } from '../shareableLink'
+import { buildShareableUrl, parseShareableUrl } from '@/utils/shareableLink'
 
 // Helper function to parse share data from URL string
-function parseShareFromUrl(url: string): { s: string; m: string; r: Record<string, unknown>; md?: Record<string, string> } | null {
+function parseShareFromUrl(
+  url: string,
+): { s: string; m: string; r: Record<string, unknown>; md?: Record<string, string> } | null {
   const hash = url.split('#')[1]
   if (!hash?.startsWith('share=')) return null
 
@@ -43,7 +45,7 @@ describe('shareableLink - encoding', () => {
       expect(parsed).toEqual({
         s: 'test.Service',
         m: 'GetUser',
-        r: { id: '123', name: 'Alice' }
+        r: { id: '123', name: 'Alice' },
       })
     })
 
@@ -58,9 +60,9 @@ describe('shareableLink - encoding', () => {
       const body = {
         user: {
           id: '456',
-          profile: { name: 'Bob', age: 30 }
+          profile: { name: 'Bob', age: 30 },
         },
-        tags: ['admin', 'user']
+        tags: ['admin', 'user'],
       }
 
       const url = buildShareableUrl('test.Service', 'CreateUser', body)
@@ -70,22 +72,14 @@ describe('shareableLink - encoding', () => {
     })
 
     it('should handle special characters', () => {
-      const url = buildShareableUrl(
-        'test.Service',
-        'Method',
-        { message: 'Hello "World" & <Friends>' }
-      )
+      const url = buildShareableUrl('test.Service', 'Method', { message: 'Hello "World" & <Friends>' })
       const parsed = parseShareFromUrl(url)
 
       expect(parsed?.r.message).toBe('Hello "World" & <Friends>')
     })
 
     it('should handle Unicode characters', () => {
-      const url = buildShareableUrl(
-        'test.Service',
-        'Method',
-        { message: '你好世界 🌍' }
-      )
+      const url = buildShareableUrl('test.Service', 'Method', { message: '你好世界 🌍' })
       const parsed = parseShareFromUrl(url)
 
       expect(parsed?.r.message).toBe('你好世界 🌍')
@@ -97,7 +91,7 @@ describe('shareableLink - encoding', () => {
         number: 42,
         boolean: true,
         nullValue: null,
-        array: [1, 2, 3]
+        array: [1, 2, 3],
       }
 
       const url = buildShareableUrl('test.Service', 'Method', body)
@@ -168,7 +162,10 @@ describe('shareableLink - parsing', () => {
 
   it('should still open links created by the previous encoder', () => {
     const json = JSON.stringify({ s: 'pkg.Service', m: 'Get', r: { name: 'café ☕' } })
-    const legacy = btoa(unescape(encodeURIComponent(json))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+    const legacy = btoa(unescape(encodeURIComponent(json)))
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '')
 
     expect(openLink(`http://localhost:3000/#share=${legacy}`)?.r).toEqual({ name: 'café ☕' })
   })

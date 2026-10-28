@@ -17,7 +17,7 @@ export const getFieldValue = (obj: Record<string, unknown> | undefined | null, f
 export const setFieldValue = (
   obj: Record<string, unknown> | undefined | null,
   fieldName: string,
-  value: unknown
+  value: unknown,
 ): Record<string, unknown> => {
   if (!obj || typeof obj !== 'object') {
     return value === undefined ? {} : { [fieldName]: value }

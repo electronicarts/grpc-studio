@@ -3,7 +3,7 @@
 import React from 'react'
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { renderHook, render } from '@testing-library/react'
-import { usePersistentHeight } from '../usePersistentHeight'
+import { usePersistentHeight } from '@/hooks/usePersistentHeight'
 
 const KEY = 'test-height-key'
 

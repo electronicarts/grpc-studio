@@ -16,12 +16,7 @@ import { createLogger } from '@/utils/debugLogger'
 const playgroundLogger = createLogger('Playground')
 
 const Playground: React.FC = () => {
-  const {
-    loading,
-    error,
-    reloadError,
-    reload,
-  } = useSchemaLoaderContext()
+  const { loading, error, reloadError, reload } = useSchemaLoaderContext()
 
   const {
     servers,
@@ -41,14 +36,7 @@ const Playground: React.FC = () => {
 
   const { collapsed: sidebarCollapsed, toggleCollapsed: toggleSidebar } = useSidebarLayout()
 
-  const {
-    tabs,
-    activeTabId,
-    setActiveTabId,
-    closeTab,
-    closeAllTabs,
-    duplicateTab,
-  } = useMethodTabs({
+  const { tabs, activeTabId, setActiveTabId, closeTab, closeAllTabs, duplicateTab } = useMethodTabs({
     selectedTarget,
     selectedService,
     selectedMethod,
@@ -58,16 +46,19 @@ const Playground: React.FC = () => {
   })
 
   // Handle manual tab click - sync to sidebar
-  const handleTabClick = React.useCallback((tabId: string) => {
-    setActiveTabId(tabId)
-    const tab = tabs.find(t => t.id === tabId)
-    if (tab) {
-      const server = servers.find(s => s.name === tab.target)
-      if (server) {
-        selectMethod(tab.method, tab.service, server)
+  const handleTabClick = React.useCallback(
+    (tabId: string) => {
+      setActiveTabId(tabId)
+      const tab = tabs.find(t => t.id === tabId)
+      if (tab) {
+        const server = servers.find(s => s.name === tab.target)
+        if (server) {
+          selectMethod(tab.method, tab.service, server)
+        }
       }
-    }
-  }, [tabs, servers, setActiveTabId, selectMethod])
+    },
+    [tabs, servers, setActiveTabId, selectMethod],
+  )
 
   React.useEffect(() => {
     const handleHomeNavigation = () => {
@@ -132,10 +123,7 @@ const Playground: React.FC = () => {
         <div className="flex flex-1 flex-col gap-6">
           {/* Server Selector */}
           <ErrorBoundary>
-            <ServerSelector
-              selectedServerNames={selectedServerNames}
-              onServerSelect={setSelectedServerNames}
-            />
+            <ServerSelector selectedServerNames={selectedServerNames} onServerSelect={setSelectedServerNames} />
           </ErrorBoundary>
 
           {/* Two Column Layout — the sidebar can be collapsed to hand the full
@@ -178,7 +166,7 @@ const Playground: React.FC = () => {
                       unmount and rehydrate from the per-tab store on return.
                       Height flows with content so the whole page scrolls. */}
                   <div>
-                    {tabs.map((tab) => (
+                    {tabs.map(tab => (
                       <TabPanel key={tab.id} tab={tab} isActive={tab.id === activeTabId} />
                     ))}
                   </div>
@@ -200,7 +188,6 @@ const Playground: React.FC = () => {
           </CollapsibleSidebar>
         </div>
       )}
-
     </div>
   )
 }

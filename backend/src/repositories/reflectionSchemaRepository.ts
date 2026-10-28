@@ -7,12 +7,12 @@
 
 import { createFileRegistry, type FileRegistry, type Registry } from '@bufbuild/protobuf'
 import type { FileDescriptorSet } from '@bufbuild/protobuf/wkt'
-import * as descriptorSetFromReflection from '../grpc/reflection/descriptorSetFromReflection.js'
-import * as reflectionMetadataCache from '../cache/reflectionMetadataCache.js'
-import multiClientManager from '../grpc/multiClientManager.js'
+import * as descriptorSetFromReflection from '#src/grpc/reflection/descriptorSetFromReflection.js'
+import * as reflectionMetadataCache from '#src/cache/reflectionMetadataCache.js'
+import multiClientManager from '#src/grpc/multiClientManager.js'
 import { withWellKnownTypes } from '@grpc-studio/shared'
-import logger from '../utils/logger.js'
-import { errorMessage } from '../utils/errorMessage.js'
+import logger from '#src/utils/logger.js'
+import { errorMessage } from '#src/utils/errorMessage.js'
 
 const repositoryLogger = logger.child({ module: 'reflection-schema-repository' })
 
@@ -75,11 +75,7 @@ export class ReflectionSchemaRepository {
     try {
       const client = await multiClientManager.getReflectionClient(target)
       const callOptions = await multiClientManager.getReflectionCallOptions(target)
-      const fileDescriptorSet = await descriptorSetFromReflection.buildFileDescriptorSet(
-        client,
-        symbol,
-        callOptions
-      )
+      const fileDescriptorSet = await descriptorSetFromReflection.buildFileDescriptorSet(client, symbol, callOptions)
 
       fileDescriptorSetCache.set(cacheKey, fileDescriptorSet)
       repositoryLogger.debug('Built FileDescriptorSet', { target, symbol, files: fileDescriptorSet.file.length })

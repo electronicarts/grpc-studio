@@ -2,16 +2,16 @@
 
 import { describe, it, mock, beforeEach, afterEach } from 'node:test'
 import assert from 'node:assert/strict'
-import { CertificateService } from '../services/certificateService.js'
-import type { CertificateRepository } from '../repositories/certificateRepository.js'
+import { CertificateService } from '#src/services/certificateService.js'
+import type { CertificateRepository } from '#src/repositories/certificateRepository.js'
 import type { CertificateReadableInfo } from '@grpc-studio/shared'
 import {
   createMockCertificateRepository,
   createValidCertificateMetadata,
   createExpiredCertificateMetadata,
   mockMtlsConfig,
-  restoreConfigManager
-} from './testFixtures.js'
+  restoreConfigManager,
+} from '#src/test/testFixtures.js'
 
 describe('CertificateService', () => {
   beforeEach(() => {
@@ -29,7 +29,10 @@ describe('CertificateService', () => {
       const result = await service.checkCertificateValidity()
 
       assert.strictEqual(result.valid, true)
-      assert.strictEqual((mockRepository.getCertificateMetadata as unknown as { mock: { calls: unknown[] } }).mock.calls.length, 0)
+      assert.strictEqual(
+        (mockRepository.getCertificateMetadata as unknown as { mock: { calls: unknown[] } }).mock.calls.length,
+        0,
+      )
     })
 
     it('should return valid for certificate with many days remaining', async () => {
@@ -37,7 +40,7 @@ describe('CertificateService', () => {
 
       const mockMetadata = createValidCertificateMetadata(100)
       const mockRepository = createMockCertificateRepository({
-        getCertificateMetadata: mock.fn(async () => mockMetadata)
+        getCertificateMetadata: mock.fn(async () => mockMetadata),
       })
 
       const service = new CertificateService(mockRepository)
@@ -54,7 +57,7 @@ describe('CertificateService', () => {
 
       const mockMetadata = createValidCertificateMetadata(5)
       const mockRepository = createMockCertificateRepository({
-        getCertificateMetadata: mock.fn(async () => mockMetadata)
+        getCertificateMetadata: mock.fn(async () => mockMetadata),
       })
 
       const service = new CertificateService(mockRepository)
@@ -70,7 +73,7 @@ describe('CertificateService', () => {
 
       const mockMetadata = createExpiredCertificateMetadata(10)
       const mockRepository = createMockCertificateRepository({
-        getCertificateMetadata: mock.fn(async () => mockMetadata)
+        getCertificateMetadata: mock.fn(async () => mockMetadata),
       })
 
       const service = new CertificateService(mockRepository)
@@ -88,18 +91,15 @@ describe('CertificateService', () => {
       const mockRepository = createMockCertificateRepository({
         getCertificateMetadata: mock.fn(async () => {
           throw new Error('Failed to read certificate')
-        })
+        }),
       })
 
       const service = new CertificateService(mockRepository)
 
-      await assert.rejects(
-        async () => await service.checkCertificateValidity(),
-        {
-          name: 'Error',
-          message: 'Failed to read certificate'
-        }
-      )
+      await assert.rejects(async () => await service.checkCertificateValidity(), {
+        name: 'Error',
+        message: 'Failed to read certificate',
+      })
     })
   })
 
@@ -110,7 +110,10 @@ describe('CertificateService', () => {
       const response = await service.getConfiguredCertificateInfo()
 
       assert.strictEqual(response.configured, false)
-      assert.strictEqual((mockRepository.getCertificateMetadata as unknown as { mock: { calls: unknown[] } }).mock.calls.length, 0)
+      assert.strictEqual(
+        (mockRepository.getCertificateMetadata as unknown as { mock: { calls: unknown[] } }).mock.calls.length,
+        0,
+      )
     })
 
     it('should return certificate info when configured', async () => {
@@ -118,7 +121,7 @@ describe('CertificateService', () => {
 
       const mockMetadata = createValidCertificateMetadata(90)
       const mockRepository = createMockCertificateRepository({
-        getCertificateMetadata: mock.fn(async () => mockMetadata)
+        getCertificateMetadata: mock.fn(async () => mockMetadata),
       })
 
       const service = new CertificateService(mockRepository)
@@ -139,7 +142,7 @@ describe('CertificateService', () => {
 
       const mockMetadata = createValidCertificateMetadata(8)
       const mockRepository = createMockCertificateRepository({
-        getCertificateMetadata: mock.fn(async () => mockMetadata)
+        getCertificateMetadata: mock.fn(async () => mockMetadata),
       })
 
       const service = new CertificateService(mockRepository)
@@ -161,7 +164,7 @@ describe('CertificateService', () => {
       const mockMetadata = createValidCertificateMetadata(3)
 
       const mockRepository = createMockCertificateRepository({
-        getCertificateMetadata: mock.fn(async () => mockMetadata)
+        getCertificateMetadata: mock.fn(async () => mockMetadata),
       })
 
       const service = new CertificateService(mockRepository)
@@ -183,7 +186,7 @@ describe('CertificateService', () => {
       const mockMetadata = createExpiredCertificateMetadata(5)
 
       const mockRepository = createMockCertificateRepository({
-        getCertificateMetadata: mock.fn(async () => mockMetadata)
+        getCertificateMetadata: mock.fn(async () => mockMetadata),
       })
 
       const service = new CertificateService(mockRepository)
@@ -205,18 +208,15 @@ describe('CertificateService', () => {
         getCertificateMetadata: mock.fn(async () => {
           throw new Error('Certificate file not found')
         }),
-        clearCache: mock.fn()
+        clearCache: mock.fn(),
       } as unknown as CertificateRepository
 
       const service = new CertificateService(mockRepository)
 
-      await assert.rejects(
-        async () => await service.getConfiguredCertificateInfo(),
-        {
-          name: 'Error',
-          message: 'Certificate file not found'
-        }
-      )
+      await assert.rejects(async () => await service.getConfiguredCertificateInfo(), {
+        name: 'Error',
+        message: 'Certificate file not found',
+      })
     })
   })
 
@@ -224,7 +224,7 @@ describe('CertificateService', () => {
     it('should call repository clearCache', () => {
       const mockRepository = {
         getCertificateMetadata: mock.fn(),
-        clearCache: mock.fn()
+        clearCache: mock.fn(),
       } as unknown as CertificateRepository
 
       const service = new CertificateService(mockRepository)
@@ -239,7 +239,7 @@ describe('CertificateService', () => {
       const mockMetadata = createValidCertificateMetadata(30)
 
       const mockRepository = createMockCertificateRepository({
-        getCertificateMetadata: mock.fn(async () => mockMetadata)
+        getCertificateMetadata: mock.fn(async () => mockMetadata),
       })
 
       const service = new CertificateService(mockRepository)
@@ -264,7 +264,7 @@ describe('CertificateService', () => {
       const mockMetadata = createValidCertificateMetadata(14) // 14 days until expiry
 
       const mockRepository = createMockCertificateRepository({
-        getCertificateMetadata: mock.fn(async () => mockMetadata)
+        getCertificateMetadata: mock.fn(async () => mockMetadata),
       })
 
       const service = new CertificateService(mockRepository)
@@ -281,7 +281,7 @@ describe('CertificateService', () => {
       const mockMetadata = createValidCertificateMetadata(7) // 7 days until expiry
 
       const mockRepository = createMockCertificateRepository({
-        getCertificateMetadata: mock.fn(async () => mockMetadata)
+        getCertificateMetadata: mock.fn(async () => mockMetadata),
       })
 
       const service = new CertificateService(mockRepository)

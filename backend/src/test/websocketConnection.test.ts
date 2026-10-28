@@ -4,10 +4,10 @@ import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import { WebSocket } from 'ws'
 import { MethodKind, type InvokeStreamStartPayload } from '@grpc-studio/shared'
-import type { GrpcMethodInvokerService } from '../services/grpcMethodInvokerService.js'
-import type { StreamCallbacks, StreamHandle } from '../types/index.js'
-import * as userContextMiddleware from '../middlewares/userContextMiddleware.js'
-import { WebSocketConnection } from '../websocket/websocketConnection.js'
+import type { GrpcMethodInvokerService } from '#src/services/grpcMethodInvokerService.js'
+import type { StreamCallbacks, StreamHandle } from '#src/types/index.js'
+import * as userContextMiddleware from '#src/middlewares/userContextMiddleware.js'
+import { WebSocketConnection } from '#src/websocket/websocketConnection.js'
 
 function fakeWebSocket() {
   const sent: Array<Record<string, unknown>> = []
@@ -37,7 +37,7 @@ function fakeWebSocket() {
 
 function deferred<T>() {
   let resolve!: (value: T) => void
-  const promise = new Promise<T>((res) => {
+  const promise = new Promise<T>(res => {
     resolve = res
   })
 
@@ -59,7 +59,13 @@ describe('WebSocketConnection', () => {
     let callbacks: StreamCallbacks | null = null
     const stream: StreamHandle = { cancel: () => {} }
     const invoker = {
-      invokeServerStream: async (_target: string, _service: string, _method: string, _data: unknown, cb: StreamCallbacks) => {
+      invokeServerStream: async (
+        _target: string,
+        _service: string,
+        _method: string,
+        _data: unknown,
+        cb: StreamCallbacks,
+      ) => {
         callbacks = cb
         return stream
       },
@@ -84,9 +90,22 @@ describe('WebSocketConnection', () => {
   it('ignores stale callbacks after a newer stream replaces an older stream', async () => {
     const callbacks: StreamCallbacks[] = []
     let firstCanceled = false
-    const streams: StreamHandle[] = [{ cancel: () => { firstCanceled = true } }, { cancel: () => {} }]
+    const streams: StreamHandle[] = [
+      {
+        cancel: () => {
+          firstCanceled = true
+        },
+      },
+      { cancel: () => {} },
+    ]
     const invoker = {
-      invokeServerStream: async (_target: string, _service: string, _method: string, _data: unknown, cb: StreamCallbacks) => {
+      invokeServerStream: async (
+        _target: string,
+        _service: string,
+        _method: string,
+        _data: unknown,
+        cb: StreamCallbacks,
+      ) => {
         callbacks.push(cb)
         return streams[callbacks.length - 1]
       },
@@ -120,7 +139,7 @@ describe('WebSocketConnection', () => {
         _target: string,
         _service: string,
         _method: string,
-        requests: AsyncIterable<unknown>
+        requests: AsyncIterable<unknown>,
       ) => {
         requestStream = requests
         return pendingStream.promise
@@ -162,7 +181,11 @@ describe('WebSocketConnection', () => {
     const secondStream = deferred<StreamHandle>()
     let callCount = 0
     let firstCanceled = false
-    const oldStream: StreamHandle = { cancel: () => { firstCanceled = true } }
+    const oldStream: StreamHandle = {
+      cancel: () => {
+        firstCanceled = true
+      },
+    }
     const newStream: StreamHandle = { cancel: () => {} }
     const invoker = {
       invokeServerStream: async () => {
@@ -197,7 +220,13 @@ describe('WebSocketConnection', () => {
   it('parses attached WebSocket messages inside the captured user context', async () => {
     let userIdFromMessageContext: string | null = null
     const invoker = {
-      invokeServerStream: async (_target: string, _service: string, _method: string, _data: unknown, cb: StreamCallbacks) => {
+      invokeServerStream: async (
+        _target: string,
+        _service: string,
+        _method: string,
+        _data: unknown,
+        cb: StreamCallbacks,
+      ) => {
         userIdFromMessageContext = userContextMiddleware.getCurrentUserId()
         cb.onEnd()
         return { cancel: () => {} }
@@ -219,7 +248,7 @@ describe('WebSocketConnection', () => {
 
     connection.open()
     emitMessage(Buffer.from(JSON.stringify({ type: 'start', payload: startPayload() })))
-    await new Promise((resolve) => setImmediate(resolve))
+    await new Promise(resolve => setImmediate(resolve))
 
     assert.equal(userIdFromMessageContext, 'user-1')
     assert.equal(sent[0].type, 'complete')
@@ -228,7 +257,13 @@ describe('WebSocketConnection', () => {
   it('uses start-frame user headers when the WebSocket upgrade had no user context', async () => {
     let userIdFromMessageContext: string | null = null
     const invoker = {
-      invokeServerStream: async (_target: string, _service: string, _method: string, _data: unknown, cb: StreamCallbacks) => {
+      invokeServerStream: async (
+        _target: string,
+        _service: string,
+        _method: string,
+        _data: unknown,
+        cb: StreamCallbacks,
+      ) => {
         userIdFromMessageContext = userContextMiddleware.getCurrentUserId()
         cb.onEnd()
         return { cancel: () => {} }
@@ -243,16 +278,20 @@ describe('WebSocketConnection', () => {
     })
 
     connection.open()
-    emitMessage(Buffer.from(JSON.stringify({
-      type: 'start',
-      payload: {
-        ...startPayload(),
-        userHeaders: {
-          'X-User-Id': 'frame-user',
-        },
-      },
-    })))
-    await new Promise((resolve) => setImmediate(resolve))
+    emitMessage(
+      Buffer.from(
+        JSON.stringify({
+          type: 'start',
+          payload: {
+            ...startPayload(),
+            userHeaders: {
+              'X-User-Id': 'frame-user',
+            },
+          },
+        }),
+      ),
+    )
+    await new Promise(resolve => setImmediate(resolve))
 
     assert.equal(userIdFromMessageContext, 'frame-user')
     assert.equal(sent[0].type, 'complete')
@@ -267,34 +306,42 @@ describe('WebSocketConnection', () => {
       grpcMethodInvokerService: {
         invokeClientStream: async () => {
           return { cancel: () => {} }
-        }
+        },
       } as any,
     })
 
     connection.open()
 
     // Start a client streaming RPC
-    emitMessage(Buffer.from(JSON.stringify({
-      type: 'start',
-      payload: {
-        target: 'test-target',
-        service: 'test.Service',
-        method: 'Upload',
-        methodKind: MethodKind.CLIENT_STREAMING,
-      },
-    })))
-    await new Promise((resolve) => setImmediate(resolve))
+    emitMessage(
+      Buffer.from(
+        JSON.stringify({
+          type: 'start',
+          payload: {
+            target: 'test-target',
+            service: 'test.Service',
+            method: 'Upload',
+            methodKind: MethodKind.CLIENT_STREAMING,
+          },
+        }),
+      ),
+    )
+    await new Promise(resolve => setImmediate(resolve))
 
     // Attempt to send more than the queue limit (default 1000)
     // For testing, we'll send a reasonable number and verify error handling works
     for (let i = 0; i < 1005; i++) {
-      emitMessage(Buffer.from(JSON.stringify({
-        type: 'data',
-        payload: { chunk: i },
-      })))
+      emitMessage(
+        Buffer.from(
+          JSON.stringify({
+            type: 'data',
+            payload: { chunk: i },
+          }),
+        ),
+      )
     }
 
-    await new Promise((resolve) => setImmediate(resolve))
+    await new Promise(resolve => setImmediate(resolve))
 
     // Should have sent an error message about queue capacity
     const errorMessages = sent.filter(msg => msg.type === 'error')
@@ -319,7 +366,13 @@ describe('WebSocketConnection', () => {
         connectionId: 'test-conn',
         ws,
         grpcMethodInvokerService: {
-          invokeServerStream: async (_target: string, _service: string, _method: string, _request: unknown, callbacks: StreamCallbacks) => {
+          invokeServerStream: async (
+            _target: string,
+            _service: string,
+            _method: string,
+            _request: unknown,
+            callbacks: StreamCallbacks,
+          ) => {
             invokeCount++
             if (invokeCount === 1) {
               await promise1
@@ -331,35 +384,43 @@ describe('WebSocketConnection', () => {
               callbacks.onEnd()
             }
             return { cancel: () => {} }
-          }
+          },
         } as any,
       })
 
       connection.open()
 
       // Start stream 1
-      emitMessage(Buffer.from(JSON.stringify({
-        type: 'start',
-        payload: startPayload(),
-      })))
-      await new Promise((resolve) => setImmediate(resolve))
+      emitMessage(
+        Buffer.from(
+          JSON.stringify({
+            type: 'start',
+            payload: startPayload(),
+          }),
+        ),
+      )
+      await new Promise(resolve => setImmediate(resolve))
 
       // Cancel immediately
       emitMessage(Buffer.from(JSON.stringify({ type: 'cancel' })))
-      await new Promise((resolve) => setImmediate(resolve))
+      await new Promise(resolve => setImmediate(resolve))
 
       // Start stream 2
-      emitMessage(Buffer.from(JSON.stringify({
-        type: 'start',
-        payload: startPayload(),
-      })))
-      await new Promise((resolve) => setImmediate(resolve))
+      emitMessage(
+        Buffer.from(
+          JSON.stringify({
+            type: 'start',
+            payload: startPayload(),
+          }),
+        ),
+      )
+      await new Promise(resolve => setImmediate(resolve))
 
       // Resolve both streams
       resolveStream1()
-      await new Promise((resolve) => setImmediate(resolve))
+      await new Promise(resolve => setImmediate(resolve))
       resolveStream2()
-      await new Promise((resolve) => setImmediate(resolve))
+      await new Promise(resolve => setImmediate(resolve))
 
       // Should only see responses from stream 2
       const responses = sent.filter(msg => msg.type === 'response')
@@ -379,7 +440,13 @@ describe('WebSocketConnection', () => {
         connectionId: 'test-conn',
         ws,
         grpcMethodInvokerService: {
-          invokeServerStream: async (_target: string, _service: string, _method: string, _request: unknown, callbacks: StreamCallbacks) => {
+          invokeServerStream: async (
+            _target: string,
+            _service: string,
+            _method: string,
+            _request: unknown,
+            callbacks: StreamCallbacks,
+          ) => {
             if (!stream1Callbacks) {
               stream1Callbacks = callbacks
               await promise1
@@ -388,41 +455,49 @@ describe('WebSocketConnection', () => {
               await promise2
             }
             return { cancel: () => {} }
-          }
+          },
         } as any,
       })
 
       connection.open()
 
       // Start stream 1
-      emitMessage(Buffer.from(JSON.stringify({
-        type: 'start',
-        payload: startPayload(),
-      })))
-      await new Promise((resolve) => setImmediate(resolve))
+      emitMessage(
+        Buffer.from(
+          JSON.stringify({
+            type: 'start',
+            payload: startPayload(),
+          }),
+        ),
+      )
+      await new Promise(resolve => setImmediate(resolve))
 
       // Start stream 2 (replaces stream 1)
-      emitMessage(Buffer.from(JSON.stringify({
-        type: 'start',
-        payload: startPayload(),
-      })))
-      await new Promise((resolve) => setImmediate(resolve))
+      emitMessage(
+        Buffer.from(
+          JSON.stringify({
+            type: 'start',
+            payload: startPayload(),
+          }),
+        ),
+      )
+      await new Promise(resolve => setImmediate(resolve))
 
       // Resolve stream 2 first
       resolveStream2()
-      await new Promise((resolve) => setImmediate(resolve))
+      await new Promise(resolve => setImmediate(resolve))
 
       // Send response from stream 2
       stream2Callbacks.onData({ stream: 2 })
-      await new Promise((resolve) => setImmediate(resolve))
+      await new Promise(resolve => setImmediate(resolve))
 
       // Resolve stream 1 late
       resolveStream1()
-      await new Promise((resolve) => setImmediate(resolve))
+      await new Promise(resolve => setImmediate(resolve))
 
       // Send response from stream 1 (should be ignored)
       stream1Callbacks.onData({ stream: 1 })
-      await new Promise((resolve) => setImmediate(resolve))
+      await new Promise(resolve => setImmediate(resolve))
 
       // Should only see response from stream 2
       const responses = sent.filter(msg => msg.type === 'response')

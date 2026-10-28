@@ -13,7 +13,7 @@ export function useUserMenu() {
   const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   const closeMenu = () => setIsOpen(false)
-  const toggleMenu = () => setIsOpen((current) => !current)
+  const toggleMenu = () => setIsOpen(current => !current)
 
   const loginUser = async () => {
     setIsLoggingIn(true)

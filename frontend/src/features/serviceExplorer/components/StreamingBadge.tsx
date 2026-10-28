@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { Badge } from '@/components/ui/badge'
-import type { StreamingType } from '../types'
+import type { StreamingType } from '@/features/serviceExplorer/types'
 
 interface StreamingBadgeProps {
   type: StreamingType

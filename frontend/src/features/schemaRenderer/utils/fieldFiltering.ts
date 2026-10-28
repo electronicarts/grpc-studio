@@ -1,11 +1,11 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import type { DescField, DescMessage, DescOneof } from '@bufbuild/protobuf'
-import { isEmpty } from './scalarTypeUtils'
-import { valueMatchesSearch } from './searchUtils'
-import { getFieldValue as getFieldValueUtil } from './fieldOperations'
-import { canDescendInto } from './descriptorTraversal'
-import { fieldTypeName } from '../../../utils/descUtils'
+import { isEmpty } from '@/features/schemaRenderer/utils/scalarTypeUtils'
+import { valueMatchesSearch } from '@/features/schemaRenderer/utils/searchUtils'
+import { getFieldValue as getFieldValueUtil } from '@/features/schemaRenderer/utils/fieldOperations'
+import { canDescendInto } from '@/features/schemaRenderer/utils/descriptorTraversal'
+import { fieldTypeName } from '@/utils/descUtils'
 
 /**
  * Does anything inside `schema` match `query`?
@@ -63,7 +63,7 @@ export function filterMembers(
     searchQuery: string
     hideEmptyFields: boolean
     isRoot: boolean
-  }
+  },
 ): (DescField | DescOneof)[] {
   const { hideEmptyFields } = options
   const query = options.isRoot ? options.searchQuery : ''

@@ -1,8 +1,3 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-export { default as FormField } from './FormField'
-
-
-
-
-
+export { default as FormField } from '@/components/shared/FormField'

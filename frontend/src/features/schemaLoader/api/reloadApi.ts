@@ -1,12 +1,12 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-import { schemaCache } from '../lib/schemaCache'
-import { restoreServers, persistServers } from '../lib/schemaPersistence'
-import { apiClient } from '../../../lib/http/apiClient'
-import { createLogger } from '../../../utils/debugLogger'
-import { parseDiscoveryResponse } from './discoveryParser'
-import type { BackendDiscoveryResponse } from './discoveryTypes'
-import type { ApiServer } from '../../../types/grpc'
+import { schemaCache } from '@/features/schemaLoader/lib/schemaCache'
+import { restoreServers, persistServers } from '@/features/schemaLoader/lib/schemaPersistence'
+import { apiClient } from '@/lib/http/apiClient'
+import { createLogger } from '@/utils/debugLogger'
+import { parseDiscoveryResponse } from '@/features/schemaLoader/api/discoveryParser'
+import type { BackendDiscoveryResponse } from '@/features/schemaLoader/api/discoveryTypes'
+import type { ApiServer } from '@/types/grpc'
 
 const schemaLogger = createLogger('schema-loader')
 
@@ -55,16 +55,8 @@ export async function reloadSchemas(current: ApiServer[], target?: string): Prom
  * Merge a single reloaded target's fresh service list into the current servers.
  * Only the matching server is replaced; the ordering of `current` is preserved.
  */
-export function mergeReloadedTarget(
-  current: ApiServer[],
-  reloaded: ApiServer[],
-  target: string,
-): ApiServer[] {
-  return current.map(server =>
-    server.name === target
-      ? (reloaded.find(rs => rs.name === target) ?? server)
-      : server
-  )
+export function mergeReloadedTarget(current: ApiServer[], reloaded: ApiServer[], target: string): ApiServer[] {
+  return current.map(server => (server.name === target ? (reloaded.find(rs => rs.name === target) ?? server) : server))
 }
 
 // ---------------------------------------------------------------------------
@@ -92,7 +84,7 @@ async function fetchSchemas(forceReload = false, target?: string): Promise<Schem
       onRetry: (attempt, error) => {
         schemaLogger.debug(`Discovery retry ${attempt}/3: ${error.message}`)
       },
-    }
+    },
   )
 
   const servers = parseDiscoveryResponse(data)

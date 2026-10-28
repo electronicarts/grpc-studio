@@ -3,10 +3,15 @@
 import { useEffect, useRef } from 'react'
 import type { GrpcMethod, GrpcService } from '@/types/grpc'
 import { formLogger } from '@/utils/debugLogger'
-import { parseGrpcErrorString } from '../../../lib/http/apiErrorParser'
-import { applyResponseSchema, normalizeResponseMessage } from '../utils/responseHandlerUtils'
-import { applyResponseSnapshot, errorStatus, okStatus, stringifyPretty } from '../utils/responseStatus'
-import type { ResponseModel, ResponseStatus, StreamModel } from '../types'
+import { parseGrpcErrorString } from '@/lib/http/apiErrorParser'
+import { applyResponseSchema, normalizeResponseMessage } from '@/features/methodExplorer/utils/responseHandlerUtils'
+import {
+  applyResponseSnapshot,
+  errorStatus,
+  okStatus,
+  stringifyPretty,
+} from '@/features/methodExplorer/utils/responseStatus'
+import type { ResponseModel, ResponseStatus, StreamModel } from '@/features/methodExplorer/types'
 
 interface UseStreamInvocationCallbacksOptions {
   selectedTarget: string
@@ -66,10 +71,7 @@ export function useStreamInvocationCallbacks({
 
     const streamedRequest = stream.currentRequest()
     if (selectedService && selectedMethod && streamedRequest) {
-      saveToHistory(
-        streamedRequest,
-        errorStatus(parsed?.code, errorMessage, requestDuration()),
-      )
+      saveToHistory(streamedRequest, errorStatus(parsed?.code, errorMessage, requestDuration()))
     }
   }
 
@@ -84,10 +86,7 @@ export function useStreamInvocationCallbacks({
 
     const streamedRequest = stream.currentRequest()
     if (selectedService && selectedMethod && messages.length > 0 && streamedRequest) {
-      saveToHistory(
-        streamedRequest,
-        okStatus(duration, responseSizeBytes),
-      )
+      saveToHistory(streamedRequest, okStatus(duration, responseSizeBytes))
     }
 
     stream.complete()

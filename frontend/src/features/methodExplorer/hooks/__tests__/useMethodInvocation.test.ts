@@ -2,17 +2,17 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
-import { useMethodInvocation } from '../useMethodInvocation'
+import { useMethodInvocation } from '@/features/methodExplorer/hooks/useMethodInvocation'
 import { MethodKind } from '@grpc-studio/shared'
-import type { GrpcService, GrpcMethod } from '../../../../types/grpc'
-import type { RequestModel, ResponseModel, StreamModel, MetadataModel } from '../../types'
+import type { GrpcService, GrpcMethod } from '@/types/grpc'
+import type { RequestModel, ResponseModel, StreamModel, MetadataModel } from '@/features/methodExplorer/types'
 
 // Mock the API and WebSocket dependencies
-vi.mock('../../api', () => ({
+vi.mock('@/features/methodExplorer/api', () => ({
   invokeUnary: vi.fn(),
 }))
 
-vi.mock('../useGrpcWebSocket', () => ({
+vi.mock('@/features/methodExplorer/hooks/useGrpcWebSocket', () => ({
   useGrpcWebSocket: () => ({
     start: vi.fn(),
     sendData: vi.fn(),
@@ -24,7 +24,7 @@ vi.mock('../useGrpcWebSocket', () => ({
   }),
 }))
 
-vi.mock('../useStreamInvocationCallbacks', () => ({
+vi.mock('@/features/methodExplorer/hooks/useStreamInvocationCallbacks', () => ({
   useStreamInvocationCallbacks: () => ({
     handleStreamResponse: vi.fn(),
     handleStreamError: vi.fn(),
@@ -32,14 +32,14 @@ vi.mock('../useStreamInvocationCallbacks', () => ({
   }),
 }))
 
-vi.mock('../useUnaryInvocationRecorder', () => ({
+vi.mock('@/features/methodExplorer/hooks/useUnaryInvocationRecorder', () => ({
   useUnaryInvocationRecorder: () => ({
     recordUnarySuccess: vi.fn(),
     recordUnaryError: vi.fn(),
   }),
 }))
 
-vi.mock('../utils/payload', () => ({
+vi.mock('@/features/methodExplorer/hooks/utils/payload', () => ({
   toWireFormat: (input: unknown) => ({ wire: input, display: input }),
 }))
 
@@ -129,8 +129,8 @@ describe('useMethodInvocation - cancelStream', () => {
         createMockResponse(),
         mockStream,
         createMockMetadata(),
-        saveToHistory
-      )
+        saveToHistory,
+      ),
     )
 
     act(() => {
@@ -145,7 +145,7 @@ describe('useMethodInvocation - cancelStream', () => {
         message: 'Cancelled by user',
         responseTimeMs: 1500,
       },
-      {}
+      {},
     )
   })
 
@@ -162,8 +162,8 @@ describe('useMethodInvocation - cancelStream', () => {
         createMockResponse(),
         mockStream,
         createMockMetadata(),
-        saveToHistory
-      )
+        saveToHistory,
+      ),
     )
 
     act(() => {
@@ -187,8 +187,8 @@ describe('useMethodInvocation - cancelStream', () => {
         createMockResponse(),
         mockStream,
         createMockMetadata(),
-        saveToHistory
-      )
+        saveToHistory,
+      ),
     )
 
     act(() => {
@@ -213,8 +213,8 @@ describe('useMethodInvocation - cancelStream', () => {
         createMockResponse(),
         mockStream,
         createMockMetadata(),
-        saveToHistory
-      )
+        saveToHistory,
+      ),
     )
 
     act(() => {
@@ -226,7 +226,7 @@ describe('useMethodInvocation - cancelStream', () => {
       expect.objectContaining({
         responseTimeMs: 3500,
       }),
-      {}
+      {},
     )
   })
 
@@ -248,19 +248,15 @@ describe('useMethodInvocation - cancelStream', () => {
         createMockResponse(),
         mockStream,
         createMockMetadata(),
-        saveToHistory
-      )
+        saveToHistory,
+      ),
     )
 
     act(() => {
       result.current.cancelStream()
     })
 
-    expect(saveToHistory).toHaveBeenCalledWith(
-      complexRequest,
-      expect.any(Object),
-      {}
-    )
+    expect(saveToHistory).toHaveBeenCalledWith(complexRequest, expect.any(Object), {})
   })
 
   it('sets loading to false when cancelling', () => {
@@ -277,8 +273,8 @@ describe('useMethodInvocation - cancelStream', () => {
         createMockResponse(),
         mockStream,
         createMockMetadata(),
-        saveToHistory
-      )
+        saveToHistory,
+      ),
     )
 
     // loading should be false initially

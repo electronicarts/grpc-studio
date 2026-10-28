@@ -40,7 +40,7 @@ export const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           title="Expand services panel"
           className={cn(
             'flex shrink-0 items-center justify-center gap-2 rounded-xl border border-border bg-card text-muted-foreground shadow-sm transition-colors hover:bg-accent hover:text-foreground',
-            'w-full px-4 py-3 lg:w-11 lg:flex-col lg:py-4'
+            'w-full px-4 py-3 lg:w-11 lg:flex-col lg:py-4',
           )}
         >
           <PanelLeftOpen className="size-5" />

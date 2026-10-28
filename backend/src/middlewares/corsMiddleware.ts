@@ -5,16 +5,16 @@
  * Cross-Origin Resource Sharing configuration
  */
 
-import type { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express'
 import {
   DEFAULT_ALLOWED_ORIGINS,
   evaluateOriginPolicy,
   validateOriginPolicy,
   type OriginPolicyOptions,
-} from '../security/originPolicy.js';
-import { sendError } from '../utils/responseHelpers.js';
+} from '#src/security/originPolicy.js'
+import { sendError } from '#src/utils/responseHelpers.js'
 
-const DEFAULT_METHODS = 'GET, POST, PUT, DELETE, OPTIONS';
+const DEFAULT_METHODS = 'GET, POST, PUT, DELETE, OPTIONS'
 const DEFAULT_HEADERS = [
   'Origin',
   'X-Requested-With',
@@ -24,7 +24,7 @@ const DEFAULT_HEADERS = [
   'X-User-Id',
   'X-User-Email',
   'X-User-Name',
-].join(', ');
+].join(', ')
 
 /**
  * Create a CORS middleware with explicit options.
@@ -37,10 +37,10 @@ const DEFAULT_HEADERS = [
  * @returns {Function} Express middleware
  */
 interface CorsOptions {
-  enabled?: boolean;
-  origins?: string[];
-  credentials?: boolean;
-  strict?: boolean;
+  enabled?: boolean
+  origins?: string[]
+  credentials?: boolean
+  strict?: boolean
 }
 
 export const createCors = ({
@@ -49,45 +49,45 @@ export const createCors = ({
   credentials = true,
   strict = false,
 }: CorsOptions = {}) => {
-  validateOriginPolicy({ enabled, origins, credentials });
+  validateOriginPolicy({ enabled, origins, credentials })
 
   return (req: Request, res: Response, next: NextFunction): void => {
-    const origin = req.headers.origin;
+    const origin = req.headers.origin
     const decision = evaluateOriginPolicy(origin, {
       enabled,
       origins,
       credentials,
       allowMissingOrigin: !strict,
-    });
+    })
 
     if (origin && decision.allowed && enabled) {
-      res.header('Access-Control-Allow-Origin', origin);
-      res.header('Vary', 'Origin');
-      res.header('Access-Control-Allow-Methods', DEFAULT_METHODS);
-      res.header('Access-Control-Allow-Headers', DEFAULT_HEADERS);
+      res.header('Access-Control-Allow-Origin', origin)
+      res.header('Vary', 'Origin')
+      res.header('Access-Control-Allow-Methods', DEFAULT_METHODS)
+      res.header('Access-Control-Allow-Headers', DEFAULT_HEADERS)
 
       if (credentials) {
-        res.header('Access-Control-Allow-Credentials', 'true');
+        res.header('Access-Control-Allow-Credentials', 'true')
       }
     }
 
     if (req.method === 'OPTIONS') {
       if (!decision.allowed) {
-        sendError(req, res, 403, 'CORS_VIOLATION', decision.reason || 'CORS policy violation');
-        return;
+        sendError(req, res, 403, 'CORS_VIOLATION', decision.reason || 'CORS policy violation')
+        return
       }
-      res.sendStatus(204);
-      return;
+      res.sendStatus(204)
+      return
     }
 
     if (strict && !decision.allowed) {
-      sendError(req, res, 403, 'CORS_VIOLATION', decision.reason || 'CORS policy violation');
-      return;
+      sendError(req, res, 403, 'CORS_VIOLATION', decision.reason || 'CORS policy violation')
+      return
     }
 
-    next();
-  };
-};
+    next()
+  }
+}
 
 /**
  * Permissive CORS — allows listed origins with credentials.
@@ -98,4 +98,4 @@ export const cors = (options: string[] | OriginPolicyOptions = DEFAULT_ALLOWED_O
     ...(Array.isArray(options) ? { origins: options } : options),
     credentials: true,
     strict: false,
-  });
+  })

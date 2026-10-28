@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import { useState } from 'react'
-import type { JsonView } from '../types'
+import type { JsonView } from '@/features/methodExplorer/types'
 
 const WIRE_UNAVAILABLE = 'The wire form is not available: this JSON is not a valid message for its schema.'
 

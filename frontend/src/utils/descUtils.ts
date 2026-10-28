@@ -29,17 +29,16 @@ export function fieldTypeName(
       return nameOf(field.listKind === 'enum' ? field.enum : field.message)
     case 'map': {
       const key = scalarTypeName(field.mapKey)
-      const val = field.mapKind === 'scalar' ? scalarTypeName(field.scalar)
-        : nameOf(field.mapKind === 'enum' ? field.enum : field.message)
+      const val =
+        field.mapKind === 'scalar'
+          ? scalarTypeName(field.scalar)
+          : nameOf(field.mapKind === 'enum' ? field.enum : field.message)
       return `map<${key}, ${val}>`
     }
   }
 }
 
-export function parseDescriptorIntoMap(
-  base64: string,
-  target: Map<string, DescMessage>,
-): void {
+export function parseDescriptorIntoMap(base64: string, target: Map<string, DescMessage>): void {
   const fdSet = fromBinary(FileDescriptorSetSchema, base64Decode(base64))
   // A registry iterates every type it holds, nested messages included
   for (const type of createFileRegistry(fdSet)) {

@@ -8,9 +8,9 @@
 import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import SchemaRenderer from '../components/core/SchemaRenderer'
+import SchemaRenderer from '@/features/schemaRenderer/components/core/SchemaRenderer'
 import { listPetsResponseSchema } from '@/test/petstore.fixtures'
-import { collectExpandablePaths } from '../utils/pathAnalysis'
+import { collectExpandablePaths } from '@/features/schemaRenderer/utils/pathAnalysis'
 
 // Mock ListPetsResponse schema structure
 
@@ -56,9 +56,7 @@ describe('SchemaRenderer - ListPetsResponse Integration', () => {
             },
           },
         },
-        vaccinations: [
-          { name: 'FVRCP', veterinarian: 'Dr. Wilson' },
-        ],
+        vaccinations: [{ name: 'FVRCP', veterinarian: 'Dr. Wilson' }],
       },
     ],
     total_count: 2,
@@ -112,14 +110,7 @@ describe('SchemaRenderer - ListPetsResponse Integration', () => {
 
   describe('Rendering with data', () => {
     it('renders repeated pets with nested structure', () => {
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={sampleResponseData}
-          onChange={() => {}}
-          readOnly={true}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={sampleResponseData} onChange={() => {}} readOnly={true} />)
 
       // Should show the message type name
       expect(screen.getByText(/ListPetsResponse/i)).toBeInTheDocument()
@@ -142,7 +133,7 @@ describe('SchemaRenderer - ListPetsResponse Integration', () => {
           onChange={() => {}}
           readOnly={true}
           defaultCollapsed={true}
-        />
+        />,
       )
 
       // Initially collapsed - items not visible
@@ -167,7 +158,7 @@ describe('SchemaRenderer - ListPetsResponse Integration', () => {
           onChange={() => {}}
           readOnly={true}
           defaultCollapsed={true}
-        />
+        />,
       )
 
       // Click "Expand" button (expand all)
@@ -194,14 +185,7 @@ describe('SchemaRenderer - ListPetsResponse Integration', () => {
     it('shows correct data in nested fields', async () => {
       const user = userEvent.setup()
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={sampleResponseData}
-          onChange={() => {}}
-          readOnly={true}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={sampleResponseData} onChange={() => {}} readOnly={true} />)
 
       // Expand all
       const expandButton = screen.getByRole('button', { name: /expand/i })
@@ -225,14 +209,7 @@ describe('SchemaRenderer - ListPetsResponse Integration', () => {
     it('handles empty pets array gracefully', () => {
       const emptyData = { pets: [], total_count: 0 }
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={emptyData}
-          onChange={() => {}}
-          readOnly={true}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={emptyData} onChange={() => {}} readOnly={true} />)
 
       // Should show 0 items
       expect(screen.getByText(/0 items/i)).toBeInTheDocument()
@@ -244,14 +221,7 @@ describe('SchemaRenderer - ListPetsResponse Integration', () => {
     it('handles missing pets field (undefined)', () => {
       const dataWithoutPets = { total_count: 0 }
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={dataWithoutPets}
-          onChange={() => {}}
-          readOnly={true}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={dataWithoutPets} onChange={() => {}} readOnly={true} />)
 
       // Should still render without crashing
       expect(screen.getByText('pets')).toBeInTheDocument()
@@ -262,14 +232,7 @@ describe('SchemaRenderer - ListPetsResponse Integration', () => {
     it('expands deeply nested coordinates in address', async () => {
       const user = userEvent.setup()
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={sampleResponseData}
-          onChange={() => {}}
-          readOnly={true}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={sampleResponseData} onChange={() => {}} readOnly={true} />)
 
       // Expand all to show deep nesting
       const expandButton = screen.getByRole('button', { name: /expand/i })
@@ -284,14 +247,7 @@ describe('SchemaRenderer - ListPetsResponse Integration', () => {
     it('verifies path depth: pets[0].owner.address.coordinates', async () => {
       const user = userEvent.setup()
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={sampleResponseData}
-          onChange={() => {}}
-          readOnly={true}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={sampleResponseData} onChange={() => {}} readOnly={true} />)
 
       const expandButton = screen.getByRole('button', { name: /expand/i })
       await user.click(expandButton)

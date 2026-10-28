@@ -6,20 +6,19 @@ import type { RequestMetadata } from '@grpc-studio/shared'
 import { buildShareableUrl } from '@/utils/shareableLink'
 
 // Context
-import { MethodExplorerProvider, useMethodExplorerContext } from '../stores'
-import { useMethodKind } from '../hooks/useMethodKind'
+import { MethodExplorerProvider, useMethodExplorerContext } from '@/features/methodExplorer/stores'
+import { useMethodKind } from '@/features/methodExplorer/hooks/useMethodKind'
 
 // Components
-import MethodHeader from './MethodHeader'
-import RequestInput from './RequestInput'
-import BidirectionalPanel from './BidirectionalPanel'
-import StreamingInfo from './StreamingInfo'
-import ExecutionControls from './ExecutionControls'
-import ErrorDisplay from './ErrorDisplay'
-import ResponseDisplay from './ResponseDisplay'
-import StreamingMessageDisplay from './StreamingMessageDisplay'
-import ProtoViewer from './ProtoViewer'
-
+import MethodHeader from '@/features/methodExplorer/components/MethodHeader'
+import RequestInput from '@/features/methodExplorer/components/RequestInput'
+import BidirectionalPanel from '@/features/methodExplorer/components/BidirectionalPanel'
+import StreamingInfo from '@/features/methodExplorer/components/StreamingInfo'
+import ExecutionControls from '@/features/methodExplorer/components/ExecutionControls'
+import ErrorDisplay from '@/features/methodExplorer/components/ErrorDisplay'
+import ResponseDisplay from '@/features/methodExplorer/components/ResponseDisplay'
+import StreamingMessageDisplay from '@/features/methodExplorer/components/StreamingMessageDisplay'
+import ProtoViewer from '@/features/methodExplorer/components/ProtoViewer'
 
 interface MethodExplorerProps {
   tabId: string
@@ -32,24 +31,14 @@ interface MethodExplorerProps {
 
 // Inner component that uses context - memoized to prevent excessive re-renders
 const MethodExplorerContent: React.FC = React.memo(() => {
-  const {
-    selectedTarget,
-    selectedService,
-    selectedMethod,
-    request,
-    stream,
-    metadata,
-    execution,
-    history,
-  } = useMethodExplorerContext()
+  const { selectedTarget, selectedService, selectedMethod, request, stream, metadata, execution, history } =
+    useMethodExplorerContext()
 
   // Share current request as a link, carrying its custom metadata headers.
   const handleShare = (): string => {
     const sharedMetadata = metadata.toMetadata()
     try {
-      const body = request.isFormMode
-        ? request.formData
-        : JSON.parse(request.body || '{}')
+      const body = request.isFormMode ? request.formData : JSON.parse(request.body || '{}')
       return buildShareableUrl(selectedService.fullName, selectedMethod.name, body, sharedMetadata)
     } catch {
       return buildShareableUrl(selectedService.fullName, selectedMethod.name, {}, sharedMetadata)
@@ -61,11 +50,7 @@ const MethodExplorerContent: React.FC = React.memo(() => {
 
   return (
     <div className="px-8 py-6">
-      <MethodHeader 
-        selectedService={selectedService}
-        selectedMethod={selectedMethod}
-        onShare={handleShare}
-      />
+      <MethodHeader selectedService={selectedService} selectedMethod={selectedMethod} onShare={handleShare} />
 
       <div className="space-y-8">
         {/* Request Input — always full width */}
@@ -78,10 +63,7 @@ const MethodExplorerContent: React.FC = React.memo(() => {
         <ExecutionControls />
 
         {/* Error Display */}
-        <ErrorDisplay 
-          error={execution.error}
-          onDismiss={() => execution.setError(null)}
-        />
+        <ErrorDisplay error={execution.error} onDismiss={() => execution.setError(null)} />
 
         {/* Streaming panel: sent messages (left 35%) | responses (right 65%) — all streaming types.
             The min-w-0 wrappers stop each panel's content from overflowing its grid track and
@@ -96,12 +78,17 @@ const MethodExplorerContent: React.FC = React.memo(() => {
                 schema={request.schema}
                 colorScheme="blue"
                 scrollable={false}
-                schemaNode={<ProtoViewer selectedTarget={selectedTarget} selectedService={selectedService} selectedMethod={selectedMethod} inline />}
+                schemaNode={
+                  <ProtoViewer
+                    selectedTarget={selectedTarget}
+                    selectedService={selectedService}
+                    selectedMethod={selectedMethod}
+                    inline
+                  />
+                }
               />
             </div>
-            <div className="min-w-0">
-              {isBidirectional ? <BidirectionalPanel /> : <ResponseDisplay />}
-            </div>
+            <div className="min-w-0">{isBidirectional ? <BidirectionalPanel /> : <ResponseDisplay />}</div>
           </div>
         )}
 
@@ -115,7 +102,14 @@ const MethodExplorerContent: React.FC = React.memo(() => {
 MethodExplorerContent.displayName = 'MethodExplorerContent'
 
 // Main component with Provider wrapper
-const MethodExplorer: React.FC<MethodExplorerProps> = ({ tabId, selectedTarget, selectedService, selectedMethod, initialRequestBody, initialMetadata }) => {
+const MethodExplorer: React.FC<MethodExplorerProps> = ({
+  tabId,
+  selectedTarget,
+  selectedService,
+  selectedMethod,
+  initialRequestBody,
+  initialMetadata,
+}) => {
   // Empty state (before provider, for performance)
   if (!selectedMethod || !selectedService) {
     return (

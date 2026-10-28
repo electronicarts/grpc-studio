@@ -2,11 +2,11 @@
 
 import { describe, it, beforeEach, afterEach, mock } from 'node:test'
 import assert from 'node:assert/strict'
-import multiClientManager from '../grpc/multiClientManager.js'
-import serverCertificateCache from '../cache/serverCertificateCache.js'
-import type { CertificateMetadata } from '../utils/certificateUtils.js'
-import type { TargetConfig } from '../config/schemas/clientSchema.js'
-import { CertificateRefreshWorker } from '../workers/certificateRefreshWorker.js'
+import multiClientManager from '#src/grpc/multiClientManager.js'
+import serverCertificateCache from '#src/cache/serverCertificateCache.js'
+import type { CertificateMetadata } from '#src/utils/certificateUtils.js'
+import type { TargetConfig } from '#src/config/schemas/clientSchema.js'
+import { CertificateRefreshWorker } from '#src/workers/certificateRefreshWorker.js'
 
 function target(name: string, mode: TargetConfig['mode']): TargetConfig {
   return { name, host: `${name}.example.com`, port: 443, mode } as TargetConfig
@@ -74,10 +74,11 @@ describe('CertificateRefreshWorker', () => {
     mock.method(multiClientManager, 'getTargetNames', () => ['t1'])
     mock.method(multiClientManager, 'getTargetConfig', () => target('t1', 'tls'))
     let resolveExtract: (value: CertificateMetadata) => void = () => {}
-    const extract = mock.fn(() =>
-      new Promise<CertificateMetadata>((resolve) => {
-        resolveExtract = resolve
-      })
+    const extract = mock.fn(
+      () =>
+        new Promise<CertificateMetadata>(resolve => {
+          resolveExtract = resolve
+        }),
     )
     const worker = new CertificateRefreshWorker(extract)
 

@@ -2,16 +2,16 @@
 
 import React from 'react'
 import type { DescField } from '@bufbuild/protobuf'
-import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
-import { defaultFieldValue } from '../../utils/fieldDefaults'
-import { isFramedMessageType } from '../../utils/wellKnownTypes'
-import ScalarField from '../fields/ScalarField'
-import EnumField from '../fields/EnumField'
-import ListField from '../fields/ListField'
-import MapField from '../fields/MapField'
-import MessageField from '../fields/MessageField'
-import PresenceCheckbox from '../shared/PresenceCheckbox'
-import type { FieldPresence } from '../shared/fieldPresence'
+import { useProtoMessageRendererContext } from '@/features/schemaRenderer/stores/schemaRendererContext'
+import { defaultFieldValue } from '@/features/schemaRenderer/utils/fieldDefaults'
+import { isFramedMessageType } from '@/features/schemaRenderer/utils/wellKnownTypes'
+import ScalarField from '@/features/schemaRenderer/components/fields/ScalarField'
+import EnumField from '@/features/schemaRenderer/components/fields/EnumField'
+import ListField from '@/features/schemaRenderer/components/fields/ListField'
+import MapField from '@/features/schemaRenderer/components/fields/MapField'
+import MessageField from '@/features/schemaRenderer/components/fields/MessageField'
+import PresenceCheckbox from '@/features/schemaRenderer/components/shared/PresenceCheckbox'
+import type { FieldPresence } from '@/features/schemaRenderer/components/shared/fieldPresence'
 
 interface FieldRendererProps {
   field: DescField
@@ -22,9 +22,11 @@ interface FieldRendererProps {
 
 /** Fields shown as a framed section (messages, Struct, lists, maps) put their checkbox in the frame header. */
 function isFramed(field: DescField): boolean {
-  return field.fieldKind === 'list'
-    || field.fieldKind === 'map'
-    || (field.fieldKind === 'message' && isFramedMessageType(field.message))
+  return (
+    field.fieldKind === 'list' ||
+    field.fieldKind === 'map' ||
+    (field.fieldKind === 'message' && isFramedMessageType(field.message))
+  )
 }
 
 /**
@@ -37,12 +39,13 @@ function isFramed(field: DescField): boolean {
 const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onChange, path }) => {
   const { readOnly } = useProtoMessageRendererContext()
 
-  const presence: FieldPresence | undefined = readOnly || field.oneof
-    ? undefined
-    : {
-        isSet: value !== undefined && value !== null,
-        onToggle: isSet => onChange(isSet ? defaultFieldValue(field) : undefined),
-      }
+  const presence: FieldPresence | undefined =
+    readOnly || field.oneof
+      ? undefined
+      : {
+          isSet: value !== undefined && value !== null,
+          onToggle: isSet => onChange(isSet ? defaultFieldValue(field) : undefined),
+        }
 
   const renderField = () => {
     switch (field.fieldKind) {

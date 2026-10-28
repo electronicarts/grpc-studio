@@ -7,7 +7,7 @@ export const HealthStatus = {
   ALIVE: 'alive',
 } as const
 
-export type HealthStatus = typeof HealthStatus[keyof typeof HealthStatus]
+export type HealthStatus = (typeof HealthStatus)[keyof typeof HealthStatus]
 
 export const HEALTH_STATUSES = Object.values(HealthStatus)
 
@@ -42,9 +42,7 @@ export interface ReadinessNotReadyResponse {
   timestamp: string
 }
 
-export type ReadinessResponse =
-  | ReadinessReadyResponse
-  | ReadinessNotReadyResponse
+export type ReadinessResponse = ReadinessReadyResponse | ReadinessNotReadyResponse
 
 /**
  * GET /live

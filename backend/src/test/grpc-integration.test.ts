@@ -63,9 +63,15 @@ async function startGrpcServer(): Promise<number> {
     child.stderr?.on('data', (chunk: Buffer) => {
       console.error('[petstore]', chunk.toString().trimEnd())
     })
-    child.on('error', (err) => { clearTimeout(timeout); reject(err) })
-    child.on('exit', (code) => {
-      if (code && code !== 0) { clearTimeout(timeout); reject(new Error(`PetStore exited ${code}`)) }
+    child.on('error', err => {
+      clearTimeout(timeout)
+      reject(err)
+    })
+    child.on('exit', code => {
+      if (code && code !== 0) {
+        clearTimeout(timeout)
+        reject(new Error(`PetStore exited ${code}`))
+      }
     })
   })
 }
@@ -87,9 +93,9 @@ let wsUrl: string
 async function startBackend(targetPort: number): Promise<void> {
   process.env.GRPC_TARGET_PORT = String(targetPort)
 
-  const { createExpressApp } = await import('../app.js')
-  const { createWebSocketServer } = await import('../websocket/websocketServer.js')
-  const { default: multiClientManager } = await import('../grpc/multiClientManager.js')
+  const { createExpressApp } = await import('#src/app.js')
+  const { createWebSocketServer } = await import('#src/websocket/websocketServer.js')
+  const { default: multiClientManager } = await import('#src/grpc/multiClientManager.js')
 
   // Multi-server mode requires the client manager to be initialized from config
   // before any target can be discovered/invoked (httpServer.ts does this at boot).
@@ -99,7 +105,7 @@ async function startBackend(targetPort: number): Promise<void> {
   httpServer = createServer(app)
   createWebSocketServer(httpServer)
 
-  await new Promise<void>((resolve) => {
+  await new Promise<void>(resolve => {
     httpServer.listen(0, '127.0.0.1', () => {
       const addr = httpServer.address() as { port: number }
       baseUrl = `http://127.0.0.1:${addr.port}`
@@ -110,9 +116,9 @@ async function startBackend(targetPort: number): Promise<void> {
 }
 
 async function stopBackend(): Promise<void> {
-  const { default: multiClientManager } = await import('../grpc/multiClientManager.js')
+  const { default: multiClientManager } = await import('#src/grpc/multiClientManager.js')
   multiClientManager.close()
-  await new Promise<void>((resolve) => httpServer.close(() => resolve()))
+  await new Promise<void>(resolve => httpServer.close(() => resolve()))
 }
 
 // ---------------------------------------------------------------------------
@@ -121,7 +127,7 @@ async function stopBackend(): Promise<void> {
 
 async function httpGet(urlPath: string) {
   const res = await fetch(`${baseUrl}${urlPath}`)
-  return { status: res.status, body: await res.json() as Record<string, unknown> }
+  return { status: res.status, body: (await res.json()) as Record<string, unknown> }
 }
 
 async function httpPost(urlPath: string, body?: unknown) {
@@ -130,7 +136,7 @@ async function httpPost(urlPath: string, body?: unknown) {
     headers: { 'Content-Type': 'application/json' },
     body: body ? JSON.stringify(body) : undefined,
   })
-  return { status: res.status, body: await res.json() as Record<string, unknown> }
+  return { status: res.status, body: (await res.json()) as Record<string, unknown> }
 }
 
 /** Invoke a unary RPC and return the parsed envelope. */
@@ -142,7 +148,10 @@ async function invokeUnary(method: string, data: unknown) {
 // WebSocket helpers
 // ---------------------------------------------------------------------------
 
-interface WsFrame { type: string; [key: string]: unknown }
+interface WsFrame {
+  type: string
+  [key: string]: unknown
+}
 
 /** Open a WebSocket connection with required Origin header. */
 function openWs(): Promise<WebSocket> {
@@ -171,7 +180,11 @@ function collectFrames(
     const frames: WsFrame[] = []
     const timeout = setTimeout(() => {
       ws.removeAllListeners('message')
-      reject(new Error(`WebSocket timeout after ${timeoutMs}ms — collected ${frames.length} frames: ${JSON.stringify(frames)}`))
+      reject(
+        new Error(
+          `WebSocket timeout after ${timeoutMs}ms — collected ${frames.length} frames: ${JSON.stringify(frames)}`,
+        ),
+      )
     }, timeoutMs)
 
     ws.on('message', (raw: Buffer) => {
@@ -206,9 +219,7 @@ async function streamRpc(opts: {
       }
     }
 
-    return await collectFrames(ws, (frames) =>
-      frames.some((f) => f.type === 'complete' || f.type === 'error'),
-    )
+    return await collectFrames(ws, frames => frames.some(f => f.type === 'complete' || f.type === 'error'))
   } finally {
     ws.close()
   }
@@ -255,14 +266,18 @@ describe('Integration: gRPC pipeline (PetStore)', () => {
       assertSuccessEnvelope(res)
 
       const { servers } = res.body.data as {
-        servers: Array<{ name: string; target: string; services: Array<{ fullName: string; methods: Array<{ name: string; kind: string }> }> }>
+        servers: Array<{
+          name: string
+          target: string
+          services: Array<{ fullName: string; methods: Array<{ name: string; kind: string }> }>
+        }>
       }
-      const server = servers.find((s) => s.services.some((svc) => svc.fullName === SERVICE))
+      const server = servers.find(s => s.services.some(svc => svc.fullName === SERVICE))
       assert.ok(server, `Expected a server exposing ${SERVICE} in discovery`)
-      const svc = server.services.find((s) => s.fullName === SERVICE)
+      const svc = server.services.find(s => s.fullName === SERVICE)
       assert.ok(svc, `Expected ${SERVICE} in discovery`)
 
-      const kinds = Object.fromEntries(svc.methods.map((m) => [m.name, m.kind]))
+      const kinds = Object.fromEntries(svc.methods.map(m => [m.name, m.kind]))
       assert.equal(kinds.GetPet, 'unary')
       assert.equal(kinds.WatchPets, 'server_streaming')
       assert.equal(kinds.BulkCreatePets, 'client_streaming')
@@ -298,7 +313,7 @@ describe('Integration: gRPC pipeline (PetStore)', () => {
       const { servers } = res.body.data as {
         servers: Array<{ name: string; target: string; connected: boolean; servicesCount: number }>
       }
-      const server = servers.find((s) => s.name === TARGET)
+      const server = servers.find(s => s.name === TARGET)
       assert.ok(server, `Expected target "${TARGET}" in status`)
       assert.equal(server.connected, true)
       assert.ok(server.target.includes(String(grpcPort)))
@@ -313,7 +328,7 @@ describe('Integration: gRPC pipeline (PetStore)', () => {
       const res = await invokeUnary('ListPets', { page_size: 10 })
       assertSuccessEnvelope(res)
 
-      const inner = (res.body.data as { success: boolean; data: { pets: unknown[]; total_count: number } })
+      const inner = res.body.data as { success: boolean; data: { pets: unknown[]; total_count: number } }
       assert.equal(inner.success, true)
       assert.ok(inner.data.pets.length > 0)
       assert.ok(inner.data.total_count > 0)
@@ -323,7 +338,7 @@ describe('Integration: gRPC pipeline (PetStore)', () => {
       const res = await invokeUnary('GetPet', { id: 'pet-001' })
       assertSuccessEnvelope(res)
 
-      const inner = (res.body.data as { success: boolean; data: { name: string; species: string } })
+      const inner = res.body.data as { success: boolean; data: { name: string; species: string } }
       assert.equal(inner.success, true)
       assert.equal(inner.data.name, 'Luna')
       assert.equal(inner.data.species, 'SPECIES_DOG')
@@ -335,7 +350,7 @@ describe('Integration: gRPC pipeline (PetStore)', () => {
       })
       assertSuccessEnvelope(res)
 
-      const inner = (res.body.data as { success: boolean; data: { id: string; name: string } })
+      const inner = res.body.data as { success: boolean; data: { id: string; name: string } }
       assert.equal(inner.success, true)
       assert.equal(inner.data.name, 'IntegrationCat')
       assert.ok(inner.data.id)
@@ -376,7 +391,7 @@ describe('Integration: gRPC pipeline (PetStore)', () => {
             {
               diagnosis: 'Test condition',
               treatment: 'Rest',
-              recovery_time: '864000s',   // 10 days in seconds
+              recovery_time: '864000s', // 10 days in seconds
               follow_up_required: false,
             },
           ],
@@ -385,7 +400,7 @@ describe('Integration: gRPC pipeline (PetStore)', () => {
       assertSuccessEnvelope(res)
 
       type MedRecord = { diagnosis: string; recovery_time: string }
-      type PetData  = { name: string; medical_history: MedRecord[] }
+      type PetData = { name: string; medical_history: MedRecord[] }
       const inner = res.body.data as { success: boolean; data: PetData }
       assert.equal(inner.success, true)
       assert.equal(inner.data.name, 'DurationPet')
@@ -402,36 +417,36 @@ describe('Integration: gRPC pipeline (PetStore)', () => {
       const res = await invokeUnary('CreatePet', {
         pet: {
           // ── Scalars ──────────────────────────────────────────────────────
-          name:    'AllFieldsPet',
-          breed:   'Border Collie',
+          name: 'AllFieldsPet',
+          breed: 'Border Collie',
           age_months: 24,
-          weight_kg:  18.5,
+          weight_kg: 18.5,
           is_neutered: true,
-          photo_thumbnail: 'aGVsbG8=',   // base64("hello")
+          photo_thumbnail: 'aGVsbG8=', // base64("hello")
 
           // ── Enums ────────────────────────────────────────────────────────
           species: 'SPECIES_DOG',
-          status:  'STATUS_AVAILABLE',
+          status: 'STATUS_AVAILABLE',
 
           // ── Wrapper types (sent as raw scalars, not { value: X }) ────────
-          description:        'A clever dog',
+          description: 'A clever dog',
           microchip_frequency: 134200,
 
           // ── Nested message (3 levels: Owner → Address → Coordinates) ────
           owner: {
-            id:    'owner-allfields',
-            name:  'Test Owner',
+            id: 'owner-allfields',
+            name: 'Test Owner',
             email: 'allfields@example.com',
             phone: '+1-555-0000',
             address: {
-              street:   '1 Test Street',
-              city:     'Testville',
-              state:    'CA',
+              street: '1 Test Street',
+              city: 'Testville',
+              state: 'CA',
               zip_code: '90210',
-              country:  'US',
+              country: 'US',
               coordinates: { latitude: 34.0522, longitude: -118.2437 },
             },
-            registered_at: '2024-01-01T00:00:00Z',   // Timestamp
+            registered_at: '2024-01-01T00:00:00Z', // Timestamp
           },
 
           // ── OneOf (scalar branch: microchip_id) ──────────────────────────
@@ -443,23 +458,23 @@ describe('Integration: gRPC pipeline (PetStore)', () => {
           // ── Repeated message: Vaccination (Timestamp + StringValue) ───────
           vaccinations: [
             {
-              name:           'Rabies',
+              name: 'Rabies',
               administered_at: '2024-06-01T09:00:00Z',
-              expires_at:      '2025-06-01T09:00:00Z',
-              veterinarian:    'Dr. Test',
-              batch_number:    'BATCH-001',   // StringValue as raw string
+              expires_at: '2025-06-01T09:00:00Z',
+              veterinarian: 'Dr. Test',
+              batch_number: 'BATCH-001', // StringValue as raw string
             },
           ],
 
           // ── Repeated message: MedicalRecord (Timestamp + Duration + FloatValue) ──
           medical_history: [
             {
-              id:          'med-allfields',
-              diagnosis:   'Annual checkup',
-              treatment:   'Routine exam',
-              date:        '2024-03-15T10:00:00Z',
-              recovery_time: '86400s',    // Duration: 1 day as proto JSON string
-              cost:          150.0,       // FloatValue as raw number
+              id: 'med-allfields',
+              diagnosis: 'Annual checkup',
+              treatment: 'Routine exam',
+              date: '2024-03-15T10:00:00Z',
+              recovery_time: '86400s', // Duration: 1 day as proto JSON string
+              cost: 150.0, // FloatValue as raw number
               follow_up_required: false,
             },
           ],
@@ -470,12 +485,12 @@ describe('Integration: gRPC pipeline (PetStore)', () => {
           // ── Map<string, MedicalRecord> ────────────────────────────────────
           records_by_vet: {
             'dr-allfields': {
-              id:          'rec-allfields',
-              diagnosis:   'Healthy',
-              treatment:   'Vaccines',
-              date:        '2024-06-01T09:00:00Z',
-              recovery_time: '3600s',     // Duration: 1 hour
-              cost:          200.0,
+              id: 'rec-allfields',
+              diagnosis: 'Healthy',
+              treatment: 'Vaccines',
+              date: '2024-06-01T09:00:00Z',
+              recovery_time: '3600s', // Duration: 1 hour
+              cost: 200.0,
               follow_up_required: false,
             },
           },
@@ -487,17 +502,45 @@ describe('Integration: gRPC pipeline (PetStore)', () => {
 
       assertSuccessEnvelope(res)
 
-      type Coords  = { latitude: number; longitude: number }
-      type Address = { street: string; city: string; state: string; zip_code: string; country: string; coordinates: Coords }
-      type Owner   = { id: string; name: string; email: string; phone: string; address: Address; registered_at: string }
-      type Vax     = { name: string; administered_at: string; expires_at: string; veterinarian: string; batch_number: string }
-      type MedRec  = { id: string; diagnosis: string; treatment: string; date: string; recovery_time: string; cost: number; follow_up_required: boolean }
-      type Ident   = { microchip_id?: string }
+      type Coords = { latitude: number; longitude: number }
+      type Address = {
+        street: string
+        city: string
+        state: string
+        zip_code: string
+        country: string
+        coordinates: Coords
+      }
+      type Owner = { id: string; name: string; email: string; phone: string; address: Address; registered_at: string }
+      type Vax = {
+        name: string
+        administered_at: string
+        expires_at: string
+        veterinarian: string
+        batch_number: string
+      }
+      type MedRec = {
+        id: string
+        diagnosis: string
+        treatment: string
+        date: string
+        recovery_time: string
+        cost: number
+        follow_up_required: boolean
+      }
+      type Ident = { microchip_id?: string }
       type Pet = {
-        id: string; name: string; breed: string; age_months: number; weight_kg: number
-        is_neutered: boolean; photo_thumbnail: string
-        species: string; status: string
-        description: string; microchip_frequency: number
+        id: string
+        name: string
+        breed: string
+        age_months: number
+        weight_kg: number
+        is_neutered: boolean
+        photo_thumbnail: string
+        species: string
+        status: string
+        description: string
+        microchip_frequency: number
         owner: Owner
         identification: Ident
         nicknames: string[]
@@ -506,16 +549,17 @@ describe('Integration: gRPC pipeline (PetStore)', () => {
         tags: Record<string, string>
         records_by_vet: Record<string, MedRec>
         metadata: Record<string, unknown>
-        created_at: string; updated_at: string
+        created_at: string
+        updated_at: string
       }
-      const { data: pet } = (res.body.data as { success: boolean; data: Pet })
+      const { data: pet } = res.body.data as { success: boolean; data: Pet }
 
       // Scalars
-      assert.equal(pet.name,         'AllFieldsPet')
-      assert.equal(pet.breed,        'Border Collie')
-      assert.equal(pet.age_months,   24)
-      assert.equal(pet.weight_kg,    18.5)
-      assert.equal(pet.is_neutered,  true)
+      assert.equal(pet.name, 'AllFieldsPet')
+      assert.equal(pet.breed, 'Border Collie')
+      assert.equal(pet.age_months, 24)
+      assert.equal(pet.weight_kg, 18.5)
+      assert.equal(pet.is_neutered, true)
       assert.ok(pet.id, 'id must be set by server')
 
       // Bytes — base64 round-trip
@@ -523,11 +567,11 @@ describe('Integration: gRPC pipeline (PetStore)', () => {
 
       // Enums
       assert.equal(pet.species, 'SPECIES_DOG')
-      assert.equal(pet.status,  'STATUS_AVAILABLE')
+      assert.equal(pet.status, 'STATUS_AVAILABLE')
 
       // Wrapper types — raw scalars, not { value: X }
-      assert.equal(pet.description,         'A clever dog')
-      assert.equal(typeof pet.description,  'string')
+      assert.equal(pet.description, 'A clever dog')
+      assert.equal(typeof pet.description, 'string')
       assert.equal(pet.microchip_frequency, 134200)
       assert.equal(typeof pet.microchip_frequency, 'number')
 
@@ -536,17 +580,17 @@ describe('Integration: gRPC pipeline (PetStore)', () => {
       assert.equal(typeof pet.updated_at, 'string')
 
       // Nested message: owner (level 1)
-      assert.equal(pet.owner.name,  'Test Owner')
+      assert.equal(pet.owner.name, 'Test Owner')
       assert.equal(pet.owner.email, 'allfields@example.com')
       assert.equal(pet.owner.phone, '+1-555-0000')
       // Nested message: owner.address (level 2)
-      assert.equal(pet.owner.address.street,   '1 Test Street')
-      assert.equal(pet.owner.address.city,     'Testville')
-      assert.equal(pet.owner.address.state,    'CA')
+      assert.equal(pet.owner.address.street, '1 Test Street')
+      assert.equal(pet.owner.address.city, 'Testville')
+      assert.equal(pet.owner.address.state, 'CA')
       assert.equal(pet.owner.address.zip_code, '90210')
-      assert.equal(pet.owner.address.country,  'US')
+      assert.equal(pet.owner.address.country, 'US')
       // Nested message: owner.address.coordinates (level 3)
-      assert.equal(pet.owner.address.coordinates.latitude,  34.0522)
+      assert.equal(pet.owner.address.coordinates.latitude, 34.0522)
       assert.equal(pet.owner.address.coordinates.longitude, -118.2437)
       // Timestamp in nested message
       assert.ok(typeof pet.owner.registered_at === 'string')
@@ -561,20 +605,20 @@ describe('Integration: gRPC pipeline (PetStore)', () => {
       // Repeated message: Vaccination
       assert.equal(pet.vaccinations.length, 1)
       const vax = pet.vaccinations[0]
-      assert.equal(vax.name,        'Rabies')
+      assert.equal(vax.name, 'Rabies')
       assert.equal(vax.veterinarian, 'Dr. Test')
       assert.ok(typeof vax.administered_at === 'string')
       assert.ok(vax.administered_at.includes('2024-06-01'))
       assert.ok(typeof vax.expires_at === 'string')
       assert.ok(vax.expires_at.includes('2025-06-01'))
       // StringValue wrapper in repeated message
-      assert.equal(vax.batch_number,        'BATCH-001')
+      assert.equal(vax.batch_number, 'BATCH-001')
       assert.equal(typeof vax.batch_number, 'string')
 
       // Repeated message: MedicalRecord
       assert.equal(pet.medical_history.length, 1)
       const med = pet.medical_history[0]
-      assert.equal(med.id,        'med-allfields')
+      assert.equal(med.id, 'med-allfields')
       assert.equal(med.diagnosis, 'Annual checkup')
       assert.equal(med.treatment, 'Routine exam')
       assert.equal(med.follow_up_required, false)
@@ -582,7 +626,7 @@ describe('Integration: gRPC pipeline (PetStore)', () => {
       assert.ok(typeof med.date === 'string')
       assert.ok(med.date.includes('2024-03-15'))
       // Duration — must come back as proto JSON string, not object
-      assert.equal(med.recovery_time,        '86400s')
+      assert.equal(med.recovery_time, '86400s')
       assert.equal(typeof med.recovery_time, 'string')
       // FloatValue — raw number
       assert.ok(Math.abs(med.cost - 150.0) < 0.01)
@@ -590,7 +634,7 @@ describe('Integration: gRPC pipeline (PetStore)', () => {
 
       // Map<string, string>
       assert.equal(pet.tags.color, 'black-white')
-      assert.equal(pet.tags.size,  'large')
+      assert.equal(pet.tags.size, 'large')
 
       // Map<string, MedicalRecord>
       const vetRec = pet.records_by_vet['dr-allfields']
@@ -599,13 +643,13 @@ describe('Integration: gRPC pipeline (PetStore)', () => {
       assert.ok(typeof vetRec.date === 'string')
       assert.ok(vetRec.date.includes('2024-06-01'))
       // Duration in map value
-      assert.equal(vetRec.recovery_time,        '3600s')
+      assert.equal(vetRec.recovery_time, '3600s')
       assert.equal(typeof vetRec.recovery_time, 'string')
       // FloatValue in map value
       assert.ok(Math.abs(vetRec.cost - 200.0) < 0.01)
 
       // Struct
-      assert.equal(pet.metadata.source,   'allfields-test')
+      assert.equal(pet.metadata.source, 'allfields-test')
       assert.equal(pet.metadata.priority, 1)
       assert.equal(pet.metadata.verified, true)
     })
@@ -621,27 +665,27 @@ describe('Integration: gRPC pipeline (PetStore)', () => {
           species: 'SPECIES_CAT',
           identification: {
             collar: {
-              color:    'red',
+              color: 'red',
               material: 'nylon',
-              has_gps:  true,
+              has_gps: true,
             },
           },
         },
       })
       assertSuccessEnvelope(res)
 
-      type CollarInfo  = { color: string; material: string; has_gps: boolean }
-      type Ident       = { collar?: CollarInfo }
-      type PetData     = { name: string; identification: Ident }
+      type CollarInfo = { color: string; material: string; has_gps: boolean }
+      type Ident = { collar?: CollarInfo }
+      type PetData = { name: string; identification: Ident }
       const inner = res.body.data as { success: boolean; data: PetData }
       assert.equal(inner.success, true)
       assert.equal(inner.data.name, 'CollarPet')
 
       const collar = inner.data.identification.collar
       assert.ok(collar, 'identification.collar must be present')
-      assert.equal(collar.color,    'red')
+      assert.equal(collar.color, 'red')
       assert.equal(collar.material, 'nylon')
-      assert.equal(collar.has_gps,  true)
+      assert.equal(collar.has_gps, true)
     })
 
     it('SearchPets filters by wrapper type max_age_months (raw scalar)', async () => {
@@ -662,9 +706,9 @@ describe('Integration: gRPC pipeline (PetStore)', () => {
       const res = await invokeUnary('SearchPets', { query: 'Luna' })
       assertSuccessEnvelope(res)
 
-      const inner = (res.body.data as { success: boolean; data: { pets: Array<{ name: string }> } })
+      const inner = res.body.data as { success: boolean; data: { pets: Array<{ name: string }> } }
       assert.equal(inner.success, true)
-      assert.ok(inner.data.pets.some((p) => p.name === 'Luna'))
+      assert.ok(inner.data.pets.some(p => p.name === 'Luna'))
     })
 
     it('UpdatePet with FieldMask only updates the masked fields', async () => {
@@ -673,12 +717,12 @@ describe('Integration: gRPC pipeline (PetStore)', () => {
         pet: { name: 'MaskTestPet', species: 'SPECIES_CAT', breed: 'Siamese', age_months: 12 },
       })
       assertSuccessEnvelope(createRes)
-      const petId = ((createRes.body.data as { success: boolean; data: { id: string } }).data).id
+      const petId = (createRes.body.data as { success: boolean; data: { id: string } }).data.id
 
       // Update only name and age_months via FieldMask (lowerCamelCase paths)
       const updateRes = await invokeUnary('UpdatePet', {
         pet: { id: petId, name: 'MaskTestPet-Renamed', breed: 'Persian', age_months: 24 },
-        update_mask: 'name,ageMonths',   // FieldMask as lowerCamelCase string
+        update_mask: 'name,ageMonths', // FieldMask as lowerCamelCase string
       })
       assertSuccessEnvelope(updateRes)
 
@@ -686,7 +730,7 @@ describe('Integration: gRPC pipeline (PetStore)', () => {
       const inner = updateRes.body.data as { success: boolean; data: PetData }
       assert.equal(inner.success, true)
       // Masked fields are updated
-      assert.equal(inner.data.name,       'MaskTestPet-Renamed')
+      assert.equal(inner.data.name, 'MaskTestPet-Renamed')
       assert.equal(inner.data.age_months, 24)
       // Non-masked field is unchanged (breed was not in the mask)
       assert.equal(inner.data.breed, 'Siamese')
@@ -700,7 +744,7 @@ describe('Integration: gRPC pipeline (PetStore)', () => {
           species: 'SPECIES_DOG',
           extra_info: {
             '@type': 'type.googleapis.com/google.protobuf.StringValue',
-            'value': 'some-extra-data',
+            value: 'some-extra-data',
           },
         },
       })
@@ -738,10 +782,10 @@ describe('Integration: gRPC pipeline (PetStore)', () => {
           species: 'SPECIES_CAT',
           extra_info: {
             '@type': 'type.googleapis.com/petstore.v1.Owner',
-            'id': 'owner-custom',
-            'name': 'Jane Smith',
-            'email': 'jane@example.com',
-            'phone': '+1-555-1234',
+            id: 'owner-custom',
+            name: 'Jane Smith',
+            email: 'jane@example.com',
+            phone: '+1-555-1234',
           },
         },
       })
@@ -771,7 +815,10 @@ describe('Integration: gRPC pipeline (PetStore)', () => {
 
       it('rejects streaming methodKind with 400', async () => {
         const res = await httpPost('/api/grpc/invoke', {
-          service: SERVICE, method: 'WatchPets', methodKind: 'server_streaming', data: {},
+          service: SERVICE,
+          method: 'WatchPets',
+          methodKind: 'server_streaming',
+          data: {},
         })
         assert.equal(res.status, 400)
       })
@@ -795,10 +842,11 @@ describe('Integration: gRPC pipeline (PetStore)', () => {
         })
 
         // Collect at least one response frame, then cancel
-        const firstBatch = await collectFrames(ws, (frames) =>
-          frames.some((f) => f.type === 'response'),
+        const firstBatch = await collectFrames(ws, frames => frames.some(f => f.type === 'response'))
+        assert.ok(
+          firstBatch.some(f => f.type === 'response'),
+          'Expected at least one response event',
         )
-        assert.ok(firstBatch.some((f) => f.type === 'response'), 'Expected at least one response event')
 
         wsSend(ws, { type: 'cancel' })
       } finally {
@@ -812,7 +860,10 @@ describe('Integration: gRPC pipeline (PetStore)', () => {
         methodKind: 'server_streaming',
         data: {},
       })
-      assert.ok(frames.some((f) => f.type === 'error'), 'Expected error frame for bad method')
+      assert.ok(
+        frames.some(f => f.type === 'error'),
+        'Expected error frame for bad method',
+      )
     })
   })
 
@@ -831,13 +882,13 @@ describe('Integration: gRPC pipeline (PetStore)', () => {
         ],
       })
 
-      const responseFrame = frames.find((f) => f.type === 'response')
+      const responseFrame = frames.find(f => f.type === 'response')
       assert.ok(responseFrame, 'Expected response frame')
 
       const data = responseFrame.data as { created_count: number; ids: string[] }
       assert.equal(data.created_count, 3)
       assert.equal(data.ids.length, 3)
-      assert.ok(frames.some((f) => f.type === 'complete'))
+      assert.ok(frames.some(f => f.type === 'complete'))
     })
 
     it('BulkCreatePets skips invalid entries gracefully', async () => {
@@ -846,12 +897,12 @@ describe('Integration: gRPC pipeline (PetStore)', () => {
         methodKind: 'client_streaming',
         clientMessages: [
           { type: 'data', payload: { pet: { name: 'Valid', species: 'SPECIES_DOG' } } },
-          { type: 'data', payload: { pet: {} } },  // missing name
+          { type: 'data', payload: { pet: {} } }, // missing name
           { type: 'end' },
         ],
       })
 
-      const responseFrame = frames.find((f) => f.type === 'response')
+      const responseFrame = frames.find(f => f.type === 'response')
       assert.ok(responseFrame, 'Expected response frame')
 
       const data = responseFrame.data as { created_count: number; errors: string[] }
@@ -874,7 +925,7 @@ describe('Integration: gRPC pipeline (PetStore)', () => {
         ],
       })
 
-      const responses = frames.filter((f) => f.type === 'response')
+      const responses = frames.filter(f => f.type === 'response')
       assert.equal(responses.length, 2, 'Expected one response per request')
 
       for (const resp of responses) {
@@ -884,20 +935,17 @@ describe('Integration: gRPC pipeline (PetStore)', () => {
         assert.ok(Object.keys(data.vitals).length > 0, 'Expected vitals')
       }
 
-      assert.ok(frames.some((f) => f.type === 'complete'))
+      assert.ok(frames.some(f => f.type === 'complete'))
     })
 
     it('MonitorHealth returns unhealthy for unknown pet', async () => {
       const frames = await streamRpc({
         method: 'MonitorHealth',
         methodKind: 'bidi_streaming',
-        clientMessages: [
-          { type: 'data', payload: { pet_id: 'ghost-pet', vital_signs: [] } },
-          { type: 'end' },
-        ],
+        clientMessages: [{ type: 'data', payload: { pet_id: 'ghost-pet', vital_signs: [] } }, { type: 'end' }],
       })
 
-      const resp = frames.find((f) => f.type === 'response')
+      const resp = frames.find(f => f.type === 'response')
       assert.ok(resp, 'Expected response frame')
 
       const data = resp.data as { pet_id: string; is_healthy: boolean }
@@ -913,8 +961,8 @@ describe('Integration: gRPC pipeline (PetStore)', () => {
       const ws = await openWs()
       try {
         wsSend(ws, { type: 'ping' })
-        const frames = await collectFrames(ws, (f) => f.some((fr) => fr.type === 'pong'))
-        assert.ok(frames.some((f) => f.type === 'pong'))
+        const frames = await collectFrames(ws, f => f.some(fr => fr.type === 'pong'))
+        assert.ok(frames.some(f => f.type === 'pong'))
       } finally {
         ws.close()
       }
@@ -924,8 +972,8 @@ describe('Integration: gRPC pipeline (PetStore)', () => {
       const ws = await openWs()
       try {
         ws.send('not valid json {{{')
-        const frames = await collectFrames(ws, (f) => f.some((fr) => fr.type === 'error'))
-        assert.ok(frames.some((f) => f.type === 'error'))
+        const frames = await collectFrames(ws, f => f.some(fr => fr.type === 'error'))
+        assert.ok(frames.some(f => f.type === 'error'))
       } finally {
         ws.close()
       }
@@ -935,8 +983,8 @@ describe('Integration: gRPC pipeline (PetStore)', () => {
       const ws = await openWs()
       try {
         wsSend(ws, { type: 'bogus' })
-        const frames = await collectFrames(ws, (f) => f.some((fr) => fr.type === 'error'))
-        assert.ok(frames.some((f) => f.type === 'error'))
+        const frames = await collectFrames(ws, f => f.some(fr => fr.type === 'error'))
+        assert.ok(frames.some(f => f.type === 'error'))
       } finally {
         ws.close()
       }
@@ -951,11 +999,13 @@ describe('Integration: gRPC pipeline (PetStore)', () => {
       const discoverRes = await httpPost('/api/grpc/discover')
       assertSuccessEnvelope(discoverRes)
 
-      const server = (discoverRes.body.data as {
-        servers: Array<{ services: Array<{ fullName: string; methods: Array<{ name: string; inputType: string }> }> }>
-      }).servers.find((s) => s.services.some((svc) => svc.fullName === SERVICE))!
-      const svc = server.services.find((s) => s.fullName === SERVICE)!
-      const listMethod = svc.methods.find((m) => m.name === 'ListPets')!
+      const server = (
+        discoverRes.body.data as {
+          servers: Array<{ services: Array<{ fullName: string; methods: Array<{ name: string; inputType: string }> }> }>
+        }
+      ).servers.find(s => s.services.some(svc => svc.fullName === SERVICE))!
+      const svc = server.services.find(s => s.fullName === SERVICE)!
+      const listMethod = svc.methods.find(m => m.name === 'ListPets')!
 
       // 2. Descriptor
       const descRes = await httpPost('/api/grpc/descriptor-set', { target: TARGET, messageType: listMethod.inputType })
@@ -966,7 +1016,7 @@ describe('Integration: gRPC pipeline (PetStore)', () => {
       const invokeRes = await invokeUnary('ListPets', { page_size: 5 })
       assertSuccessEnvelope(invokeRes)
 
-      const inner = (invokeRes.body.data as { success: boolean; data: { pets: unknown[] } })
+      const inner = invokeRes.body.data as { success: boolean; data: { pets: unknown[] } }
       assert.equal(inner.success, true)
       assert.ok(inner.data.pets.length > 0)
     })

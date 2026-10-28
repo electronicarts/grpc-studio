@@ -3,7 +3,7 @@
 import React from 'react'
 import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
+import { useProtoMessageRendererContext } from '@/features/schemaRenderer/stores/schemaRendererContext'
 
 interface AddButtonProps {
   /** What gets added, shown as "Add <noun>". */

@@ -4,8 +4,8 @@ import { describe, it, mock } from 'node:test'
 import assert from 'node:assert/strict'
 import { create } from '@bufbuild/protobuf'
 import { FileDescriptorSetSchema, FileDescriptorProtoSchema, DescriptorProtoSchema } from '@bufbuild/protobuf/wkt'
-import { DescriptorSetService } from '../services/descriptorSetService.js'
-import type { ReflectionSchemaRepository } from '../repositories/reflectionSchemaRepository.js'
+import { DescriptorSetService } from '#src/services/descriptorSetService.js'
+import type { ReflectionSchemaRepository } from '#src/repositories/reflectionSchemaRepository.js'
 
 const TEST_TARGET = 'test-target'
 
@@ -17,21 +17,21 @@ describe('DescriptorSetService', () => {
         name: 'test.proto',
         package: 'test',
         messageType: [],
-        service: []
+        service: [],
       })
 
       const mockFileDescriptorSet = create(FileDescriptorSetSchema, {
-        file: [mockFileDescriptorProto]
+        file: [mockFileDescriptorProto],
       })
 
       const mockRegistry = {
         getMessage: mock.fn((name: string) => ({ name })),
-        getService: mock.fn(() => null)
+        getService: mock.fn(() => null),
       }
 
       const mockSchemaRepository = {
         getFileDescriptorSet: mock.fn(async () => mockFileDescriptorSet),
-        getFileRegistry: mock.fn(async () => mockRegistry)
+        getFileRegistry: mock.fn(async () => mockRegistry),
       } as unknown as ReflectionSchemaRepository
 
       const service = new DescriptorSetService(mockSchemaRepository)
@@ -49,11 +49,11 @@ describe('DescriptorSetService', () => {
         name: 'user.proto',
         package: 'api',
         messageType: [],
-        service: []
+        service: [],
       })
 
       const mockFileDescriptorSet = create(FileDescriptorSetSchema, {
-        file: [mockFileDescriptorProto]
+        file: [mockFileDescriptorProto],
       })
 
       const mockRegistry = {
@@ -63,19 +63,20 @@ describe('DescriptorSetService', () => {
           }
           return null
         }),
-        getService: mock.fn(() => null)
+        getService: mock.fn(() => null),
       }
 
       const mockSchemaRepository = {
         getFileDescriptorSet: mock.fn(async () => mockFileDescriptorSet),
-        getFileRegistry: mock.fn(async () => mockRegistry)
+        getFileRegistry: mock.fn(async () => mockRegistry),
       } as unknown as ReflectionSchemaRepository
 
       const service = new DescriptorSetService(mockSchemaRepository)
       const result = await service.getDescriptorSetBase64(TEST_TARGET, 'api.User')
 
       assert.ok(result)
-      const calls = (mockRegistry.getMessage as unknown as { mock: { calls: Array<{ arguments: string[] }> } }).mock.calls
+      const calls = (mockRegistry.getMessage as unknown as { mock: { calls: Array<{ arguments: string[] }> } }).mock
+        .calls
       assert.strictEqual(calls.length, 1)
       assert.strictEqual(calls[0].arguments[0], 'api.User')
     })
@@ -86,11 +87,11 @@ describe('DescriptorSetService', () => {
         name: 'service.proto',
         package: 'api',
         messageType: [],
-        service: []
+        service: [],
       })
 
       const mockFileDescriptorSet = create(FileDescriptorSetSchema, {
-        file: [mockFileDescriptorProto]
+        file: [mockFileDescriptorProto],
       })
 
       const mockRegistry = {
@@ -100,19 +101,20 @@ describe('DescriptorSetService', () => {
             return { name: 'UserService' }
           }
           return null
-        })
+        }),
       }
 
       const mockSchemaRepository = {
         getFileDescriptorSet: mock.fn(async () => mockFileDescriptorSet),
-        getFileRegistry: mock.fn(async () => mockRegistry)
+        getFileRegistry: mock.fn(async () => mockRegistry),
       } as unknown as ReflectionSchemaRepository
 
       const service = new DescriptorSetService(mockSchemaRepository)
       const result = await service.getDescriptorSetBase64(TEST_TARGET, 'api.UserService')
 
       assert.ok(result)
-      const calls = (mockRegistry.getService as unknown as { mock: { calls: Array<{ arguments: string[] }> } }).mock.calls
+      const calls = (mockRegistry.getService as unknown as { mock: { calls: Array<{ arguments: string[] }> } }).mock
+        .calls
       assert.strictEqual(calls.length, 1)
       assert.strictEqual(calls[0].arguments[0], 'api.UserService')
     })
@@ -123,21 +125,21 @@ describe('DescriptorSetService', () => {
         name: 'test.proto',
         package: 'test',
         messageType: [],
-        service: []
+        service: [],
       })
 
       const mockFileDescriptorSet = create(FileDescriptorSetSchema, {
-        file: [mockFileDescriptorProto]
+        file: [mockFileDescriptorProto],
       })
 
       const mockRegistry = {
         getMessage: mock.fn(() => null),
-        getService: mock.fn(() => null)
+        getService: mock.fn(() => null),
       }
 
       const mockSchemaRepository = {
         getFileDescriptorSet: mock.fn(async () => mockFileDescriptorSet),
-        getFileRegistry: mock.fn(async () => mockRegistry)
+        getFileRegistry: mock.fn(async () => mockRegistry),
       } as unknown as ReflectionSchemaRepository
 
       const service = new DescriptorSetService(mockSchemaRepository)
@@ -155,18 +157,15 @@ describe('DescriptorSetService', () => {
         }),
         getFileRegistry: mock.fn(async () => {
           throw new Error('Repository error')
-        })
+        }),
       } as unknown as ReflectionSchemaRepository
 
       const service = new DescriptorSetService(mockSchemaRepository)
 
-      await assert.rejects(
-        async () => await service.getDescriptorSetBase64(TEST_TARGET, 'test.Message'),
-        {
-          name: 'Error',
-          message: 'Failed to fetch descriptor set'
-        }
-      )
+      await assert.rejects(async () => await service.getDescriptorSetBase64(TEST_TARGET, 'test.Message'), {
+        name: 'Error',
+        message: 'Failed to fetch descriptor set',
+      })
     })
 
     it('should correctly calculate binary size in logs', async () => {
@@ -176,29 +175,29 @@ describe('DescriptorSetService', () => {
         field: [
           { name: 'field1', number: 1, type: 9 }, // STRING type
           { name: 'field2', number: 2, type: 9 },
-          { name: 'field3', number: 3, type: 9 }
-        ]
+          { name: 'field3', number: 3, type: 9 },
+        ],
       })
 
       const mockFileDescriptorProto = create(FileDescriptorProtoSchema, {
         name: 'large.proto',
         package: 'test',
         messageType: [mockMessage],
-        service: []
+        service: [],
       })
 
       const mockFileDescriptorSet = create(FileDescriptorSetSchema, {
-        file: [mockFileDescriptorProto]
+        file: [mockFileDescriptorProto],
       })
 
       const mockRegistry = {
         getMessage: mock.fn(() => ({ name: 'LargeMessage' })),
-        getService: mock.fn(() => null)
+        getService: mock.fn(() => null),
       }
 
       const mockSchemaRepository = {
         getFileDescriptorSet: mock.fn(async () => mockFileDescriptorSet),
-        getFileRegistry: mock.fn(async () => mockRegistry)
+        getFileRegistry: mock.fn(async () => mockRegistry),
       } as unknown as ReflectionSchemaRepository
 
       const service = new DescriptorSetService(mockSchemaRepository)
@@ -214,34 +213,34 @@ describe('DescriptorSetService', () => {
       // Create proper protobuf message instances with nested types
       const mockInner = create(DescriptorProtoSchema, {
         name: 'Inner',
-        field: [{ name: 'value', number: 1, type: 9 }] // STRING type
+        field: [{ name: 'value', number: 1, type: 9 }], // STRING type
       })
 
       const mockOuter = create(DescriptorProtoSchema, {
         name: 'Outer',
         nestedType: [mockInner],
-        field: []
+        field: [],
       })
 
       const mockFileDescriptorProto = create(FileDescriptorProtoSchema, {
         name: 'nested.proto',
         package: 'complex',
         messageType: [mockOuter],
-        service: []
+        service: [],
       })
 
       const mockFileDescriptorSet = create(FileDescriptorSetSchema, {
-        file: [mockFileDescriptorProto]
+        file: [mockFileDescriptorProto],
       })
 
       const mockRegistry = {
         getMessage: mock.fn(() => ({ name: 'Outer' })),
-        getService: mock.fn(() => null)
+        getService: mock.fn(() => null),
       }
 
       const mockSchemaRepository = {
         getFileDescriptorSet: mock.fn(async () => mockFileDescriptorSet),
-        getFileRegistry: mock.fn(async () => mockRegistry)
+        getFileRegistry: mock.fn(async () => mockRegistry),
       } as unknown as ReflectionSchemaRepository
 
       const service = new DescriptorSetService(mockSchemaRepository)
@@ -254,24 +253,28 @@ describe('DescriptorSetService', () => {
     it('should call repository methods with correct message type', async () => {
       // Create proper protobuf message instance (empty descriptor set is valid)
       const mockFileDescriptorSet = create(FileDescriptorSetSchema, {
-        file: []
+        file: [],
       })
 
       const mockRegistry = {
         getMessage: mock.fn(() => null),
-        getService: mock.fn(() => null)
+        getService: mock.fn(() => null),
       }
 
       const mockSchemaRepository = {
         getFileDescriptorSet: mock.fn(async () => mockFileDescriptorSet),
-        getFileRegistry: mock.fn(async () => mockRegistry)
+        getFileRegistry: mock.fn(async () => mockRegistry),
       } as unknown as ReflectionSchemaRepository
 
       const service = new DescriptorSetService(mockSchemaRepository)
       await service.getDescriptorSetBase64(TEST_TARGET, 'com.example.TestMessage')
 
-      const descriptorCalls = (mockSchemaRepository.getFileDescriptorSet as unknown as { mock: { calls: Array<{ arguments: string[] }> } }).mock.calls
-      const registryCalls = (mockSchemaRepository.getFileRegistry as unknown as { mock: { calls: Array<{ arguments: string[] }> } }).mock.calls
+      const descriptorCalls = (
+        mockSchemaRepository.getFileDescriptorSet as unknown as { mock: { calls: Array<{ arguments: string[] }> } }
+      ).mock.calls
+      const registryCalls = (
+        mockSchemaRepository.getFileRegistry as unknown as { mock: { calls: Array<{ arguments: string[] }> } }
+      ).mock.calls
 
       assert.strictEqual(descriptorCalls.length, 1)
       assert.strictEqual(descriptorCalls[0].arguments[0], TEST_TARGET)

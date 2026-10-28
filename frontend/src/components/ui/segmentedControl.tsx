@@ -28,9 +28,9 @@ export const SegmentedControlItem: React.FC<SegmentedControlItemProps> = ({ sele
       selected
         ? 'bg-white text-foreground shadow-sm dark:bg-gray-700'
         : cn(
-          'text-gray-700 hover:bg-white/60 hover:text-gray-900',
-          'dark:text-gray-300 dark:hover:bg-gray-700/50 dark:hover:text-white',
-        ),
+            'text-gray-700 hover:bg-white/60 hover:text-gray-900',
+            'dark:text-gray-300 dark:hover:bg-gray-700/50 dark:hover:text-white',
+          ),
       className,
     )}
     {...props}

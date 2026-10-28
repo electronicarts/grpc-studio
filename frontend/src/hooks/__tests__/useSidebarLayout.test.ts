@@ -2,7 +2,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
-import { useSidebarLayout } from '../useSidebarLayout'
+import { useSidebarLayout } from '@/hooks/useSidebarLayout'
 
 describe('useSidebarLayout', () => {
   beforeEach(() => {

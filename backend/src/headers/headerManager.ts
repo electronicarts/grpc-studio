@@ -1,8 +1,8 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import { type RequestMetadata } from '@grpc-studio/shared'
-import authManager from '../auth/authManager.js'
-import type { UserContext } from '../types/index.js'
+import authManager from '#src/auth/authManager.js'
+import type { UserContext } from '#src/types/index.js'
 
 interface AuthHeaderPlugin {
   getHeaders(): Promise<Record<string, string>>
@@ -40,7 +40,7 @@ export class HeaderManager {
    */
   async getOutboundHeaders(
     userContext: UserContext | null = null,
-    requestMetadata: RequestMetadata | null = null
+    requestMetadata: RequestMetadata | null = null,
   ): Promise<Record<string, string>> {
     return {
       ...(requestMetadata ?? {}),

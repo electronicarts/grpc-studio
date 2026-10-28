@@ -14,19 +14,21 @@
  * @param {number} timeoutMs - Timeout in milliseconds (default: 30000)
  * @returns {Function} Express middleware
  */
-import type { Request, Response, NextFunction } from 'express';
-import { AppError } from '../errors/AppError.js';
-import { isResponseFinished } from '../utils/responseLifecycle.js';
+import type { Request, Response, NextFunction } from 'express'
+import { AppError } from '#src/errors/AppError.js'
+import { isResponseFinished } from '#src/utils/responseLifecycle.js'
 
-export const requestTimeout = (timeoutMs = 30000) => (_req: Request, res: Response, next: NextFunction): void => {
-  const timer = setTimeout(() => {
-    if (!isResponseFinished(res)) {
-      next(new AppError('Request timeout', 408, 'REQUEST_TIMEOUT'));
-    }
-  }, timeoutMs);
+export const requestTimeout =
+  (timeoutMs = 30000) =>
+  (_req: Request, res: Response, next: NextFunction): void => {
+    const timer = setTimeout(() => {
+      if (!isResponseFinished(res)) {
+        next(new AppError('Request timeout', 408, 'REQUEST_TIMEOUT'))
+      }
+    }, timeoutMs)
 
-  res.on('finish', () => clearTimeout(timer));
-  res.on('close', () => clearTimeout(timer));
+    res.on('finish', () => clearTimeout(timer))
+    res.on('close', () => clearTimeout(timer))
 
-  next();
-};
+    next()
+  }

@@ -1,12 +1,12 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import type { DescMessage } from '@bufbuild/protobuf'
-import { toDisplayFormat, toWireJson } from './payload'
-import { isRecord } from '../../../utils/jsonUtils'
-import { schemaCache } from '../../schemaLoader/lib/schemaCache'
-import { formLogger } from '../../../utils/debugLogger'
-import type { GrpcMethod } from '../../../types/grpc'
-import type { ResponseModel } from '../types'
+import { toDisplayFormat, toWireJson } from '@/features/methodExplorer/utils/payload'
+import { isRecord } from '@/utils/jsonUtils'
+import { schemaCache } from '@/features/schemaLoader/lib/schemaCache'
+import { formLogger } from '@/utils/debugLogger'
+import type { GrpcMethod } from '@/types/grpc'
+import type { ResponseModel } from '@/features/methodExplorer/types'
 
 /**
  * Canonicalize a raw response message through Buf protobuf JSON rules.
@@ -43,14 +43,11 @@ export function wireResponseJson(
  * Fetch the response schema for a method and apply it to the response model.
  * No-op if method is null.
  */
-export function applyResponseSchema(
-  target: string,
-  method: GrpcMethod | null,
-  response: ResponseModel,
-): void {
+export function applyResponseSchema(target: string, method: GrpcMethod | null, response: ResponseModel): void {
   if (!method) return
 
-  schemaCache.getSchema(target, method.outputType)
+  schemaCache
+    .getSchema(target, method.outputType)
     .then(schema => {
       response.setSchema(schema)
     })

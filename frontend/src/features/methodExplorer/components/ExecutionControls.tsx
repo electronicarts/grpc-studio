@@ -4,10 +4,10 @@ import React from 'react'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
 import { Play } from 'lucide-react'
-import ServerStreamControls from './ServerStreamControls'
-import ClientStreamControls from './ClientStreamControls'
-import { useMethodExplorerContext } from '../stores'
-import { useMethodKind } from '../hooks/useMethodKind'
+import ServerStreamControls from '@/features/methodExplorer/components/ServerStreamControls'
+import ClientStreamControls from '@/features/methodExplorer/components/ClientStreamControls'
+import { useMethodExplorerContext } from '@/features/methodExplorer/stores'
+import { useMethodKind } from '@/features/methodExplorer/hooks/useMethodKind'
 
 const ExecutionControls: React.FC = () => {
   const { execution, stream, history } = useMethodExplorerContext()

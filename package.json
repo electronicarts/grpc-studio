@@ -34,13 +34,17 @@
     "test": "cd frontend && npm test",
     "demo:capture": "playwright test e2e/demo-capture.spec.ts --project=chromium --workers=1",
     "demo:gif": "node ./scripts/demo-gif.mjs",
-    "demo:mp4": "node ./scripts/demo-mp4.mjs"
+    "demo:mp4": "node ./scripts/demo-mp4.mjs",
+    "format": "prettier --write \"{frontend,backend,shared}/src/**/*.{ts,tsx}\"",
+    "format:check": "prettier --check \"{frontend,backend,shared}/src/**/*.{ts,tsx}\""
   },
   "devDependencies": {
     "@playwright/test": "^1.49.0",
     "concurrently": "^8.2.2",
+    "eslint-config-prettier": "^10.1.8",
     "js-yaml": "^4.1.0",
-    "knip": "^6.26.0"
+    "knip": "^6.26.0",
+    "prettier": "^3.0.0"
   },
   "overrides": {
     "eslint": "8.57.1"

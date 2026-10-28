@@ -13,14 +13,7 @@
  * or referencing TONES[tone] directly instead of hand-writing color classes.
  */
 
-export type Tone =
-  | 'danger'
-  | 'success'
-  | 'warning'
-  | 'critical'
-  | 'info'
-  | 'brand'
-  | 'neutral'
+export type Tone = 'danger' | 'success' | 'warning' | 'critical' | 'info' | 'brand' | 'neutral'
 
 export interface ToneClasses {
   /** Foreground text/icon in the tone color. */

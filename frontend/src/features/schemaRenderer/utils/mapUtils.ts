@@ -4,7 +4,7 @@
  * Utilities for working with protobuf map fields.
  */
 
-import { valueMatchesSearch } from './searchUtils'
+import { valueMatchesSearch } from '@/features/schemaRenderer/utils/searchUtils'
 
 interface FilterMapEntriesParams {
   mapValue: Record<string, unknown>
@@ -39,9 +39,8 @@ export function filterMapEntries({ mapValue, searchQuery }: FilterMapEntriesPara
     ? allEntries.filter(([key, value]) => mapEntryMatchesSearch(key, value, searchQuery))
     : allEntries
 
-  const countDisplay = searchQuery && entries.length !== allEntries.length
-    ? `${entries.length}/${allEntries.length}`
-    : `${entries.length}`
+  const countDisplay =
+    searchQuery && entries.length !== allEntries.length ? `${entries.length}/${allEntries.length}` : `${entries.length}`
 
   return { allEntries, entries, countDisplay }
 }

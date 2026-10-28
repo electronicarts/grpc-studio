@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-import type { ApiServer } from '../../../types/grpc'
-import type { BackendDiscoveryResponse } from './discoveryTypes'
+import type { ApiServer } from '@/types/grpc'
+import type { BackendDiscoveryResponse } from '@/features/schemaLoader/api/discoveryTypes'
 
 export function parseDiscoveryResponse(data: BackendDiscoveryResponse): ApiServer[] {
   if (!data.servers || !Array.isArray(data.servers)) {
@@ -9,4 +9,3 @@ export function parseDiscoveryResponse(data: BackendDiscoveryResponse): ApiServe
   }
   return data.servers
 }
-

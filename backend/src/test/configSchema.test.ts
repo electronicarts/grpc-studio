@@ -5,9 +5,9 @@ import assert from 'node:assert/strict'
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
-import { loadConfig } from '../config/configLoader.js'
-import * as serverSchema from '../config/schemas/serverSchema.js'
-import * as clientSchema from '../config/schemas/clientSchema.js'
+import { loadConfig } from '#src/config/configLoader.js'
+import * as serverSchema from '#src/config/schemas/serverSchema.js'
+import * as clientSchema from '#src/config/schemas/clientSchema.js'
 
 describe('config schemas', () => {
   it('requires the backend bind host to be supplied', () => {
@@ -34,20 +34,26 @@ describe('config schemas', () => {
   })
 
   it('accepts explicitly configured hosts', () => {
-    assert.equal(serverSchema.ServerSchema.safeParse({
-      host: '0.0.0.0',
-      port: 3001,
-    }).success, true)
+    assert.equal(
+      serverSchema.ServerSchema.safeParse({
+        host: '0.0.0.0',
+        port: 3001,
+      }).success,
+      true,
+    )
 
-    assert.equal(clientSchema.ClientSchema.safeParse({
-      targets: [
-        {
-          name: 'target-1',
-          host: 'localhost',
-          port: 50051,
-        },
-      ],
-    }).success, true)
+    assert.equal(
+      clientSchema.ClientSchema.safeParse({
+        targets: [
+          {
+            name: 'target-1',
+            host: 'localhost',
+            port: 50051,
+          },
+        ],
+      }).success,
+      true,
+    )
   })
 
   it('requires at least one configured target', () => {
@@ -101,14 +107,12 @@ describe('config schemas', () => {
     const configPath = path.join(tempDir, 'backend.yaml')
 
     try {
-      fs.writeFileSync(configPath, [
-        'server:',
-        '  host: 127.0.0.1',
-        'client:',
-        '  targets:',
-        '    - name: target-1',
-        '      host: yaml-host',
-      ].join('\n'))
+      fs.writeFileSync(
+        configPath,
+        ['server:', '  host: 127.0.0.1', 'client:', '  targets:', '    - name: target-1', '      host: yaml-host'].join(
+          '\n',
+        ),
+      )
 
       const config = loadConfig({
         configPath,
@@ -132,5 +136,5 @@ describe('config schemas', () => {
 })
 
 function formatIssues(result: { success: boolean; error?: { issues: Array<{ message: string }> } }): string {
-  return result.success ? '' : result.error?.issues.map(issue => issue.message).join('\n') ?? ''
+  return result.success ? '' : (result.error?.issues.map(issue => issue.message).join('\n') ?? '')
 }

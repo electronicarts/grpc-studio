@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-import { buildApiUrl } from '../../../config'
-import { wsLogger } from '../../../utils/debugLogger'
+import { buildApiUrl } from '@/config'
+import { wsLogger } from '@/utils/debugLogger'
 
 export function getWebSocketUrl(): string {
   const apiUrl = buildApiUrl('config')
