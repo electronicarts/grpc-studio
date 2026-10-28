@@ -7,8 +7,7 @@
 
 import React from 'react'
 import type { DescMessage } from '@bufbuild/protobuf'
-import { isWrapperDesc } from '@bufbuild/protobuf/wkt'
-import { wellKnownKind } from '../../utils/wellKnownTypes'
+import { wellKnownType } from '../../utils/wellKnownTypes'
 import TimestampField from '../wellKnown/TimestampField'
 import DurationField from '../wellKnown/DurationField'
 import FieldMaskField from '../wellKnown/FieldMaskField'
@@ -34,7 +33,8 @@ interface WellKnownTypeRendererProps {
 export function renderWellKnownType(props: WellKnownTypeRendererProps): React.ReactElement | null {
   const { message, fieldName, value, onChange, path, presence } = props
 
-  switch (wellKnownKind(message)) {
+  const wellKnown = wellKnownType(message)
+  switch (wellKnown?.kind) {
     case 'timestamp':
       return <TimestampField name={fieldName} value={value} onChange={onChange} />
     case 'duration':
@@ -55,10 +55,8 @@ export function renderWellKnownType(props: WellKnownTypeRendererProps): React.Re
         />
       )
     case 'wrapper':
-      return isWrapperDesc(message)
-        ? <WrapperField name={fieldName} desc={message} value={value} onChange={onChange} />
-        : null
-    case null:
+      return <WrapperField name={fieldName} desc={wellKnown.desc} value={value} onChange={onChange} />
+    default:
       return null
   }
 }

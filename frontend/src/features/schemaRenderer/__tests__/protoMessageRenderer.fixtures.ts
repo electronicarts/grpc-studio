@@ -229,6 +229,33 @@ const fdSet = create(FileDescriptorSetSchema, {
           ],
         },
         {
+          // Collections whose items aren't strings: numbers, enums and well-known types
+          name: 'TypedCollections',
+          nestedType: [
+            {
+              name: 'CountsEntry',
+              options: { mapEntry: true },
+              field: [
+                field({ name: 'key', number: 1, type: T.STRING }),
+                field({ name: 'value', number: 2, type: T.INT32 }),
+              ],
+            },
+            {
+              name: 'StatusesEntry',
+              options: { mapEntry: true },
+              field: [
+                field({ name: 'key', number: 1, type: T.STRING }),
+                enumField('value', 2, '.test.Status'),
+              ],
+            },
+          ],
+          field: [
+            messageField('counts', 1, '.test.TypedCollections.CountsEntry', { label: L.REPEATED }),
+            messageField('statuses', 2, '.test.TypedCollections.StatusesEntry', { label: L.REPEATED }),
+            messageField('times', 3, '.google.protobuf.Timestamp', { label: L.REPEATED }),
+          ],
+        },
+        {
           name: 'OneofBasic',
           oneofDecl: [{ name: 'testOneof' }],
           field: [
@@ -396,6 +423,7 @@ export const durationMessageSchema = schema('test.DurationMessage')
 const wrapperMessageSchema = schema('test.WrapperMessage')
 export const allScalarsSchema = schema('test.AllScalars')
 export const optionalFieldsSchema = schema('test.OptionalFields')
+export const typedCollectionsSchema = schema('test.TypedCollections')
 export const enumSchema = schema('test.EnumMessage')
 export const repeatedFieldsSchema = schema('test.RepeatedFields')
 export const mapFieldsSchema = schema('test.MapFields')
@@ -415,6 +443,7 @@ export const schemaCache = new Map<string, DescMessage>([
   wrapperMessageSchema,
   allScalarsSchema,
   optionalFieldsSchema,
+  typedCollectionsSchema,
   enumSchema,
   repeatedFieldsSchema,
   mapFieldsSchema,

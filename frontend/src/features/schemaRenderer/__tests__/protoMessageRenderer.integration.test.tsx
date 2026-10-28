@@ -26,29 +26,17 @@ import {
   deeplyNestedSchema,
   comprehensiveSchema,
   testData,
-  schemaCache as testSchemaMap,
 } from './protoMessageRenderer.fixtures'
-
-const latest = (onChange: ReturnType<typeof vi.fn>) =>
-  onChange.mock.calls[onChange.mock.calls.length - 1][0] as Record<string, unknown>
+import { latestCall } from '@/test/latestCall'
 
 // Mock protobuf registry to return our test schemas.
 // Signatures match the real cache: getSchema(target, messageType) and
 // getCachedSchema(target, messageType); these tests key on the type only.
-vi.mock('../../schemaLoader/lib/schemaCache', () => ({
-  schemaCache: {
-    getSchema: vi.fn((_target: string, type: string) => {
-      return Promise.resolve(testSchemaMap.get(type) || null)
-    }),
-    getCacheSize: vi.fn(() => testSchemaMap.size),
-    getSchemaMap: vi.fn(() => new Map(testSchemaMap)),
-    getTargetSchemas: vi.fn(() => [...testSchemaMap.values()]),
-    getCachedSchema: vi.fn((_target: string, type: string) => testSchemaMap.get(type) ?? null),
-    subscribe: vi.fn(() => () => {}),
-    get allLoaded() { return true },
-  },
-  needsSchemaLoad: vi.fn(() => false),
-}))
+vi.mock('../../schemaLoader/lib/schemaCache', async () => {
+  const { schemaCacheModule } = await import('@/test/schemaCacheMock')
+  const { schemaCache } = await import('./protoMessageRenderer.fixtures')
+  return schemaCacheModule(schemaCache)
+})
 
 describe('ProtoMessageRenderer Integration Tests', () => {
   beforeEach(() => {
@@ -118,7 +106,7 @@ describe('ProtoMessageRenderer Integration Tests', () => {
 
       await waitFor(() => {
         expect(onChange).toHaveBeenCalled()
-        const lastCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
+        const lastCall = latestCall(onChange)
         expect(lastCall.stringField).toBe('test value')
       })
     })
@@ -138,7 +126,7 @@ describe('ProtoMessageRenderer Integration Tests', () => {
 
       await waitFor(() => {
         expect(onChange).toHaveBeenCalled()
-        const lastCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
+        const lastCall = latestCall(onChange)
         expect(lastCall.int32Field).toBe(42)
       })
     })
@@ -291,13 +279,13 @@ describe('ProtoMessageRenderer Integration Tests', () => {
       const input = screen.getByPlaceholderText('Enter count')
       fireEvent.change(input, { target: { value: '5' } })
       await waitFor(() => {
-        expect(latest(onChange).count).toBe(5)
+        expect(latestCall(onChange).count).toBe(5)
       })
       expect(screen.getByRole('checkbox', { name: 'Send count' })).toBeChecked()
 
       fireEvent.change(input, { target: { value: '' } })
       await waitFor(() => {
-        expect('count' in latest(onChange)).toBe(false)
+        expect('count' in latestCall(onChange)).toBe(false)
       })
       expect(screen.getByRole('checkbox', { name: 'Send count' })).not.toBeChecked()
     })
@@ -308,13 +296,13 @@ describe('ProtoMessageRenderer Integration Tests', () => {
 
       fireEvent.click(screen.getByRole('checkbox', { name: 'Send count' }))
       await waitFor(() => {
-        expect(latest(onChange).count).toBe(0)
+        expect(latestCall(onChange).count).toBe(0)
       })
 
       fireEvent.click(screen.getByRole('checkbox', { name: 'Send label' }))
       await waitFor(() => {
-        expect('label' in latest(onChange)).toBe(false)
-        expect(latest(onChange).count).toBe(0)
+        expect('label' in latestCall(onChange)).toBe(false)
+        expect(latestCall(onChange).count).toBe(0)
       })
     })
 
@@ -324,12 +312,12 @@ describe('ProtoMessageRenderer Integration Tests', () => {
 
       fireEvent.click(screen.getByRole('checkbox', { name: 'Send flag' }))
       await waitFor(() => {
-        expect(latest(onChange).flag).toBe(false)
+        expect(latestCall(onChange).flag).toBe(false)
       })
 
       fireEvent.change(screen.getByRole('combobox', { name: 'flag' }), { target: { value: 'true' } })
       await waitFor(() => {
-        expect(latest(onChange).flag).toBe(true)
+        expect(latestCall(onChange).flag).toBe(true)
       })
     })
 
@@ -343,24 +331,24 @@ describe('ProtoMessageRenderer Integration Tests', () => {
       // Ticking sends it as an empty message and shows its fields
       fireEvent.click(childCheckbox)
       await waitFor(() => {
-        expect(latest(onChange).child).toEqual({})
+        expect(latestCall(onChange).child).toEqual({})
       })
 
       fireEvent.change(screen.getByPlaceholderText('Enter name'), { target: { value: 'n' } })
       await waitFor(() => {
-        expect(latest(onChange).child).toEqual({ name: 'n' })
+        expect(latestCall(onChange).child).toEqual({ name: 'n' })
       })
 
       // Emptying its fields still sends an empty message, until it is unticked
       fireEvent.change(screen.getByPlaceholderText('Enter name'), { target: { value: '' } })
       await waitFor(() => {
-        expect(latest(onChange).child).toEqual({})
+        expect(latestCall(onChange).child).toEqual({})
       })
       expect(childCheckbox).toBeChecked()
 
       fireEvent.click(childCheckbox)
       await waitFor(() => {
-        expect('child' in latest(onChange)).toBe(false)
+        expect('child' in latestCall(onChange)).toBe(false)
       })
       expect(screen.queryByPlaceholderText('Enter name')).not.toBeInTheDocument()
     })
@@ -374,7 +362,7 @@ describe('ProtoMessageRenderer Integration Tests', () => {
 
       fireEvent.click(checkbox)
       await waitFor(() => {
-        expect('metadata' in latest(onChange)).toBe(false)
+        expect('metadata' in latestCall(onChange)).toBe(false)
       })
     })
 
@@ -850,7 +838,7 @@ describe('ProtoMessageRenderer Integration Tests', () => {
 
       fireEvent.click(screen.getByRole('checkbox', { name: 'Send child' }))
       await waitFor(() => {
-        expect('child' in latest(onChange)).toBe(false)
+        expect('child' in latestCall(onChange)).toBe(false)
       })
       expect(screen.queryByPlaceholderText(/enter name/i)).toBeInTheDocument() // root level name only
       expect(screen.getAllByPlaceholderText(/enter name/i)).toHaveLength(1)
@@ -864,7 +852,7 @@ describe('ProtoMessageRenderer Integration Tests', () => {
 
       fireEvent.click(screen.getByRole('checkbox', { name: 'Send stringToString' }))
       await waitFor(() => {
-        expect(latest(onChange).stringToString).toEqual({})
+        expect(latestCall(onChange).stringToString).toEqual({})
       })
       expect(screen.getByText(/add entry/i)).toBeInTheDocument()
     })

@@ -28,28 +28,19 @@ import {
   durationMessageSchema,
   fieldMaskMessageSchema,
   anyMessageSchema,
-  schemaCache as testSchemaMap,
+  typedCollectionsSchema,
 } from './protoMessageRenderer.fixtures'
+import { latestCall } from '@/test/latestCall'
 
 // ---------------------------------------------------------------------------
 // Mocks
 // ---------------------------------------------------------------------------
 
-vi.mock('../../schemaLoader/lib/schemaCache', () => ({
-  schemaCache: {
-    // Match the real signatures: getSchema(target, messageType) and
-    // getCachedSchema(target, messageType). These tests key purely on the
-    // message type (target is undefined here), so the target arg is ignored.
-    getSchema: vi.fn((_target: string, type: string) => Promise.resolve(testSchemaMap.get(type) ?? null)),
-    getCacheSize: vi.fn(() => testSchemaMap.size),
-    getCachedSchema: vi.fn((_target: string, type: string) => testSchemaMap.get(type) ?? null),
-    getSchemaMap: vi.fn(() => new Map(testSchemaMap)),
-    getTargetSchemas: vi.fn(() => [...testSchemaMap.values()]),
-    subscribe: vi.fn(() => () => {}),
-    get allLoaded() { return true },
-  },
-  needsSchemaLoad: vi.fn(() => false),
-}))
+vi.mock('../../schemaLoader/lib/schemaCache', async () => {
+  const { schemaCacheModule } = await import('@/test/schemaCacheMock')
+  const { schemaCache } = await import('./protoMessageRenderer.fixtures')
+  return schemaCacheModule(schemaCache)
+})
 
 // Replace MuiDateTimePicker with a simple controlled text input so
 // TimestampField can be tested without MUI/dayjs browser-env complexity.
@@ -85,10 +76,6 @@ vi.mock('@/components/ui/mui-datetime-picker', () => ({
 // ---------------------------------------------------------------------------
 
 beforeEach(() => vi.clearAllMocks())
-
-function latestCall(onChange: ReturnType<typeof vi.fn>) {
-  return onChange.mock.calls.at(-1)![0] as Record<string, unknown>
-}
 
 // ---------------------------------------------------------------------------
 // EnumField
@@ -438,7 +425,7 @@ describe('AnyField onChange', () => {
 
     const select = screen.getByTestId('anyField-typeSelect') as HTMLSelectElement
     const optionValues = Array.from(select.options).map(o => o.value)
-    // The mock provides testSchemaMap which includes test.AllScalars, test.EnumMessage, etc.
+    // The schema cache mock serves the fixture schemas, which include test.AllScalars, test.EnumMessage, etc.
     expect(optionValues).toContain('test.AllScalars')
     expect(optionValues).toContain('test.EnumMessage')
     expect(optionValues).toContain('google.protobuf.Timestamp')
@@ -1479,5 +1466,63 @@ describe('MapField (message values) onChange', () => {
       expect(Object.keys(entries)).toHaveLength(1)
       expect(Object.values(entries).includes(undefined)).toBe(false)
     })
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Collections of numbers, enums and well-known types
+// ---------------------------------------------------------------------------
+
+describe('Typed collection items', () => {
+  it('starts a new number map value at 0 and stores typed numbers as numbers', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(<SchemaRenderer schema={typedCollectionsSchema} data={{ counts: {} }} onChange={onChange} readOnly={false} />)
+
+    await user.click(screen.getByTestId('mapField-addEntryButton'))
+    await user.keyboard('a{Enter}')
+    await waitFor(() => expect(latestCall(onChange).counts).toEqual({ a: 0 }))
+
+    const valueInput = screen.getByLabelText('counts value')
+    await user.clear(valueInput)
+    await user.type(valueInput, '5')
+    await waitFor(() => expect(latestCall(onChange).counts).toEqual({ a: 5 }))
+  })
+
+  it('starts a new enum map value at the first enum value and edits it with a select', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(<SchemaRenderer schema={typedCollectionsSchema} data={{ statuses: {} }} onChange={onChange} readOnly={false} />)
+
+    await user.click(screen.getByTestId('mapField-addEntryButton'))
+    await user.keyboard('x{Enter}')
+    await waitFor(() => expect(latestCall(onChange).statuses).toEqual({ x: 'STATUS_UNKNOWN' }))
+
+    await user.selectOptions(screen.getByRole('combobox'), 'STATUS_ACTIVE')
+    await waitFor(() => expect(latestCall(onChange).statuses).toEqual({ x: 'STATUS_ACTIVE' }))
+  })
+
+  it('gives a repeated Timestamp item a valid value and the Timestamp editor, not seconds/nanos', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(<SchemaRenderer schema={typedCollectionsSchema} data={{ times: [] }} onChange={onChange} readOnly={false} />)
+
+    await user.click(screen.getByRole('button', { name: /Add times/i }))
+
+    await waitFor(() => {
+      const times = latestCall(onChange).times as unknown[]
+      expect(times).toHaveLength(1)
+      expect(Number.isNaN(Date.parse(times[0] as string))).toBe(false)
+    })
+    expect(screen.getByText('UTC')).toBeInTheDocument()
+    expect(screen.queryByPlaceholderText(/Enter seconds/i)).not.toBeInTheDocument()
+  })
+
+  it('shows no add or remove buttons in read-only views', () => {
+    render(
+      <SchemaRenderer schema={typedCollectionsSchema} data={{ counts: { a: 1 }, times: [] }} onChange={vi.fn()} readOnly />
+    )
+    expect(screen.queryByRole('button', { name: /^Add / })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^Remove / })).not.toBeInTheDocument()
   })
 })

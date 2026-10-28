@@ -2,7 +2,7 @@
 
 import { describe, it, expect } from 'vitest'
 import { ScalarType } from '@bufbuild/protobuf'
-import { getInputType, parseValue, isEmpty, scalarZeroValue } from '../scalarTypeUtils'
+import { getInputType, parseValue, isEmpty, jsonZeroValue } from '../scalarTypeUtils'
 
 describe('scalarTypeUtils', () => {
   describe('getInputType', () => {
@@ -111,13 +111,13 @@ describe('scalarTypeUtils', () => {
     })
   })
 
-  describe('scalarZeroValue', () => {
+  describe('jsonZeroValue', () => {
     it('gives each scalar its proto JSON zero value', () => {
-      expect(scalarZeroValue(ScalarType.INT32)).toBe(0)
-      expect(scalarZeroValue(ScalarType.INT64)).toBe('0')
-      expect(scalarZeroValue(ScalarType.DOUBLE)).toBe(0)
-      expect(scalarZeroValue(ScalarType.BOOL)).toBe(false)
-      expect(scalarZeroValue(ScalarType.STRING)).toBe('')
+      expect(jsonZeroValue(ScalarType.INT32)).toBe(0)
+      expect(jsonZeroValue(ScalarType.INT64)).toBe('0')
+      expect(jsonZeroValue(ScalarType.DOUBLE)).toBe(0)
+      expect(jsonZeroValue(ScalarType.BOOL)).toBe(false)
+      expect(jsonZeroValue(ScalarType.STRING)).toBe('')
     })
   })
 })

@@ -1,6 +1,6 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-import React, { useState, useEffect, useMemo, useRef } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import ViewTabs, { type ViewTab } from './ViewTabs'
@@ -10,7 +10,8 @@ import ProtoViewer from './ProtoViewer'
 import ProtoMessageRenderer from '../../schemaRenderer'
 import { useMethodExplorerContext } from '../stores'
 import { wireResponseJson } from '../utils/responseHandlerUtils'
-import JsonViewSwitch, { type JsonView } from './JsonViewSwitch'
+import { useJsonView } from '../hooks/useJsonView'
+import JsonViewSwitch from './JsonViewSwitch'
 
 /**
  * Renders the single response from a completed unary RPC call.
@@ -22,13 +23,8 @@ const UnaryMessageDisplay: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ViewTab>(hasSchema ? 'form' : 'json')
   const effectiveTab = activeTab === 'form' && !hasSchema ? 'json' : activeTab
   const [expanded, setExpanded] = useState(true)
-  const [jsonView, setJsonView] = useState<JsonView>('full')
   const prevHasSchemaRef = useRef(hasSchema)
-
-  const wireRaw = useMemo(
-    () => wireResponseJson(response.raw, response.data, response.schema, selectedTarget),
-    [response.raw, response.data, response.schema, selectedTarget],
-  )
+  const json = useJsonView(hasSchema, () => wireResponseJson(response.raw, response.data, response.schema, selectedTarget))
 
   // Switch to form view when schema first loads (only when schema transitions from false to true)
   useEffect(() => {
@@ -76,15 +72,13 @@ const UnaryMessageDisplay: React.FC = () => {
       ) : (
         <div className="rounded-md border bg-muted/50">
           <div className="flex items-center gap-2 px-3 pt-2">
-            {wireRaw && (
-              <JsonViewSwitch view={jsonView} onChange={setJsonView} />
-            )}
+            {json.canShowWire && <JsonViewSwitch view={json.view} onChange={json.setView} />}
             <Button variant="ghost" size="sm" onClick={() => setExpanded(v => !v)} className="ml-auto h-7 px-2 text-xs">
               {expanded ? <><ChevronUp className="mr-1 size-3" />Collapse</> : <><ChevronDown className="mr-1 size-3" />Expand</>}
             </Button>
           </div>
           <pre className={`overflow-auto px-4 pb-4 text-sm ${expanded ? '' : 'max-h-60'}`}>
-            {jsonView === 'wire' && wireRaw ? wireRaw : response.raw}
+            {json.view === 'wire' ? json.wireText : response.raw}
           </pre>
         </div>
       )}

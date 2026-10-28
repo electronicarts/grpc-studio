@@ -6,11 +6,6 @@ import type { GrpcMethod } from '../../../types/grpc'
 import { fieldTypeName } from '../../../utils/descUtils'
 import { MethodKind } from '@grpc-studio/shared'
 
-/** The last segment of a fully qualified name, for names that only exist as strings (no descriptor). */
-function shortName(fullName: string): string {
-  return fullName.slice(fullName.lastIndexOf('.') + 1)
-}
-
 function formatField(f: DescField): string {
   const label = f.fieldKind === 'list' ? 'repeated ' : ''
   return `  ${label}${fieldTypeName(f, type => type.name)} ${f.name} = ${f.number};`
@@ -43,6 +38,8 @@ function formatEnum(desc: DescEnum): string {
 /**
  * The method as .proto text: its service line, then its request and response messages, followed by every
  * enum and message they use (singular, repeated and map fields, recursively), each printed once.
+ *
+ * @param serviceName the service's short name, e.g. "PetStoreService"
  */
 export function formatMethodProto(
   serviceName: string,
@@ -50,21 +47,24 @@ export function formatMethodProto(
   resolveSchema: (type: string) => DescMessage | null,
   options?: { outputOnly?: boolean }
 ): string {
+  const input = resolveSchema(method.inputType)
+  const output = resolveSchema(method.outputType)
+  // A type that hasn't loaded yet has only its full name to go by
+  const nameOf = (desc: DescMessage | null, fullName: string) => desc?.name ?? fullName.slice(fullName.lastIndexOf('.') + 1)
   const streams = (kinds: string[]) => kinds.includes(method.kind)
-  const inputShort = shortName(method.inputType)
-  const outputShort = shortName(method.outputType)
-  const inputWrap = streams([MethodKind.CLIENT_STREAMING, MethodKind.BIDI_STREAMING]) ? `stream ${inputShort}` : inputShort
-  const outputWrap = streams([MethodKind.SERVER_STREAMING, MethodKind.BIDI_STREAMING]) ? `stream ${outputShort}` : outputShort
+  const inputName = nameOf(input, method.inputType)
+  const outputName = nameOf(output, method.outputType)
+  const inputWrap = streams([MethodKind.CLIENT_STREAMING, MethodKind.BIDI_STREAMING]) ? `stream ${inputName}` : inputName
+  const outputWrap = streams([MethodKind.SERVER_STREAMING, MethodKind.BIDI_STREAMING]) ? `stream ${outputName}` : outputName
 
   const blocks = [[
-    `service ${shortName(serviceName)} {`,
+    `service ${serviceName} {`,
     `  rpc ${method.name}(${inputWrap}) returns (${outputWrap});`,
     '}',
   ].join('\n')]
 
-  const roots = [options?.outputOnly ? null : resolveSchema(method.inputType), resolveSchema(method.outputType)]
   const printed = new Set<string>()
-  for (const root of roots) {
+  for (const root of [options?.outputOnly ? null : input, output]) {
     if (!root) continue
     for (const type of [root, ...usedTypes(root)]) {
       if (printed.has(type.typeName)) continue

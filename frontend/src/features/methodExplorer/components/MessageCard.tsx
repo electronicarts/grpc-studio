@@ -1,6 +1,6 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-import React, { useMemo, useState } from 'react'
+import React from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Copy, Check, ChevronDown, ChevronUp } from 'lucide-react'
@@ -10,14 +10,16 @@ import { getMessagePreview } from '../utils/messagePreview'
 import { useCopyToClipboard } from '../../../utils/useCopyToClipboard'
 import { useMethodExplorerContext } from '../stores'
 import { toWireJson } from '../utils/payload'
-import JsonViewSwitch, { type JsonView } from './JsonViewSwitch'
+import { isRecord } from '../../../utils/jsonUtils'
+import { useJsonView } from '../hooks/useJsonView'
+import JsonViewSwitch from './JsonViewSwitch'
 
 interface MessageCardProps {
   msg: unknown
   originalIndex: number
   isExpanded: boolean
   isLatest: boolean
-  schema?: DescMessage | null
+  schema: DescMessage | null
   isFormMode: boolean
   onToggle: () => void
   colorScheme?: 'purple' | 'blue'
@@ -29,11 +31,7 @@ const MessageCard: React.FC<MessageCardProps> = ({
 }) => {
   const { selectedTarget } = useMethodExplorerContext()
   const { copied, copy } = useCopyToClipboard()
-  const [jsonView, setJsonView] = useState<JsonView>('full')
-  const wire = useMemo(
-    () => (isExpanded && !isFormMode ? toWireJson(msg, schema ?? null, selectedTarget) : null),
-    [isExpanded, isFormMode, msg, schema, selectedTarget],
-  )
+  const json = useJsonView(schema !== null && isRecord(msg), () => toWireJson(msg, schema, selectedTarget))
 
   const handleCopy = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -121,11 +119,9 @@ const MessageCard: React.FC<MessageCardProps> = ({
             </div>
           ) : (
             <div className="mt-2 space-y-2">
-              {wire && (
-                <JsonViewSwitch view={jsonView} onChange={setJsonView} />
-              )}
+              {json.canShowWire && <JsonViewSwitch view={json.view} onChange={json.setView} />}
               <pre className="max-h-80 overflow-auto rounded bg-muted p-3 font-mono text-xs text-foreground">
-                {JSON.stringify(jsonView === 'wire' && wire ? wire : msg, null, 2)}
+                {json.view === 'wire' ? json.wireText : JSON.stringify(msg, null, 2)}
               </pre>
             </div>
           )}

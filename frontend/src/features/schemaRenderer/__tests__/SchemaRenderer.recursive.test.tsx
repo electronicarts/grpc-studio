@@ -24,21 +24,13 @@ import {
   lineageSchema,
   recursiveOneofSchema,
   testData,
-  schemaCache as testSchemaMap,
 } from './protoMessageRenderer.fixtures'
 
-vi.mock('../../schemaLoader/lib/schemaCache', () => ({
-  schemaCache: {
-    getSchema: vi.fn((_target: string, type: string) => Promise.resolve(testSchemaMap.get(type) || null)),
-    getCacheSize: vi.fn(() => testSchemaMap.size),
-    getSchemaMap: vi.fn(() => new Map(testSchemaMap)),
-    getTargetSchemas: vi.fn(() => [...testSchemaMap.values()]),
-    getCachedSchema: vi.fn((_target: string, type: string) => testSchemaMap.get(type) ?? null),
-    subscribe: vi.fn(() => () => {}),
-    get allLoaded() { return true },
-  },
-  needsSchemaLoad: vi.fn(() => false),
-}))
+vi.mock('../../schemaLoader/lib/schemaCache', async () => {
+  const { schemaCacheModule } = await import('@/test/schemaCacheMock')
+  const { schemaCache } = await import('./protoMessageRenderer.fixtures')
+  return schemaCacheModule(schemaCache)
+})
 
 describe('cyclic schemas', () => {
   beforeEach(() => {

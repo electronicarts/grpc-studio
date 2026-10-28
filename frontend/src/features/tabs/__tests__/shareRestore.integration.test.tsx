@@ -33,16 +33,7 @@ const server: ApiServer = { name: 'Server1', target: 'localhost:50051', services
 
 // The schema cache is consulted synchronously during render; return null so the
 // request body is used verbatim (no canonicalization rewrites in this test).
-vi.mock('../../schemaLoader/lib/schemaCache', () => ({
-  schemaCache: {
-    subscribe: vi.fn(() => () => {}),
-    getCachedSchema: vi.fn(() => null),
-    getSchema: vi.fn(() => Promise.resolve(null)),
-    getCacheSize: vi.fn(() => 0),
-    getSchemaMap: vi.fn(() => new Map()),
-    getTargetSchemas: vi.fn(() => []),
-  },
-}))
+vi.mock('../../schemaLoader/lib/schemaCache', async () => (await import('@/test/schemaCacheMock')).schemaCacheModule())
 
 // Servers/services come from React Query in the real app; feed them directly.
 vi.mock('../../schemaLoader', () => ({

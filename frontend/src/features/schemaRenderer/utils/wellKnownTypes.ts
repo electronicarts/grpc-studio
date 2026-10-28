@@ -8,29 +8,35 @@ import {
   StructSchema,
   TimestampSchema,
   isWrapperDesc,
+  type WktWrapperDesc,
 } from '@bufbuild/protobuf/wkt'
 
-/** The well-known types that get a specialized editor instead of the regular message form. */
-export type WellKnownKind = 'timestamp' | 'duration' | 'fieldMask' | 'any' | 'struct' | 'wrapper'
+/**
+ * A well-known type that gets a specialized editor instead of the regular message form. Wrappers carry buf's
+ * narrowed descriptor, so callers can read the wrapped scalar without checking again.
+ */
+export type WellKnownType =
+  | { kind: 'timestamp' | 'duration' | 'fieldMask' | 'any' | 'struct' }
+  | { kind: 'wrapper'; desc: WktWrapperDesc }
 
 /**
  * Classifies a message type by the editor it gets, or returns null for a regular message.
  * buf recognizes the types; which editor each one gets is this app's choice, decided only here.
  */
-export function wellKnownKind(desc: DescMessage): WellKnownKind | null {
+export function wellKnownType(desc: DescMessage): WellKnownType | null {
   switch (desc.typeName) {
     case TimestampSchema.typeName:
-      return 'timestamp'
+      return { kind: 'timestamp' }
     case DurationSchema.typeName:
-      return 'duration'
+      return { kind: 'duration' }
     case FieldMaskSchema.typeName:
-      return 'fieldMask'
+      return { kind: 'fieldMask' }
     case AnySchema.typeName:
-      return 'any'
+      return { kind: 'any' }
     case StructSchema.typeName:
-      return 'struct'
+      return { kind: 'struct' }
     default:
-      return isWrapperDesc(desc) ? 'wrapper' : null
+      return isWrapperDesc(desc) ? { kind: 'wrapper', desc } : null
   }
 }
 
@@ -39,6 +45,6 @@ export function wellKnownKind(desc: DescMessage): WellKnownKind | null {
  * as opposed to a single input like Timestamp, Duration, FieldMask, Any and the wrappers.
  */
 export function isFramedMessageType(desc: DescMessage): boolean {
-  const kind = wellKnownKind(desc)
-  return kind === null || kind === 'struct'
+  const kind = wellKnownType(desc)?.kind
+  return kind === undefined || kind === 'struct'
 }

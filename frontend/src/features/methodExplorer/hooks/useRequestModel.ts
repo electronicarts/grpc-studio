@@ -32,8 +32,14 @@ export function useRequestModel(
 
   // The JSON view holds exactly the fields ticked in the form, so the two always agree key for key.
   const canonicalizeRequestData = useCallback((data: Record<string, unknown>) => {
-    return canonicalizeProtoJson(data, schema, { target: selectedTarget, keepPresentFields: true })
+    return canonicalizeProtoJson(data, schema, selectedTarget, 'present')
   }, [schema, selectedTarget])
+
+  const loadData = useCallback((data: Record<string, unknown>) => {
+    const canonical = canonicalizeRequestData(data)
+    setFormData(canonical)
+    setBody(JSON.stringify(canonical, null, 2))
+  }, [canonicalizeRequestData])
 
   const firstSchemaLoadRef = useRef(true)
   useEffect(() => {
@@ -122,6 +128,6 @@ export function useRequestModel(
 
   return {
     body, formData, formKey, isFormMode, schema, loadingSchema, validationError,
-    setBody, setFormData, toggleMode, reset, clear,
+    setBody, setFormData, loadData, toggleMode, reset, clear,
   }
 }

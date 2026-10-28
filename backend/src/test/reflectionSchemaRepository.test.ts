@@ -2,15 +2,12 @@
 
 import { afterEach, describe, it, mock } from 'node:test'
 import assert from 'node:assert/strict'
-import { create, createFileRegistry, type FileRegistry } from '@bufbuild/protobuf'
-import { FileDescriptorSetSchema } from '@bufbuild/protobuf/wkt'
+import type { FileRegistry } from '@bufbuild/protobuf'
 import { ReflectionSchemaRepository } from '../repositories/reflectionSchemaRepository.js'
-import { fileDescriptor } from './protoFixtures.js'
+import { fileDescriptor, fileRegistry } from './protoFixtures.js'
 
 function serviceRegistry(pkg: string, message: string): FileRegistry {
-  return createFileRegistry(create(FileDescriptorSetSchema, {
-    file: [fileDescriptor({ name: `${pkg}.proto`, package: pkg, messageType: [{ name: message, nestedType: [{ name: 'Inner' }] }] })],
-  }))
+  return fileRegistry(fileDescriptor({ name: `${pkg}.proto`, package: pkg, messageType: [{ name: message, nestedType: [{ name: 'Inner' }] }] }))
 }
 
 /** A repository whose reflection lookups are stubbed: `services` maps a service name to its registry. */

@@ -51,7 +51,7 @@ Every field kind follows the same rules, so new fields should reuse the shared p
 
 A framed field (message, Struct, list, map) shows its contents only while ticked, so there are no chevrons when editing. Bools are a `true` / `false` select when editing, so the value never looks like the checkbox that decides whether it is sent.
 
-The request's JSON tab keeps exactly the ticked fields (`canonicalizeProtoJson` with `keepPresentFields`), so the form and JSON always agree, key for key. Its **Wire** view shows what the server actually receives: protobuf drops plain proto3 fields (no `optional`) at their default value, so a ticked `false`, `0` or `""` on such a field is absent there.
+The request's JSON tab keeps exactly the ticked fields (`canonicalizeProtoJson` emitting `'present'` fields), so the form and JSON always agree, key for key. Its **Wire** view shows what the server actually receives: protobuf drops plain proto3 fields (no `optional`) at their default value, so a ticked `false`, `0` or `""` on such a field is absent there.
 
 **Adding and removing.** Collections add with `AddButton` (`+ Add <noun>`), which appends a row that is edited in place, and remove with `RemoveButton` (✕). There is never a separate input that has to be committed with its own button.
 

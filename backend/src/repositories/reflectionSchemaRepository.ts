@@ -10,7 +10,7 @@ import type { FileDescriptorSet } from '@bufbuild/protobuf/wkt'
 import * as descriptorSetFromReflection from '../grpc/reflection/descriptorSetFromReflection.js'
 import * as reflectionMetadataCache from '../cache/reflectionMetadataCache.js'
 import multiClientManager from '../grpc/multiClientManager.js'
-import { withWellKnownTypes } from '../grpc/connect/dynamicRegistry.js'
+import { withWellKnownTypes } from '@grpc-studio/shared'
 import logger from '../utils/logger.js'
 
 const repositoryLogger = logger.child({ module: 'reflection-schema-repository' })
@@ -131,18 +131,21 @@ export class ReflectionSchemaRepository {
     const cached = targetRegistryCache.get(cacheKey)
     if (cached !== undefined) return cached
 
+    // Services are independent, so look them up concurrently; one that fails is skipped
+    const serviceNames = await this.listServices(target)
+    const results = await Promise.allSettled(serviceNames.map(serviceName => this.getFileRegistry(target, serviceName)))
     const serviceRegistries: FileRegistry[] = []
-    for (const serviceName of await this.listServices(target)) {
-      try {
-        serviceRegistries.push(await this.getFileRegistry(target, serviceName))
-      } catch (error) {
-        repositoryLogger.warn('Failed to get registry for service, skipping', {
-          target,
-          serviceName,
-          error: error instanceof Error ? error.message : String(error),
-        })
+    results.forEach((result, index) => {
+      if (result.status === 'fulfilled') {
+        serviceRegistries.push(result.value)
+        return
       }
-    }
+      repositoryLogger.warn('Failed to get registry for service, skipping', {
+        target,
+        serviceName: serviceNames[index],
+        error: result.reason instanceof Error ? result.reason.message : String(result.reason),
+      })
+    })
 
     const registry = withWellKnownTypes(...serviceRegistries)
     targetRegistryCache.set(cacheKey, registry)

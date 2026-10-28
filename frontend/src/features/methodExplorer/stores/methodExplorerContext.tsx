@@ -10,7 +10,6 @@ import { useHistoryModel } from '../hooks/useHistoryModel'
 import { useMetadataModel, nextRowId } from '../hooks/useMetadataModel'
 import { useMethodInvocation } from '../hooks/useMethodInvocation'
 import { formLogger } from '../../../utils/debugLogger'
-import { canonicalizeProtoJson } from '../utils/payload'
 import { metadataToRows } from '../utils/metadata'
 import { tabStateStore, type TabStateSnapshot } from '@/stores'
 import type {
@@ -156,10 +155,7 @@ export function MethodExplorerProvider({
   const loadFromHistory = (item: RequestHistoryItem) => {
     try {
       const { data } = history.parse(item)
-      const canonical = canonicalizeProtoJson(data, request.schema, { target: selectedTarget, keepPresentFields: true })
-
-      request.setFormData(canonical)
-      request.setBody(JSON.stringify(canonical, null, 2))
+      request.loadData(data)
       metadata.setRows(metadataToRows(item.metadata, nextRowId))
       response.clear()
       history.setVisible(false)

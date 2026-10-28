@@ -1,16 +1,10 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-/**
- * Dynamic registry builder that combines well-known types with reflected schemas.
- * This enables google.protobuf.Any fields to contain custom message types discovered
- * via reflection, not just WKTs.
- */
-
 import { createRegistry, type Registry } from '@bufbuild/protobuf'
 import * as wkt from '@bufbuild/protobuf/wkt'
 
 // Every well-known type, via the files buf ships them in
-const wktRegistry: Registry = createRegistry(
+const wellKnownTypes: Registry = createRegistry(
   wkt.file_google_protobuf_any,
   wkt.file_google_protobuf_api,
   wkt.file_google_protobuf_compiler_plugin,
@@ -29,9 +23,10 @@ const wktRegistry: Registry = createRegistry(
 )
 
 /**
- * Merges reflected registries with the WKTs into one Registry, nested messages included. It can be passed
- * to fromJson/toJson so google.protobuf.Any fields can contain custom types discovered through reflection.
+ * A registry of the given types (registries, files or messages from reflection) plus every well-known type,
+ * nested messages included. Passed to fromJson/toJson so google.protobuf.Any fields can contain custom types
+ * discovered through reflection, as well as WKTs.
  */
-export function withWellKnownTypes(...registries: Registry[]): Registry {
-  return createRegistry(wktRegistry, ...registries)
+export function withWellKnownTypes(...types: Parameters<typeof createRegistry>): Registry {
+  return createRegistry(wellKnownTypes, ...types)
 }

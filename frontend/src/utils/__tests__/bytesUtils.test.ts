@@ -4,7 +4,6 @@ import { describe, it, expect } from 'vitest'
 import { formatBytes } from '../bytesUtils'
 
 describe('bytesUtils', () => {
-
   describe('formatBytes', () => {
     it('should format bytes under 1KB', () => {
       expect(formatBytes(0)).toBe('0 B')

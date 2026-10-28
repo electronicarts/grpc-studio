@@ -6,7 +6,6 @@ import type { ServiceItemProps } from '../types'
 import { SelectableButton } from '@/components/ui/selectableButton'
 
 const ServiceItem: React.FC<ServiceItemProps & { serverName?: string; serverTarget?: string }> = ({ service, isSelected, isExpanded, onToggle, children, serverName, serverTarget }) => {
-
   return (
     <div>
       <SelectableButton

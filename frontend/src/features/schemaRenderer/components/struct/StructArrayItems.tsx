@@ -1,6 +1,5 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
 import { removeArrayItem, replaceArrayItem } from '../../utils/collectionMutation'
 import AddButton from '../shared/AddButton'
 import { StructValue } from './StructValue'
@@ -11,8 +10,6 @@ interface StructArrayItemsProps {
 }
 
 export function StructArrayItems({ value, onChange }: StructArrayItemsProps) {
-  const { readOnly } = useProtoMessageRendererContext()
-
   const updateItem = (index: number, nextValue: unknown) => {
     onChange(replaceArrayItem(value, index, nextValue))
   }
@@ -29,7 +26,7 @@ export function StructArrayItems({ value, onChange }: StructArrayItemsProps) {
           label={`Item ${index + 1}`}
           value={item}
           onChange={(nextValue) => updateItem(index, nextValue)}
-          onRemove={!readOnly ? () => removeItem(index) : undefined}
+          onRemove={() => removeItem(index)}
         />
       ))}
 
@@ -37,9 +34,7 @@ export function StructArrayItems({ value, onChange }: StructArrayItemsProps) {
         <div className="text-sm italic text-muted-foreground">No items</div>
       )}
 
-      {!readOnly && (
-        <AddButton noun="item" onClick={() => onChange([...value, ''])} testId="structField-addItemButton" />
-      )}
+      <AddButton noun="item" onClick={() => onChange([...value, ''])} testId="structField-addItemButton" />
     </div>
   )
 }

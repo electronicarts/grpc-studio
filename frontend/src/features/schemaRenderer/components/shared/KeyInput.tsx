@@ -7,8 +7,8 @@ import { cn } from '@/utils/cn'
 interface KeyInputProps {
   /** The committed key; empty for a row that hasn't been given one yet. */
   value: string
-  /** Keys used by the other rows, which this one may not take. */
-  takenKeys: readonly string[]
+  /** Every committed key in the collection, this row's own included; the key may not take another row's. */
+  existingKeys: ReadonlySet<string>
   onCommit: (key: string) => void
   placeholder: string
   'aria-label': string
@@ -16,9 +16,9 @@ interface KeyInputProps {
   className?: string
 }
 
-function keyError(key: string, takenKeys: readonly string[]): string | null {
+function keyError(key: string, ownKey: string, existingKeys: ReadonlySet<string>): string | null {
   if (!key) return 'Required'
-  if (takenKeys.includes(key)) return 'Already exists'
+  if (key !== ownKey && existingKeys.has(key)) return 'Already exists'
   return null
 }
 
@@ -29,7 +29,7 @@ function keyError(key: string, takenKeys: readonly string[]): string | null {
  */
 const KeyInput: React.FC<KeyInputProps> = ({
   value,
-  takenKeys,
+  existingKeys,
   onCommit,
   placeholder,
   'aria-label': ariaLabel,
@@ -40,11 +40,11 @@ const KeyInput: React.FC<KeyInputProps> = ({
   const [draft, setDraft] = useState<string | null>(null)
   const [touched, setTouched] = useState(false)
   const text = draft ?? value
-  const error = touched ? keyError(text.trim(), takenKeys) : null
+  const error = touched ? keyError(text.trim(), value, existingKeys) : null
 
   const commit = () => {
     const key = text.trim()
-    const invalid = keyError(key, takenKeys) !== null
+    const invalid = keyError(key, value, existingKeys) !== null
     setTouched(invalid)
     if (invalid) return
     setDraft(null)

@@ -4,25 +4,21 @@ import { describe, it, mock } from 'node:test'
 import assert from 'node:assert/strict'
 import { DiscoveryService } from '../services/discoveryService.js'
 import type { ReflectionSchemaRepository } from '../repositories/reflectionSchemaRepository.js'
-import { create, createFileRegistry } from '@bufbuild/protobuf'
-import { FileDescriptorSetSchema } from '@bufbuild/protobuf/wkt'
-import { fileDescriptor } from './protoFixtures.js'
+import { fileDescriptor, fileRegistry } from './protoFixtures.js'
 
 const TEST_TARGET = 'test-target'
 
 /** A repository serving a real registry with one service, as reflection would. */
 function repositoryWithService(pkg: string, serviceName: string, methods: string[]): ReflectionSchemaRepository {
   const prefix = pkg ? `.${pkg}.` : '.'
-  const registry = createFileRegistry(create(FileDescriptorSetSchema, {
-    file: [fileDescriptor({
-      name: 'service.proto',
-      package: pkg,
-      messageType: [{ name: 'Request' }, { name: 'Response' }],
-      service: [{
-        name: serviceName,
-        method: methods.map(name => ({ name, inputType: `${prefix}Request`, outputType: `${prefix}Response` })),
-      }],
-    })],
+  const registry = fileRegistry(fileDescriptor({
+    name: 'service.proto',
+    package: pkg,
+    messageType: [{ name: 'Request' }, { name: 'Response' }],
+    service: [{
+      name: serviceName,
+      method: methods.map(name => ({ name, inputType: `${prefix}Request`, outputType: `${prefix}Response` })),
+    }],
   }))
   return { getFileRegistry: mock.fn(async () => registry) } as unknown as ReflectionSchemaRepository
 }

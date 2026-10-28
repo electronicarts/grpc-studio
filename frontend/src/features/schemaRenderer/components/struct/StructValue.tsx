@@ -67,9 +67,7 @@ export function StructValue({ label, labelEditor, value, onChange, onRemove }: S
         <Badge className="bg-brand text-white">oneof</Badge>
         {labelEditor || <span className="font-medium text-foreground">{label}</span>}
         <span className="text-xs text-muted-foreground">(google.protobuf.Value)</span>
-        {onRemove && (
-          <RemoveButton label={label} onClick={onRemove} className="ml-auto" testId="structField-removeButton" />
-        )}
+        {onRemove && <RemoveButton label={label} onClick={onRemove} className="ml-auto" testId="structField-removeButton" />}
       </div>
 
       <Select

@@ -22,6 +22,7 @@ class SchemaCache {
   private schemas = new Map<string, DescMessage>()
   private loadingPromises = new Map<string, Promise<DescMessage | null>>()
   private listeners = new Set<Listener>()
+  private changes = 0
 
   // ── subscriptions ─────────────────────────────────────────────
 
@@ -31,17 +32,19 @@ class SchemaCache {
   }
 
   private notify() {
+    this.changes++
     for (const listener of this.listeners) listener()
+  }
+
+  /** Increases whenever the cached schemas change, so derived data (e.g. registries) knows to rebuild. */
+  get version(): number {
+    return this.changes
   }
 
   // ── synchronous reads ─────────────────────────────────────────
 
   getCachedSchema(target: string, messageType: string): DescMessage | null {
     return this.schemas.get(scopedKey(target, messageType)) ?? null
-  }
-
-  getSchemaMap(): Map<string, DescMessage> {
-    return new Map(this.schemas)
   }
 
   /** Every message type loaded from one target server. */
@@ -73,7 +76,8 @@ class SchemaCache {
     const promise = fetchDescriptorSet(target, messageType, this.schemas)
       .then(desc => {
         this.loadingPromises.delete(key)
-        if (desc) this.notify()
+        // Notify even when the requested type was missing: the response may still have added other types
+        this.notify()
         return desc
       })
       .catch(error => {

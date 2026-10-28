@@ -1,6 +1,8 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import { ScalarType, protoInt64 } from '@bufbuild/protobuf'
+import { scalarZeroValue, type ScalarValue } from '@bufbuild/protobuf/reflect'
+import { base64Encode } from '@bufbuild/protobuf/wire'
 
 /**
  * Check if a scalar type is numeric (needs number input).
@@ -67,13 +69,18 @@ export function parseValue(value: string, scalar: ScalarType): unknown {
 }
 
 /**
- * The value a scalar field takes when set without user input, in form-data representation.
+ * A scalar runtime value from buf (bigint, Uint8Array, …) in proto JSON form, the form data's representation.
  */
-export function scalarZeroValue(scalar: ScalarType): unknown {
-  if (is64Bit(scalar)) return '0'
-  if (isNumeric(scalar)) return 0
-  if (scalar === ScalarType.BOOL) return false
-  return ''
+export function scalarToJson(value: ScalarValue): unknown {
+  if (typeof value === 'bigint') return String(value)
+  if (value instanceof Uint8Array) return base64Encode(value)
+  if (typeof value === 'number' && !Number.isFinite(value)) return String(value) // "NaN", "Infinity", "-Infinity"
+  return value
+}
+
+/** A scalar type's zero value (buf's `scalarZeroValue`) in proto JSON form: `0`, `"0"` for 64-bit, `false`, `""`. */
+export function jsonZeroValue(scalar: ScalarType): unknown {
+  return scalarToJson(scalarZeroValue(scalar, false))
 }
 
 /**

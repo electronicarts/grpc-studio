@@ -2,24 +2,22 @@
 
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { create, createFileRegistry, fromJson, toJson } from '@bufbuild/protobuf'
-import { AnySchema, FieldDescriptorProto_Type, FileDescriptorSetSchema } from '@bufbuild/protobuf/wkt'
-import { withWellKnownTypes } from '../grpc/connect/dynamicRegistry.js'
-import { field, fileDescriptor } from './protoFixtures.js'
+import { fromJson, toJson } from '@bufbuild/protobuf'
+import { AnySchema, FieldDescriptorProto_Type } from '@bufbuild/protobuf/wkt'
+import { withWellKnownTypes } from '@grpc-studio/shared'
+import { field, fileDescriptor, fileRegistry } from './protoFixtures.js'
 
-const fileDescriptorSet = create(FileDescriptorSetSchema, {
-  file: [fileDescriptor({
-    name: 'outer.proto',
-    messageType: [{
-      name: 'Outer',
-      field: [field('id', 1, FieldDescriptorProto_Type.STRING)],
-      nestedType: [{ name: 'Inner', field: [field('label', 1, FieldDescriptorProto_Type.STRING)] }],
-    }],
-  })],
-})
+const reflected = fileRegistry(fileDescriptor({
+  name: 'outer.proto',
+  messageType: [{
+    name: 'Outer',
+    field: [field('id', 1, FieldDescriptorProto_Type.STRING)],
+    nestedType: [{ name: 'Inner', field: [field('label', 1, FieldDescriptorProto_Type.STRING)] }],
+  }],
+}))
 
 describe('withWellKnownTypes', () => {
-  const registry = withWellKnownTypes(createFileRegistry(fileDescriptorSet))
+  const registry = withWellKnownTypes(reflected)
 
   it('includes reflected top-level and nested messages', () => {
     assert.ok(registry.getMessage('test.Outer'))

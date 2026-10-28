@@ -14,7 +14,7 @@ import type { ResponseModel } from '../types'
 export function normalizeResponseMessage(
   data: unknown,
   outputType: string | null,
-  target?: string,
+  target: string,
 ): ReturnType<typeof toDisplayFormat> {
   return toDisplayFormat(data, outputType, target)
 }
@@ -27,7 +27,7 @@ export function wireResponseJson(
   raw: string,
   data: unknown,
   schema: DescMessage | null,
-  target?: string,
+  target: string,
 ): string | null {
   const wire = toWireJson(data, schema, target)
   if (!wire) return null

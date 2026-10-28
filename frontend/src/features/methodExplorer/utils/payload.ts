@@ -1,41 +1,26 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-import { fromJson, toJson, createRegistry } from '@bufbuild/protobuf'
+import { fromJson, toJson } from '@bufbuild/protobuf'
 import type { DescMessage, Registry } from '@bufbuild/protobuf'
 import * as wkt from '@bufbuild/protobuf/wkt'
-import type { JsonObject, JsonValue } from '@grpc-studio/shared'
+import { withWellKnownTypes, type JsonObject, type JsonValue } from '@grpc-studio/shared'
 import { cloneJsonObject, isJsonObject, isRecord } from '../../../utils/jsonUtils'
 import { schemaCache } from '../../schemaLoader/lib/schemaCache'
 import { cleanFormData } from '../../../utils/cleanFormData'
 import { anyTypeName } from '../../../utils/descUtils'
 
-// Every well-known type, via the files buf ships them in
-const wktRegistry: Registry = createRegistry(
-  wkt.file_google_protobuf_any,
-  wkt.file_google_protobuf_api,
-  wkt.file_google_protobuf_compiler_plugin,
-  wkt.file_google_protobuf_cpp_features,
-  wkt.file_google_protobuf_descriptor,
-  wkt.file_google_protobuf_duration,
-  wkt.file_google_protobuf_empty,
-  wkt.file_google_protobuf_field_mask,
-  wkt.file_google_protobuf_go_features,
-  wkt.file_google_protobuf_java_features,
-  wkt.file_google_protobuf_source_context,
-  wkt.file_google_protobuf_struct,
-  wkt.file_google_protobuf_timestamp,
-  wkt.file_google_protobuf_type,
-  wkt.file_google_protobuf_wrappers,
-)
+const registries = new Map<string, { version: number; registry: Registry }>()
 
 /**
- * Builds a dynamic registry with the WKTs and every type loaded from the target server.
- * This allows google.protobuf.Any fields to contain custom reflected types, not just WKTs.
- * Without a target, every loaded type is included.
+ * A registry with the WKTs and every type loaded from the target server, so google.protobuf.Any fields can
+ * contain custom reflected types. Cached per target and rebuilt only when the schema cache changes.
  */
-function buildDynamicRegistry(target?: string): Registry {
-  const schemas = target === undefined ? schemaCache.getSchemaMap().values() : schemaCache.getTargetSchemas(target)
-  return createRegistry(wktRegistry, ...schemas)
+function targetRegistry(target: string): Registry {
+  const cached = registries.get(target)
+  if (cached?.version === schemaCache.version) return cached.registry
+  const registry = withWellKnownTypes(...schemaCache.getTargetSchemas(target))
+  registries.set(target, { version: schemaCache.version, registry })
+  return registry
 }
 
 export interface Payload {
@@ -43,28 +28,20 @@ export interface Payload {
   wire: JsonObject
 }
 
-function lookupSchema(target: string | undefined, type: string): DescMessage | null {
-  // Need target to lookup schema - if not provided, return null
-  if (!target) return null
-  return schemaCache.getCachedSchema(target, type)
-}
-
-interface CanonicalizeOptions {
-  target?: string
-  /** Emit every field, including plain proto3 fields at their default value. */
-  alwaysEmitImplicit?: boolean
-  /**
-   * Emit exactly the fields present in `data`, normalized, and no others: a field given as `false`, `0` or `""`
-   * stays in, and an absent field stays out. The request form relies on this so that its "Send" checkbox and the
-   * JSON view agree on every key. Takes precedence over `alwaysEmitImplicit`.
-   */
-  keepPresentFields?: boolean
-}
+/**
+ * Which fields the canonical JSON contains:
+ * - `wire`: what protobuf encodes; plain proto3 fields at their default value are dropped
+ * - `all`: every field, including plain proto3 fields at their default value
+ * - `present`: exactly the fields present in the data, so a field given as `false`, `0` or `""` stays in and an
+ *   absent one stays out. The request form relies on this so its "Send" checkboxes and JSON view agree on every key.
+ */
+export type EmitFields = 'wire' | 'all' | 'present'
 
 export function canonicalizeProtoJson(
   data: Record<string, unknown>,
   schema: DescMessage | null,
-  options: CanonicalizeOptions = {},
+  target: string,
+  emit: EmitFields = 'wire',
 ): JsonObject {
   if (!schema) {
     if (!isJsonObject(data)) {
@@ -77,13 +54,12 @@ export function canonicalizeProtoJson(
   // Protobuf JSON format doesn't support undefined - fields should be omitted
   const cleanedData = cleanFormData(data) as JsonObject
 
-  // Use dynamic registry so Any fields can contain custom reflected types
-  const registry = buildDynamicRegistry(options.target)
+  const registry = targetRegistry(target)
 
   const message = fromJson(schema, cleanedData, { ignoreUnknownFields: false, registry })
   const json = toJson(schema, message, {
     useProtoFieldName: true,
-    alwaysEmitImplicit: options.keepPresentFields || (options.alwaysEmitImplicit ?? false),
+    alwaysEmitImplicit: emit !== 'wire',
     registry,
   })
 
@@ -91,7 +67,7 @@ export function canonicalizeProtoJson(
     throw new Error(`Expected ${schema.typeName} to encode to a JSON object`)
   }
 
-  return options.keepPresentFields ? keepPresentFields(json, cleanedData, schema, registry) : json
+  return emit === 'present' ? keepPresentFields(json, cleanedData, schema, registry) : json
 }
 
 /**
@@ -153,10 +129,10 @@ function keepPresentInMessage(
 export function toWireFormat(
   obj: Record<string, unknown>,
   messageType: string | null,
-  target?: string,
+  target: string,
 ): Payload {
-  const schema = messageType ? lookupSchema(target, messageType) : null
-  const canonical = canonicalizeProtoJson(obj, schema, { target })
+  const schema = messageType ? schemaCache.getCachedSchema(target, messageType) : null
+  const canonical = canonicalizeProtoJson(obj, schema, target)
 
   return {
     display: cloneJsonObject(canonical),
@@ -167,14 +143,14 @@ export function toWireFormat(
 export function toDisplayFormat(
   obj: unknown,
   messageType: string | null,
-  target?: string,
+  target: string,
 ): Payload {
   if (!isRecord(obj)) {
     return { display: {}, wire: {} }
   }
 
-  const schema = messageType ? lookupSchema(target, messageType) : null
-  const canonical = canonicalizeProtoJson(obj, schema, { target, alwaysEmitImplicit: true })
+  const schema = messageType ? schemaCache.getCachedSchema(target, messageType) : null
+  const canonical = canonicalizeProtoJson(obj, schema, target, 'all')
 
   return {
     display: cloneJsonObject(canonical),
@@ -186,10 +162,10 @@ export function toDisplayFormat(
  * The wire form of a message: what protobuf actually encodes, with plain proto3 fields at their default value
  * dropped. Returns null when there is no schema to encode with, or the data isn't a valid message.
  */
-export function toWireJson(data: unknown, schema: DescMessage | null, target?: string): JsonObject | null {
+export function toWireJson(data: unknown, schema: DescMessage | null, target: string): JsonObject | null {
   if (!schema || !isRecord(data)) return null
   try {
-    return canonicalizeProtoJson(data, schema, { target })
+    return canonicalizeProtoJson(data, schema, target)
   } catch {
     return null
   }

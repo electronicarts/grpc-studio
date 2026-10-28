@@ -83,13 +83,13 @@ const ProtoViewer: React.FC<ProtoViewerProps> = ({ selectedTarget, selectedServi
 
   const protoText = useMemo(() => {
     return formatMethodProto(
-      selectedService.fullName,
+      selectedService.name,
       selectedMethod,
       (type) => schemaCache.getCachedSchema(selectedTarget, type),
       outputOnly ? { outputOnly: true } : undefined
     )
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedTarget, selectedService.fullName, selectedMethod, cacheSize, outputOnly])
+  }, [selectedTarget, selectedService.name, selectedMethod, cacheSize, outputOnly])
 
   const highlighted = useMemo(() => highlightProto(protoText), [protoText])
 

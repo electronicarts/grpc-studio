@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { FormInput, Code, FileCode2, Tags } from 'lucide-react'
-import { viewTabClass } from './viewTabClass'
+import { segmentedControlClass, viewTabClass } from './viewTabClass'
 
 export type ViewTab = 'form' | 'json' | 'schema' | 'metadata'
 
@@ -27,7 +27,7 @@ const ViewTabs: React.FC<ViewTabsProps> = ({
   showMetadataTab = true,
   metadataCount = 0,
 }) => (
-  <div className="flex items-center rounded-lg bg-muted p-0.5">
+  <div className={segmentedControlClass}>
     {hasSchema && (
       <button type="button" onClick={() => onTabChange('form')} className={viewTabClass(activeTab === 'form')}>
         <FormInput className="size-3.5" />

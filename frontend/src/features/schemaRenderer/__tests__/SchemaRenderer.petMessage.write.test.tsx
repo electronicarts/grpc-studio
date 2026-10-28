@@ -17,9 +17,7 @@ import userEvent from '@testing-library/user-event'
 import SchemaRenderer from '../components/core/SchemaRenderer'
 import { petSchema } from './petstore.fixtures'
 import { structMessageSchema, durationMessageSchema, fieldMaskMessageSchema } from './protoMessageRenderer.fixtures'
-
-
-// Reuse schema creation from read tests
+import { latestCall } from '@/test/latestCall'
 
 describe('SchemaRenderer - Pet Message WRITE Path', () => {
   const schema = petSchema
@@ -38,8 +36,6 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
         />
       )
 
-      // Expand all to show all fields
-
       // Fill in string scalar (pet.name is the first name field)
       const nameInputs = screen.getAllByPlaceholderText(/Enter name/i)
       await user.type(nameInputs[0], 'Max')
@@ -50,9 +46,9 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
       })
 
       // Get the latest call
-      const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
-      expect(latestCall.name).toBe('Max')
-      expect('name' in latestCall).toBe(true)
+      const latest = latestCall(onChange)
+      expect(latest.name).toBe('Max')
+      expect('name' in latest).toBe(true)
 
       // Fill in numeric scalar
       const ageInput = screen.getByPlaceholderText(/Enter age_months/i)
@@ -60,8 +56,8 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
       await user.type(ageInput, '36')
 
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
-        expect(latestCall.age_months).toBe(36)
+        const latest = latestCall(onChange)
+        expect(latest.age_months).toBe(36)
       })
 
       // Fill in double scalar
@@ -70,16 +66,16 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
       await user.type(weightInput, '32.5')
 
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
-        expect(latestCall.weight_kg).toBe(32.5)
+        const latest = latestCall(onChange)
+        expect(latest.weight_kg).toBe(32.5)
       })
 
       // Set boolean scalar
       await user.selectOptions(screen.getByRole('combobox', { name: 'is_neutered' }), 'true')
 
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
-        expect(latestCall.is_neutered).toBe(true)
+        const latest = latestCall(onChange)
+        expect(latest.is_neutered).toBe(true)
       })
 
       // Fill in bytes scalar
@@ -87,8 +83,8 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
       await user.type(bytesInput, 'YWJjMTIz')
 
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
-        expect(latestCall.photo_thumbnail).toBe('YWJjMTIz')
+        const latest = latestCall(onChange)
+        expect(latest.photo_thumbnail).toBe('YWJjMTIz')
       })
     })
 
@@ -105,7 +101,6 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
         />
       )
 
-
       // A nested message is ticked to be sent before its fields show
       await user.click(screen.getByRole('checkbox', { name: 'Send owner' }))
 
@@ -114,8 +109,8 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
       await user.type(ownerNameInput, 'Alice')
 
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
-        expect(latestCall.owner?.name).toBe('Alice')
+        const latest = latestCall(onChange)
+        expect(latest.owner?.name).toBe('Alice')
       })
 
       // Fill in owner.email
@@ -123,8 +118,8 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
       await user.type(emailInput, 'alice@example.com')
 
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
-        expect(latestCall.owner?.email).toBe('alice@example.com')
+        const latest = latestCall(onChange)
+        expect(latest.owner?.email).toBe('alice@example.com')
       })
 
       // Fill in deeply nested owner.address.city
@@ -133,8 +128,8 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
       await user.type(cityInput, 'San Francisco')
 
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
-        expect(latestCall.owner?.address?.city).toBe('San Francisco')
+        const latest = latestCall(onChange)
+        expect(latest.owner?.address?.city).toBe('San Francisco')
       })
 
       // Fill in owner.address.coordinates.latitude
@@ -144,8 +139,8 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
       await user.type(latInput, '37.7749')
 
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
-        expect(latestCall.owner?.address?.coordinates?.latitude).toBe(37.7749)
+        const latest = latestCall(onChange)
+        expect(latest.owner?.address?.coordinates?.latitude).toBe(37.7749)
       })
     })
 
@@ -162,16 +157,15 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
         />
       )
 
-
       // Tick the list to send it, then add the first nickname
       await user.click(screen.getByRole('checkbox', { name: 'Send nicknames' }))
       const addNicknameButton = screen.getByRole('button', { name: /Add nicknames/i })
       await user.click(addNicknameButton)
 
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
-        expect(Array.isArray(latestCall.nicknames)).toBe(true)
-        expect(latestCall.nicknames.length).toBe(1)
+        const latest = latestCall(onChange)
+        expect(Array.isArray(latest.nicknames)).toBe(true)
+        expect(latest.nicknames.length).toBe(1)
       })
 
       // Fill in the nickname
@@ -179,15 +173,15 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
       await user.type(nicknameInputs[0], 'Maxy')
 
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
-        expect(latestCall.nicknames[0]).toBe('Maxy')
+        const latest = latestCall(onChange)
+        expect(latest.nicknames[0]).toBe('Maxy')
       })
 
       // Add second nickname
       await user.click(addNicknameButton)
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
-        expect(latestCall.nicknames.length).toBe(2)
+        const latest = latestCall(onChange)
+        expect(latest.nicknames.length).toBe(2)
       })
     })
 
@@ -204,16 +198,15 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
         />
       )
 
-
       // Tick the list to send it, then add the first vaccination
       await user.click(screen.getByRole('checkbox', { name: 'Send vaccinations' }))
       const addVaccinationButton = screen.getByRole('button', { name: /Add vaccinations/i })
       await user.click(addVaccinationButton)
 
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
-        expect(Array.isArray(latestCall.vaccinations)).toBe(true)
-        expect(latestCall.vaccinations.length).toBe(1)
+        const latest = latestCall(onChange)
+        expect(Array.isArray(latest.vaccinations)).toBe(true)
+        expect(latest.vaccinations.length).toBe(1)
       })
 
       // Fill in vaccination name
@@ -222,8 +215,8 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
       await user.type(vaccinationNameInput, 'Rabies')
 
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
-        expect(latestCall.vaccinations[0]?.name).toBe('Rabies')
+        const latest = latestCall(onChange)
+        expect(latest.vaccinations[0]?.name).toBe('Rabies')
       })
     })
 
@@ -244,7 +237,6 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
           readOnly={false}
         />
       )
-
 
       // Map field should be visible and show the entry
       const tagsSection = screen.getByText('tags')
@@ -282,19 +274,19 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
       await user.click(screen.getByRole('checkbox', { name: 'Send name' }))
 
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
+        const latest = latestCall(onChange)
 
         // CRITICAL: Key should be DELETED, not set to undefined
-        expect('name' in latestCall).toBe(false)
-        expect(latestCall.name).toBeUndefined()
+        expect('name' in latest).toBe(false)
+        expect(latest.name).toBeUndefined()
 
         // Other fields should remain
-        expect(latestCall.age_months).toBe(36)
-        expect(latestCall.weight_kg).toBe(32.5)
+        expect(latest.age_months).toBe(36)
+        expect(latest.weight_kg).toBe(32.5)
       })
 
       // Verify no undefined values in the object
-      const finalData = onChange.mock.calls[onChange.mock.calls.length - 1][0]
+      const finalData = latestCall(onChange)
       const values = Object.values(finalData)
       expect(values.includes(undefined)).toBe(false)
     })
@@ -320,23 +312,22 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
         />
       )
 
-
       // Unset owner.email
       await user.click(screen.getByRole('checkbox', { name: 'Send email' }))
 
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
+        const latest = latestCall(onChange)
 
         // CRITICAL: Key should be DELETED from owner object
-        expect('email' in (latestCall.owner || {})).toBe(false)
-        expect(latestCall.owner?.email).toBeUndefined()
+        expect('email' in (latest.owner || {})).toBe(false)
+        expect(latest.owner?.email).toBeUndefined()
 
         // Other nested fields should remain
-        expect(latestCall.owner?.name).toBe('Alice')
+        expect(latest.owner?.name).toBe('Alice')
       })
 
       // Verify no undefined values anywhere
-      const finalData = onChange.mock.calls[onChange.mock.calls.length - 1][0]
+      const finalData = latestCall(onChange)
       const ownerValues = Object.values(finalData.owner || {})
       expect(ownerValues.includes(undefined)).toBe(false)
     })
@@ -367,19 +358,18 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
         />
       )
 
-
       // Unset city
       await user.click(screen.getByRole('checkbox', { name: 'Send city' }))
 
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
+        const latest = latestCall(onChange)
 
         // City should be deleted
-        expect('city' in (latestCall.owner?.address || {})).toBe(false)
+        expect('city' in (latest.owner?.address || {})).toBe(false)
 
         // Other fields intact
-        expect(latestCall.owner?.address?.street).toBe('123 Main St')
-        expect(latestCall.owner?.address?.coordinates?.latitude).toBe(37.7749)
+        expect(latest.owner?.address?.street).toBe('123 Main St')
+        expect(latest.owner?.address?.coordinates?.latitude).toBe(37.7749)
       })
     })
 
@@ -403,14 +393,13 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
         />
       )
 
-
       // The second "Send name" checkbox is owner.name (the first is the pet's own name)
       await user.click(screen.getAllByRole('checkbox', { name: 'Send name' })[1])
 
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
-        expect(latestCall.owner).toEqual({})
-        expect(latestCall.name).toBe('Max')
+        const latest = latestCall(onChange)
+        expect(latest.owner).toEqual({})
+        expect(latest.name).toBe('Max')
       })
     })
 
@@ -437,13 +426,12 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
         />
       )
 
-
       await user.click(screen.getByRole('checkbox', { name: 'Send owner' }))
 
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
-        expect('owner' in latestCall).toBe(false)
-        expect(latestCall.name).toBe('Max')
+        const latest = latestCall(onChange)
+        expect('owner' in latest).toBe(false)
+        expect(latest.name).toBe('Max')
       })
     })
 
@@ -466,8 +454,8 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
       await user.click(ownerCheckbox)
 
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
-        expect(latestCall.owner).toEqual({})
+        const latest = latestCall(onChange)
+        expect(latest.owner).toEqual({})
       })
       expect(screen.getByPlaceholderText(/Enter email/i)).toBeInTheDocument()
     })
@@ -490,12 +478,12 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
 
       await user.selectOptions(select, 'false')
       await waitFor(() => {
-        expect(onChange.mock.calls[onChange.mock.calls.length - 1][0].is_neutered).toBe(false)
+        expect(latestCall(onChange).is_neutered).toBe(false)
       })
 
       await user.click(screen.getByRole('checkbox', { name: 'Send is_neutered' }))
       await waitFor(() => {
-        expect('is_neutered' in onChange.mock.calls[onChange.mock.calls.length - 1][0]).toBe(false)
+        expect('is_neutered' in latestCall(onChange)).toBe(false)
       })
     })
 
@@ -521,11 +509,11 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
       await user.selectOptions(screen.getByRole('combobox', { name: 'is_neutered' }), 'false')
 
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
+        const latest = latestCall(onChange)
 
         // Boolean false should be PRESERVED (not deleted)
-        expect(latestCall.is_neutered).toBe(false)
-        expect('is_neutered' in latestCall).toBe(true)
+        expect(latest.is_neutered).toBe(false)
+        expect('is_neutered' in latest).toBe(true)
       })
     })
 
@@ -553,11 +541,11 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
       await user.type(ageInput, '0')
 
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
+        const latest = latestCall(onChange)
 
         // Zero should be PRESERVED (not deleted)
-        expect(latestCall.age_months).toBe(0)
-        expect('age_months' in latestCall).toBe(true)
+        expect(latest.age_months).toBe(0)
+        expect('age_months' in latest).toBe(true)
       })
     })
 
@@ -584,10 +572,10 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
       await user.clear(idInput)
 
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
+        const latest = latestCall(onChange)
 
         // Emptying the input leaves the field out; ticking its checkbox sends an empty string
-        expect('id' in latestCall).toBe(false)
+        expect('id' in latest).toBe(false)
       })
       expect(screen.getByRole('checkbox', { name: 'Send id' })).not.toBeChecked()
     })
@@ -609,7 +597,6 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
         />
       )
 
-
       // Find remove buttons (using accessible name or aria-label)
       // The X button should be within the nicknames section
       const removeButtons = screen.getAllByRole('button')
@@ -623,15 +610,15 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
       await user.click(xButtons[1])
 
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
+        const latest = latestCall(onChange)
 
         // Array should have 2 items after removal, no undefined
-        expect(Array.isArray(latestCall.nicknames)).toBe(true)
-        expect(latestCall.nicknames.length).toBe(2)
-        expect(latestCall.nicknames.includes(undefined)).toBe(false)
+        expect(Array.isArray(latest.nicknames)).toBe(true)
+        expect(latest.nicknames.length).toBe(2)
+        expect(latest.nicknames.includes(undefined)).toBe(false)
 
         // Should be either ['Maxy', 'Buddy'] or ['Good Boy', 'Buddy'] depending on which was removed
-        expect(latestCall.nicknames).toContain('Buddy')
+        expect(latest.nicknames).toContain('Buddy')
       })
     })
 
@@ -656,7 +643,6 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
         />
       )
 
-
       // Find X buttons for map entries
       const allButtons = screen.getAllByRole('button')
       const xButtons = allButtons.filter(btn => btn.innerHTML.includes('lucide-x'))
@@ -667,13 +653,13 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
       await user.click(xButtons[0])
 
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
+        const latest = latestCall(onChange)
 
         // Map should have 2 entries after removal
-        expect(Object.keys(latestCall.tags || {}).length).toBe(2)
+        expect(Object.keys(latest.tags || {}).length).toBe(2)
 
         // No undefined values in map
-        const mapValues = Object.values(latestCall.tags || {})
+        const mapValues = Object.values(latest.tags || {})
         expect(mapValues.includes(undefined)).toBe(false)
       })
     })
@@ -707,7 +693,6 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
         />
       )
 
-
       // Edit name
       const nameInput = screen.getByDisplayValue('Max')
       await user.clear(nameInput)
@@ -724,15 +709,15 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
       await user.type(emailInput, 'alice.johnson@example.com')
 
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
+        const latest = latestCall(onChange)
 
         // All edits should be reflected
-        expect(latestCall.name).toBe('Maximus')
-        expect(latestCall.age_months).toBe(36)
-        expect(latestCall.owner?.email).toBe('alice.johnson@example.com')
+        expect(latest.name).toBe('Maximus')
+        expect(latest.age_months).toBe(36)
+        expect(latest.owner?.email).toBe('alice.johnson@example.com')
 
         // No undefined values anywhere
-        const allValues = JSON.stringify(latestCall)
+        const allValues = JSON.stringify(latest)
         expect(allValues.includes('undefined')).toBe(false)
       })
     })
@@ -758,15 +743,14 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
         />
       )
 
-
       // Remove the whole owner message in one go
       await user.click(screen.getByRole('checkbox', { name: 'Send owner' }))
 
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
+        const latest = latestCall(onChange)
 
-        expect('owner' in latestCall).toBe(false)
-        expect(latestCall.name).toBe('Max')
+        expect('owner' in latest).toBe(false)
+        expect(latest.name).toBe('Max')
       })
     })
   })
@@ -794,10 +778,10 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
       await user.type(nameInput, 'Buddy')
 
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
+        const latest = latestCall(onChange)
 
         // Final value should be set correctly
-        expect(latestCall.name).toBe('Buddy')
+        expect(latest.name).toBe('Buddy')
 
         // No undefined in any call
         onChange.mock.calls.forEach(call => {
@@ -841,16 +825,16 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
       await user.selectOptions(screen.getByRole('combobox', { name: 'is_neutered' }), 'false')
 
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
+        const latest = latestCall(onChange)
 
         // All edits preserved
-        expect(latestCall.name).toBe('Rex')
-        expect(latestCall.age_months).toBe(36)
-        expect(latestCall.weight_kg).toBe(32.5)
-        expect(latestCall.is_neutered).toBe(false)
+        expect(latest.name).toBe('Rex')
+        expect(latest.age_months).toBe(36)
+        expect(latest.weight_kg).toBe(32.5)
+        expect(latest.is_neutered).toBe(false)
 
         // No undefined values
-        expect(Object.values(latestCall).includes(undefined)).toBe(false)
+        expect(Object.values(latest).includes(undefined)).toBe(false)
       })
     })
   })
@@ -876,7 +860,7 @@ describe('SchemaRenderer - Wrapper type field write path', () => {
     await user.type(input, 'A friendly dog')
 
     await waitFor(() => {
-      const latest = onChange.mock.calls.at(-1)![0]
+      const latest = latestCall(onChange)
       // Must be a raw string, not { value: 'A friendly dog' }
       expect(typeof latest.description).toBe('string')
       expect(latest.description).toBe('A friendly dog')
@@ -893,7 +877,7 @@ describe('SchemaRenderer - Wrapper type field write path', () => {
     await user.clear(input)
 
     await waitFor(() => {
-      const latest = onChange.mock.calls.at(-1)![0]
+      const latest = latestCall(onChange)
       // Key must be deleted — not {} or { value: undefined }
       expect('description' in latest).toBe(false)
     })
@@ -935,7 +919,7 @@ describe('SchemaRenderer - Struct field write path', () => {
       expect((kindSelect as HTMLSelectElement).value).toBe('number')
 
       // The onChange value must be numeric (0), not a string or undefined
-      const latest = onChange.mock.calls.at(-1)![0]
+      const latest = latestCall(onChange)
       const structValue = (latest.metadata as Record<string, unknown>).priority
       expect(typeof structValue).toBe('number')
       expect(structValue).toBe(0)
@@ -955,12 +939,11 @@ describe('SchemaRenderer - Struct field write path', () => {
       />
     )
 
-
     const numberInput = screen.getByDisplayValue('42')
     await user.clear(numberInput)
 
     await waitFor(() => {
-      const latest = onChange.mock.calls.at(-1)![0]
+      const latest = latestCall(onChange)
       const metadata = latest.metadata as Record<string, unknown>
       expect(typeof metadata.priority).toBe('number') // still number kind, reset to 0
       expect(metadata.label).toBe('urgent')           // other field unaffected
@@ -988,7 +971,7 @@ describe('SchemaRenderer - FieldMaskField write path', () => {
     await user.keyboard('displayName{Enter}')
 
     await waitFor(() => {
-      const latest = onChange.mock.calls.at(-1)![0] as Record<string, unknown>
+      const latest = latestCall(onChange)
       expect(latest.mask).toBe('displayName')
       expect(typeof latest.mask).toBe('string')
     })
@@ -1003,7 +986,7 @@ describe('SchemaRenderer - FieldMaskField write path', () => {
     await user.keyboard('email{Enter}')
 
     await waitFor(() => {
-      expect((onChange.mock.calls.at(-1)![0] as Record<string, unknown>).mask).toBe('name,email')
+      expect((latestCall(onChange)).mask).toBe('name,email')
     })
   })
 
@@ -1015,7 +998,7 @@ describe('SchemaRenderer - FieldMaskField write path', () => {
     await user.click(screen.getByRole('button', { name: 'Remove path displayName' }))
 
     await waitFor(() => {
-      expect('mask' in (onChange.mock.calls.at(-1)![0] as Record<string, unknown>)).toBe(false)
+      expect('mask' in (latestCall(onChange))).toBe(false)
     })
   })
 
@@ -1027,7 +1010,7 @@ describe('SchemaRenderer - FieldMaskField write path', () => {
     await user.click(screen.getByRole('button', { name: 'Remove path email' }))
 
     await waitFor(() => {
-      expect((onChange.mock.calls.at(-1)![0] as Record<string, unknown>).mask).toBe('name,phone')
+      expect((latestCall(onChange)).mask).toBe('name,phone')
     })
   })
 
@@ -1064,7 +1047,7 @@ describe('SchemaRenderer - DurationField write path', () => {
     await user.type(screen.getByPlaceholderText(/86400s/i), '864000s')
 
     await waitFor(() => {
-      const latest = onChange.mock.calls.at(-1)![0] as Record<string, unknown>
+      const latest = latestCall(onChange)
       expect(typeof latest.dur).toBe('string')
       expect(latest.dur).toBe('864000s')
     })
@@ -1081,7 +1064,7 @@ describe('SchemaRenderer - DurationField write path', () => {
     await user.clear(screen.getByDisplayValue('86400s'))
 
     await waitFor(() => {
-      expect('dur' in (onChange.mock.calls.at(-1)![0] as Record<string, unknown>)).toBe(false)
+      expect('dur' in (latestCall(onChange))).toBe(false)
     })
   })
 
@@ -1098,7 +1081,7 @@ describe('SchemaRenderer - DurationField write path', () => {
     await user.type(input, '7200s')
 
     await waitFor(() => {
-      const latest = onChange.mock.calls.at(-1)![0] as Record<string, unknown>
+      const latest = latestCall(onChange)
       expect(latest.dur).toBe('7200s')
     })
   })

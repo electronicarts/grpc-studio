@@ -15,7 +15,6 @@ import SchemaRenderer from '../components/core/SchemaRenderer'
 import { petSchema } from './petstore.fixtures'
 import { collectExpandablePaths } from '../utils/pathAnalysis'
 
-
 // Create complete Pet schema with ALL field types
 
 describe('SchemaRenderer - Complete Pet Message Integration', () => {

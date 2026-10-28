@@ -1,7 +1,7 @@
 {
   "name": "@grpc-studio/shared",
   "version": "2.0.0",
-  "description": "Shared types for gRPC Studio \u2014 single source of truth for API contracts",
+  "description": "Shared types for gRPC Studio — single source of truth for API contracts",
   "type": "module",
   "exports": {
     ".": {

@@ -13,7 +13,7 @@ interface StructObjectFieldsProps {
 
 export function StructObjectFields({ value, onChange }: StructObjectFieldsProps) {
   const { readOnly } = useProtoMessageRendererContext()
-  const { rows, addRow } = useKeyedRows<unknown>(value, onChange, () => '')
+  const { rows, addRow, keys } = useKeyedRows<unknown>(value, onChange, () => '')
 
   return (
     <div className="space-y-3">
@@ -24,7 +24,7 @@ export function StructObjectFields({ value, onChange }: StructObjectFieldsProps)
           labelEditor={!readOnly && (
             <KeyInput
               value={row.key}
-              takenKeys={row.takenKeys}
+              existingKeys={keys}
               onCommit={row.commitKey}
               placeholder="Field name"
               aria-label="Struct field name"
@@ -34,7 +34,7 @@ export function StructObjectFields({ value, onChange }: StructObjectFieldsProps)
           )}
           value={row.value}
           onChange={row.setValue}
-          onRemove={!readOnly ? row.remove : undefined}
+          onRemove={row.remove}
         />
       ))}
 
@@ -42,7 +42,7 @@ export function StructObjectFields({ value, onChange }: StructObjectFieldsProps)
         <div className="text-sm italic text-muted-foreground">No fields</div>
       )}
 
-      {!readOnly && <AddButton noun="field" onClick={addRow} testId="structField-addButton" />}
+      <AddButton noun="field" onClick={addRow} testId="structField-addButton" />
     </div>
   )
 }

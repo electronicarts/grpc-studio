@@ -96,7 +96,7 @@ export class GrpcMethodInvokerService {
         const data = await this.withConnectionRetry(
           target,
           async (forceRecreate) => {
-            // Use global descriptor set so Any fields can contain types from any reflected service
+            // One registry for the target, so Any fields can contain types from any reflected service
             const registry = await this.schemaRepository.getTargetRegistry(target)
             const method = await this.resolveMethod(target, serviceName, methodName)
             assertUnaryMethod(method)

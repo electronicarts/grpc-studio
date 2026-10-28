@@ -11,8 +11,6 @@ export interface KeyedRow<V> {
   key: string
   value: V
   isPending: boolean
-  /** Keys used by the other rows, which this one may not take. */
-  takenKeys: string[]
   commitKey: (key: string) => void
   setValue: (value: V) => void
   remove: () => void
@@ -38,7 +36,7 @@ export function useKeyedRows<V>(
   const ids = useRef(new Map<string, number>())
   const nextId = useRef(0)
   const [pending, setPending] = useState<{ id: number; value: V } | null>(null)
-  const keys = Object.keys(entries)
+  const keys = new Set(Object.keys(entries))
 
   const idOf = (key: string): number => {
     let id = ids.current.get(key)
@@ -54,7 +52,6 @@ export function useKeyedRows<V>(
     key,
     value: entries[key],
     isPending: false,
-    takenKeys: keys.filter(other => other !== key),
     commitKey: nextKey => {
       ids.current.set(nextKey, idOf(key))
       ids.current.delete(key)
@@ -72,7 +69,6 @@ export function useKeyedRows<V>(
     key: '',
     value: pending.value,
     isPending: true,
-    takenKeys: keys,
     commitKey: key => {
       ids.current.set(key, pending.id)
       setPending(null)
@@ -84,6 +80,8 @@ export function useKeyedRows<V>(
 
   return {
     rows: pendingRow ? [...committedRows, pendingRow] : committedRows,
+    /** Every committed key; a row's key must not collide with another row's. */
+    keys: keys as ReadonlySet<string>,
     /** Adds the pending row, unless one is already waiting for its key. */
     addRow: () => {
       if (!pending) setPending({ id: nextId.current++, value: createValue() })

@@ -33,7 +33,7 @@ const FieldMaskField: React.FC<FieldMaskFieldProps> = ({ name, value, onChange }
     : []
 
   // Paths are unique keys without values, so they reuse the keyed-row editing of maps.
-  const { rows, addRow } = useKeyedRows<null>(
+  const { rows, addRow, keys } = useKeyedRows<null>(
     Object.fromEntries(paths.map(path => [path, null])),
     next => {
       const nextPaths = Object.keys(next)
@@ -59,7 +59,7 @@ const FieldMaskField: React.FC<FieldMaskFieldProps> = ({ name, value, onChange }
           <div key={row.id} className="flex items-start gap-2">
             <KeyInput
               value={row.key}
-              takenKeys={row.takenKeys}
+              existingKeys={keys}
               onCommit={row.commitKey}
               placeholder="lowerCamelCase path, e.g. owner.displayName"
               aria-label={`${name} path`}
@@ -74,7 +74,7 @@ const FieldMaskField: React.FC<FieldMaskFieldProps> = ({ name, value, onChange }
           <p className="text-sm italic text-muted-foreground">No paths</p>
         )}
 
-        {!readOnly && <AddButton noun="path" onClick={addRow} testId="fieldMask-addButton" />}
+        <AddButton noun="path" onClick={addRow} testId="fieldMask-addButton" />
 
         <p className="text-xs text-muted-foreground">
           lowerCamelCase paths — supports nesting (e.g. <code>owner.displayName</code>) and oneOf branches

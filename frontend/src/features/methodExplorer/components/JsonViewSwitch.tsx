@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import React from 'react'
-import { viewTabClass } from './viewTabClass'
+import { segmentedControlClass, viewTabClass } from './viewTabClass'
 
 export type JsonView = 'full' | 'wire'
 
@@ -24,7 +24,7 @@ const JsonViewSwitch: React.FC<JsonViewSwitchProps> = ({
   fullHint = 'Every field, including those at their default value',
 }) => (
   <div className="flex items-center gap-3">
-    <div className="flex items-center rounded-lg bg-muted p-0.5" role="group" aria-label="JSON view">
+    <div className={segmentedControlClass} role="group" aria-label="JSON view">
       <button type="button" aria-pressed={view === 'full'} onClick={() => onChange('full')} className={viewTabClass(view === 'full')}>
         {fullLabel}
       </button>

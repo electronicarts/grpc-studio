@@ -8,7 +8,7 @@ import {
   FileDescriptorSetSchema,
   file_google_protobuf_timestamp,
 } from '@bufbuild/protobuf/wkt'
-import { defaultFieldValue, defaultListItem } from '../fieldDefaults'
+import { defaultFieldValue, defaultElementValue } from '../fieldDefaults'
 
 const registry = createFileRegistry(create(FileDescriptorSetSchema, {
   file: [
@@ -73,16 +73,16 @@ describe('defaultFieldValue', () => {
   })
 })
 
-describe('defaultListItem', () => {
+describe('defaultElementValue', () => {
   it("starts new items at the element type's zero value", () => {
-    expect(defaultListItem(listField('counts'))).toBe(0)
-    expect(defaultListItem(listField('bigs'))).toBe('0')
-    expect(defaultListItem(listField('colors'))).toBe('COLOR_BLUE')
-    expect(typeof defaultListItem(listField('times'))).toBe('string')
+    expect(defaultElementValue(listField('counts'))).toBe(0)
+    expect(defaultElementValue(listField('bigs'))).toBe('0')
+    expect(defaultElementValue(listField('colors'))).toBe('COLOR_BLUE')
+    expect(typeof defaultElementValue(listField('times'))).toBe('string')
   })
 
   it('produces items buf accepts', () => {
-    const json = Object.fromEntries(['counts', 'bigs', 'colors', 'times'].map(n => [n, [defaultListItem(listField(n))]]))
+    const json = Object.fromEntries(['counts', 'bigs', 'colors', 'times'].map(n => [n, [defaultElementValue(listField(n))]]))
     expect(() => fromJson(settings, json, { registry })).not.toThrow()
   })
 })

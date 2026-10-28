@@ -33,12 +33,6 @@ describe('schemaCache', () => {
       expect(schemaCache.getCacheSize()).toBe(0)
     })
 
-    it('exposes an immutable copy of the schema map', () => {
-      const map = schemaCache.getSchemaMap()
-      map.set('x', {} as never)
-      // Mutating the returned copy must not affect the cache.
-      expect(schemaCache.getCacheSize()).toBe(0)
-    })
   })
 
   describe('getTargetSchemas', () => {

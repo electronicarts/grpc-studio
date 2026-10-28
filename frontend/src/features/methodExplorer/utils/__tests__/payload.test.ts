@@ -2,6 +2,7 @@
 
 import { describe, expect, it, vi } from 'vitest'
 import { canonicalizeProtoJson, toWireFormat as rawToWireFormat, toWireJson } from '../payload'
+import { schemaCache as mockedSchemaCache } from '../../../schemaLoader/lib/schemaCache'
 import {
   schemaCache as testSchemaMap,
 } from '../../../schemaRenderer/__tests__/protoMessageRenderer.fixtures'
@@ -10,14 +11,11 @@ import {
 // cached per (target, messageType). These tests exercise a single fixed target.
 const TEST_TARGET = 'test-target'
 
-vi.mock('../../../schemaLoader/lib/schemaCache', () => ({
-  schemaCache: {
-    // Matches the real two-arg signature: getCachedSchema(target, messageType).
-    getCachedSchema: vi.fn((_target: string, type: string) => testSchemaMap.get(type) ?? null),
-    getSchemaMap: vi.fn(() => testSchemaMap),
-    getTargetSchemas: vi.fn(() => [...testSchemaMap.values()]),
-  },
-}))
+vi.mock('../../../schemaLoader/lib/schemaCache', async () => {
+  const { schemaCacheModule } = await import('@/test/schemaCacheMock')
+  const { schemaCache } = await import('../../../schemaRenderer/__tests__/protoMessageRenderer.fixtures')
+  return schemaCacheModule(schemaCache)
+})
 
 // Thin wrapper so the existing (obj, messageType) call sites keep working while
 // always passing the target the real lookup requires.
@@ -240,9 +238,9 @@ describe('Any with empty WKT fields', () => {
   })
 })
 
-describe('canonicalizeProtoJson with keepPresentFields', () => {
+describe("canonicalizeProtoJson emitting 'present' fields", () => {
   const canonical = (data: Record<string, unknown>, typeName: string) =>
-    canonicalizeProtoJson(data, testSchemaMap.get(typeName) ?? null, { target: TEST_TARGET, keepPresentFields: true })
+    canonicalizeProtoJson(data, testSchemaMap.get(typeName) ?? null, TEST_TARGET, 'present')
 
   it('keeps fields given at their default value and adds no others', () => {
     expect(canonical({ int32Field: 0, boolField: false, stringField: '' }, 'test.AllScalars'))
@@ -289,5 +287,23 @@ describe('toWireJson', () => {
   it('returns null without a schema, or for data that is not a valid message', () => {
     expect(toWireJson({ stringField: 'hi' }, null, TEST_TARGET)).toBeNull()
     expect(toWireJson({ int32Field: 'not a number' }, schema, TEST_TARGET)).toBeNull()
+  })
+})
+
+describe('target registry', () => {
+  const schema = testSchemaMap.get('test.AllScalars') ?? null
+  const cache = mockedSchemaCache as unknown as { version: number; getTargetSchemas: ReturnType<typeof vi.fn> }
+
+  it('is built once per target and reused until the schema cache changes', () => {
+    const target = 'registry-target'
+    cache.getTargetSchemas.mockClear()
+
+    canonicalizeProtoJson({ stringField: 'a' }, schema, target)
+    canonicalizeProtoJson({ stringField: 'b' }, schema, target)
+    expect(cache.getTargetSchemas).toHaveBeenCalledTimes(1)
+
+    cache.version++
+    canonicalizeProtoJson({ stringField: 'c' }, schema, target)
+    expect(cache.getTargetSchemas).toHaveBeenCalledTimes(2)
   })
 })

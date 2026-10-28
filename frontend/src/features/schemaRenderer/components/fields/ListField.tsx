@@ -7,10 +7,10 @@ import { useProtoMessageRendererContext } from '../../stores/schemaRendererConte
 import { removeArrayItem, replaceArrayItem } from '../../utils/collectionMutation'
 import { valueMatchesSearch } from '../../utils/searchUtils'
 import { fieldTypeName } from '../../../../utils/descUtils'
-import { defaultListItem } from '../../utils/fieldDefaults'
+import { defaultElementValue } from '../../utils/fieldDefaults'
 import ScalarField from './ScalarField'
 import EnumField from './EnumField'
-import MessageRenderer from '../core/MessageRenderer'
+import MessageValue from './MessageValue'
 import MessageFieldFrame from '../shared/MessageFieldFrame'
 import type { FieldPresence } from '../shared/fieldPresence'
 import AddButton from '../shared/AddButton'
@@ -25,7 +25,7 @@ interface ListFieldProps {
 }
 
 const ListField: React.FC<ListFieldProps> = ({ field, value, onChange, path, presence }) => {
-  const { readOnly, searchQuery } = useProtoMessageRendererContext()
+  const { searchQuery } = useProtoMessageRendererContext()
 
   const allItems = Array.isArray(value) ? value : []
 
@@ -73,20 +73,17 @@ const ListField: React.FC<ListFieldProps> = ({ field, value, onChange, path, pre
                 value={item as string | number | undefined}
                 onChange={val => updateItem(index, val)}
               />
-            ) : field.listKind === 'message' ? (
-              <div className="rounded bg-muted p-2">
-                <MessageRenderer
-                  schema={field.message}
-                  value={(item || {}) as Record<string, unknown>}
-                  onChange={val => updateItem(index, val)}
-                  basePath={`${path}[${index}]`}
-                />
-              </div>
-            ) : null}
+            ) : (
+              <MessageValue
+                schema={field.message}
+                name={field.name}
+                value={item}
+                onChange={val => updateItem(index, val)}
+                path={`${path}[${index}]`}
+              />
+            )}
           </div>
-          {!readOnly && (
-            <RemoveButton label={`item ${index + 1}`} onClick={() => onChange(removeArrayItem(allItems, index))} />
-          )}
+          <RemoveButton label={`item ${index + 1}`} onClick={() => onChange(removeArrayItem(allItems, index))} />
         </div>
       ))}
 
@@ -96,12 +93,7 @@ const ListField: React.FC<ListFieldProps> = ({ field, value, onChange, path, pre
         </div>
       )}
 
-      {!readOnly && (
-        <AddButton
-          noun={field.name}
-          onClick={() => onChange([...allItems, defaultListItem(field)])}
-        />
-      )}
+      <AddButton noun={field.name} onClick={() => onChange([...allItems, defaultElementValue(field)])} />
     </MessageFieldFrame>
   )
 }

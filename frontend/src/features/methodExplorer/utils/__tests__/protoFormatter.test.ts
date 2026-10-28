@@ -48,7 +48,7 @@ const registry = createFileRegistry(create(FileDescriptorSetSchema, {
 
 const method = { name: 'GetAnimal', inputType: 'zoo.GetAnimalRequest', outputType: 'zoo.Animal', kind: MethodKind.UNARY }
 const format = (options?: { outputOnly?: boolean }) =>
-  formatMethodProto('zoo.ZooService', method, type => registry.getMessage(type) ?? null, options)
+  formatMethodProto('ZooService', method, type => registry.getMessage(type) ?? null, options)
 
 describe('formatMethodProto', () => {
   it('prints the service, the messages and every enum they use, each once', () => {
@@ -100,7 +100,7 @@ describe('formatMethodProto', () => {
   })
 
   it('marks streaming sides', () => {
-    const text = formatMethodProto('zoo.ZooService', { ...method, kind: MethodKind.BIDI_STREAMING }, () => null)
+    const text = formatMethodProto('ZooService', { ...method, kind: MethodKind.BIDI_STREAMING }, () => null)
     expect(text).toContain('rpc GetAnimal(stream GetAnimalRequest) returns (stream Animal);')
   })
 })

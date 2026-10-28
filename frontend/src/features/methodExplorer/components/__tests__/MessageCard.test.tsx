@@ -5,20 +5,17 @@ import { describe, expect, it, vi } from 'vitest'
 import MessageCard from '../MessageCard'
 import {
   allScalarsSchema,
-  schemaCache as testSchemaMap,
 } from '../../../schemaRenderer/__tests__/protoMessageRenderer.fixtures'
 
 vi.mock('../../stores', () => ({
   useMethodExplorerContext: () => ({ selectedTarget: 'test-target' }),
 }))
 
-vi.mock('../../../schemaLoader/lib/schemaCache', () => ({
-  schemaCache: {
-    getCachedSchema: vi.fn((_target: string, type: string) => testSchemaMap.get(type) ?? null),
-    getSchemaMap: vi.fn(() => testSchemaMap),
-    getTargetSchemas: vi.fn(() => [...testSchemaMap.values()]),
-  },
-}))
+vi.mock('../../../schemaLoader/lib/schemaCache', async () => {
+  const { schemaCacheModule } = await import('@/test/schemaCacheMock')
+  const { schemaCache } = await import('../../../schemaRenderer/__tests__/protoMessageRenderer.fixtures')
+  return schemaCacheModule(schemaCache)
+})
 
 const renderCard = (props: Partial<React.ComponentProps<typeof MessageCard>> = {}) =>
   render(

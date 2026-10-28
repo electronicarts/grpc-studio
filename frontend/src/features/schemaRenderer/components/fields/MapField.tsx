@@ -9,7 +9,10 @@ import { useProtoMessageRendererContext } from '../../stores/schemaRendererConte
 import { useKeyedRows, type KeyedRow } from '../../hooks/useKeyedRows'
 import { filterMapEntries } from '../../utils/mapUtils'
 import { fieldTypeName } from '../../../../utils/descUtils'
-import MessageRenderer from '../core/MessageRenderer'
+import EnumField from './EnumField'
+import MessageValue from './MessageValue'
+import { defaultElementValue } from '../../utils/fieldDefaults'
+import { getInputType, parseValue } from '../../utils/scalarTypeUtils'
 import MessageFieldFrame from '../shared/MessageFieldFrame'
 import type { FieldPresence } from '../shared/fieldPresence'
 import AddButton from '../shared/AddButton'
@@ -29,49 +32,36 @@ const MapField: React.FC<MapFieldProps> = ({ field, value, onChange, path, prese
 
   const isMapObject = value !== null && typeof value === 'object' && !Array.isArray(value)
   const mapValue = isMapObject ? value as Record<string, unknown> : {}
-  const isScalarValue = field.mapKind === 'scalar'
-  const valueSchema = field.mapKind === 'message' ? field.message : null
 
   const { allEntries, entries, countDisplay } = filterMapEntries({ mapValue, searchQuery })
-  const { rows, addRow } = useKeyedRows<unknown>(
-    mapValue,
-    onChange,
-    () => isScalarValue ? '' : {},
-    entries.map(([key]) => key),
-  )
-  const hasPendingRow = rows.some(row => row.isPending)
-
+  const { rows, addRow, keys } = useKeyedRows<unknown>(mapValue, onChange, () => defaultElementValue(field), entries.map(([key]) => key))
 
   const renderValue = (row: KeyedRow<unknown>) => {
-    if (isScalarValue) {
-      return (
-        <Input
-          value={(row.value as string | number | undefined) ?? ''}
-          onChange={e => row.setValue(e.target.value)}
-          placeholder="Value"
-          aria-label={`${field.name} value`}
-          disabled={readOnly}
-          className="w-full"
-        />
-      )
-    }
-    if (valueSchema) {
-      return (
-        <div className="rounded bg-muted p-2">
-          <MessageRenderer
-            schema={valueSchema}
-            value={(row.value as Record<string, unknown>) || {}}
-            onChange={row.setValue}
-            basePath={`${path}[${row.key}]`}
+    switch (field.mapKind) {
+      case 'scalar':
+        return (
+          <Input
+            type={getInputType(field.scalar)}
+            value={String(row.value ?? '')}
+            onChange={e => row.setValue(parseValue(e.target.value, field.scalar) ?? '')}
+            placeholder="Value"
+            aria-label={`${field.name} value`}
+            disabled={readOnly}
+            className="w-full"
           />
-        </div>
-      )
+        )
+      case 'enum':
+        return (
+          <EnumField
+            name="value"
+            enumDesc={field.enum}
+            value={row.value as string | number | undefined}
+            onChange={value => row.setValue(value ?? defaultElementValue(field))}
+          />
+        )
+      case 'message':
+        return <MessageValue schema={field.message} name="value" value={row.value} onChange={row.setValue} path={`${path}[${row.key}]`} />
     }
-    return (
-      <pre className="overflow-auto rounded bg-muted p-2 text-xs">
-        {typeof row.value === 'object' ? JSON.stringify(row.value, null, 2) : String(row.value)}
-      </pre>
-    )
   }
 
   return (
@@ -96,7 +86,7 @@ const MapField: React.FC<MapFieldProps> = ({ field, value, onChange, path, prese
             ) : (
               <KeyInput
                 value={row.key}
-                takenKeys={row.takenKeys}
+                existingKeys={keys}
                 onCommit={row.commitKey}
                 placeholder="Key"
                 aria-label={`${field.name} key`}
@@ -106,11 +96,11 @@ const MapField: React.FC<MapFieldProps> = ({ field, value, onChange, path, prese
             )}
             {renderValue(row)}
           </div>
-          {!readOnly && <RemoveButton label={row.key ? `entry ${row.key}` : 'new entry'} onClick={row.remove} />}
+          <RemoveButton label={row.key ? `entry ${row.key}` : 'new entry'} onClick={row.remove} />
         </div>
       ))}
 
-      {entries.length === 0 && !hasPendingRow && (
+      {rows.length === 0 && (
         <div className="text-sm italic text-muted-foreground">
           {searchQuery && allEntries.length > 0
             ? `No entries matching "${searchQuery}"`
@@ -118,7 +108,7 @@ const MapField: React.FC<MapFieldProps> = ({ field, value, onChange, path, prese
         </div>
       )}
 
-      {!readOnly && <AddButton noun="entry" onClick={addRow} testId="mapField-addEntryButton" />}
+      <AddButton noun="entry" onClick={addRow} testId="mapField-addEntryButton" />
     </MessageFieldFrame>
   )
 }
