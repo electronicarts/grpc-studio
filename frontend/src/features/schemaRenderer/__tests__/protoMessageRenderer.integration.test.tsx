@@ -26,7 +26,7 @@ import {
   deeplyNestedSchema,
   comprehensiveSchema,
   testData,
-} from './protoMessageRenderer.fixtures'
+} from '@/test/protoMessageRenderer.fixtures'
 import { latestCall } from '@/test/latestCall'
 
 // Mock protobuf registry to return our test schemas.
@@ -34,7 +34,7 @@ import { latestCall } from '@/test/latestCall'
 // getCachedSchema(target, messageType); these tests key on the type only.
 vi.mock('../../schemaLoader/lib/schemaCache', async () => {
   const { schemaCacheModule } = await import('@/test/schemaCacheMock')
-  const { schemaCache } = await import('./protoMessageRenderer.fixtures')
+  const { schemaCache } = await import('@/test/protoMessageRenderer.fixtures')
   return schemaCacheModule(schemaCache)
 })
 
@@ -568,20 +568,40 @@ describe('ProtoMessageRenderer Integration Tests', () => {
   describe('ReadOnly Mode', () => {
     it('should show map keys, struct field names and mask paths as text, not inputs', () => {
       const { unmount } = render(
-        <ProtoMessageRenderer schema={mapFieldsSchema} data={{ stringToString: { color: 'red' } }} onChange={vi.fn()} readOnly />
+        <ProtoMessageRenderer
+          schema={mapFieldsSchema}
+          data={{ stringToString: { color: 'red' } }}
+          onChange={vi.fn()}
+          readOnly
+        />
       )
       expect(screen.getByText('Key: color')).toBeInTheDocument()
       expect(screen.queryByDisplayValue('color')).not.toBeInTheDocument()
+      // The value sits under its key with no label of its own
+      expect(screen.getByDisplayValue('red')).toBeInTheDocument()
+      expect(screen.queryByText('stringToString value')).not.toBeInTheDocument()
       unmount()
 
       const { unmount: unmountStruct } = render(
-        <ProtoMessageRenderer schema={structMessageSchema} data={{ metadata: { priority: 'high' } }} onChange={vi.fn()} readOnly />
+        <ProtoMessageRenderer
+          schema={structMessageSchema}
+          data={{ metadata: { priority: 'high' } }}
+          onChange={vi.fn()}
+          readOnly
+        />
       )
       expect(screen.getByText('priority')).toBeInTheDocument()
       expect(screen.queryByDisplayValue('priority')).not.toBeInTheDocument()
       unmountStruct()
 
-      render(<ProtoMessageRenderer schema={fieldMaskMessageSchema} data={{ mask: 'name,email' }} onChange={vi.fn()} readOnly />)
+      render(
+        <ProtoMessageRenderer
+          schema={fieldMaskMessageSchema}
+          data={{ mask: 'name,email' }}
+          onChange={vi.fn()}
+          readOnly
+        />
+      )
       expect(screen.getByText('name')).toBeInTheDocument()
       expect(screen.getByText('email')).toBeInTheDocument()
       expect(screen.queryByDisplayValue('name')).not.toBeInTheDocument()

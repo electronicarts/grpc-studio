@@ -3,7 +3,7 @@
 import { describe, it, expect } from 'vitest'
 import { act, renderHook } from '@testing-library/react'
 import { useRequestModel } from '../useRequestModel'
-import { allScalarsSchema } from '../../../schemaRenderer/__tests__/protoMessageRenderer.fixtures'
+import { allScalarsSchema } from '@/test/protoMessageRenderer.fixtures'
 
 describe('useRequestModel JSON view', () => {
   it('holds exactly the fields set in the form, including plain proto3 fields at their default value', () => {

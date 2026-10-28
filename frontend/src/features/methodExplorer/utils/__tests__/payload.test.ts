@@ -5,7 +5,7 @@ import { canonicalizeProtoJson, toWireFormat as rawToWireFormat, toWireJson } fr
 import { schemaCache as mockedSchemaCache } from '../../../schemaLoader/lib/schemaCache'
 import {
   schemaCache as testSchemaMap,
-} from '../../../schemaRenderer/__tests__/protoMessageRenderer.fixtures'
+} from '@/test/protoMessageRenderer.fixtures'
 
 // In production a target is always supplied (the selected server); schemas are
 // cached per (target, messageType). These tests exercise a single fixed target.
@@ -13,7 +13,7 @@ const TEST_TARGET = 'test-target'
 
 vi.mock('../../../schemaLoader/lib/schemaCache', async () => {
   const { schemaCacheModule } = await import('@/test/schemaCacheMock')
-  const { schemaCache } = await import('../../../schemaRenderer/__tests__/protoMessageRenderer.fixtures')
+  const { schemaCache } = await import('@/test/protoMessageRenderer.fixtures')
   return schemaCacheModule(schemaCache)
 })
 
@@ -292,7 +292,7 @@ describe('toWireJson', () => {
 
 describe('target registry', () => {
   const schema = testSchemaMap.get('test.AllScalars') ?? null
-  const cache = mockedSchemaCache as unknown as { version: number; getTargetSchemas: ReturnType<typeof vi.fn> }
+  const cache = vi.mocked(mockedSchemaCache)
 
   it('is built once per target and reused until the schema cache changes', () => {
     const target = 'registry-target'
@@ -302,7 +302,7 @@ describe('target registry', () => {
     canonicalizeProtoJson({ stringField: 'b' }, schema, target)
     expect(cache.getTargetSchemas).toHaveBeenCalledTimes(1)
 
-    cache.version++
+    cache.getVersion.mockReturnValue(1)
     canonicalizeProtoJson({ stringField: 'c' }, schema, target)
     expect(cache.getTargetSchemas).toHaveBeenCalledTimes(2)
   })

@@ -24,11 +24,11 @@ import {
   lineageSchema,
   recursiveOneofSchema,
   testData,
-} from './protoMessageRenderer.fixtures'
+} from '@/test/protoMessageRenderer.fixtures'
 
 vi.mock('../../schemaLoader/lib/schemaCache', async () => {
   const { schemaCacheModule } = await import('@/test/schemaCacheMock')
-  const { schemaCache } = await import('./protoMessageRenderer.fixtures')
+  const { schemaCache } = await import('@/test/protoMessageRenderer.fixtures')
   return schemaCacheModule(schemaCache)
 })
 

@@ -115,7 +115,7 @@ const RequestInput: React.FC = () => {
           {activeTab === 'json' && <RequestJsonView />}
 
           {request.validationError && (
-            <p className="mt-2 text-sm text-destructive">{request.validationError}</p>
+            <p className="mt-2 text-sm text-danger">{request.validationError}</p>
           )}
 
           {activeTab === 'schema' && (

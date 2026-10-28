@@ -2,40 +2,8 @@
 
 import { create, createFileRegistry } from '@bufbuild/protobuf'
 import type { DescMessage } from '@bufbuild/protobuf'
-import {
-  FieldDescriptorProto_Label,
-  FieldDescriptorProto_Type,
-  FileDescriptorSetSchema,
-} from '@bufbuild/protobuf/wkt'
-
-const L = FieldDescriptorProto_Label
-const T = FieldDescriptorProto_Type
-
-type FieldInit = {
-  name: string
-  number: number
-  type: FieldDescriptorProto_Type
-  label?: FieldDescriptorProto_Label
-  typeName?: string
-  oneofIndex?: number
-  proto3Optional?: boolean
-}
-
-function field(init: FieldInit) {
-  return {
-    label: L.OPTIONAL,
-    jsonName: init.name,
-    ...init,
-  }
-}
-
-function messageField(name: string, number: number, typeName: string, extra: Partial<FieldInit> = {}) {
-  return field({ name, number, type: T.MESSAGE, typeName, ...extra })
-}
-
-function enumField(name: string, number: number, typeName: string) {
-  return field({ name, number, type: T.ENUM, typeName })
-}
+import { FileDescriptorSetSchema } from '@bufbuild/protobuf/wkt'
+import { L, T, enumField, field, messageField } from './descriptors'
 
 const fdSet = create(FileDescriptorSetSchema, {
   file: [
@@ -241,6 +209,14 @@ const fdSet = create(FileDescriptorSetSchema, {
               ],
             },
             {
+              name: 'FlagsEntry',
+              options: { mapEntry: true },
+              field: [
+                field({ name: 'key', number: 1, type: T.STRING }),
+                field({ name: 'value', number: 2, type: T.BOOL }),
+              ],
+            },
+            {
               name: 'StatusesEntry',
               options: { mapEntry: true },
               field: [
@@ -253,6 +229,7 @@ const fdSet = create(FileDescriptorSetSchema, {
             messageField('counts', 1, '.test.TypedCollections.CountsEntry', { label: L.REPEATED }),
             messageField('statuses', 2, '.test.TypedCollections.StatusesEntry', { label: L.REPEATED }),
             messageField('times', 3, '.google.protobuf.Timestamp', { label: L.REPEATED }),
+            messageField('flags', 4, '.test.TypedCollections.FlagsEntry', { label: L.REPEATED }),
           ],
         },
         {

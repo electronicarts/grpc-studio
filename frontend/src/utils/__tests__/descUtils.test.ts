@@ -142,7 +142,7 @@ describe('descUtils', () => {
 
 
   describe('parseDescriptorIntoMap', () => {
-    it('collects top-level and nested messages by their full name', () => {
+    it('should collect top-level and nested messages by their full name', () => {
       const fdSet = create(FileDescriptorSetSchema, {
         file: [{
           name: 'outer.proto',
@@ -207,11 +207,11 @@ function createMockDescriptorBase64(): string {
 }
 
 describe('Any type URLs', () => {
-  it('builds the type URL for a message type', () => {
+  it('should build the type URL for a message type', () => {
     expect(anyTypeUrl('pkg.Outer.Inner')).toBe('type.googleapis.com/pkg.Outer.Inner')
   })
 
-  it('reads the type name after the last slash, whatever the host', () => {
+  it('should read the type name after the last slash, whatever the host', () => {
     expect(anyTypeName('type.googleapis.com/pkg.Outer.Inner')).toBe('pkg.Outer.Inner')
     expect(anyTypeName('example.com/types/pkg.Msg')).toBe('pkg.Msg')
     expect(anyTypeName(anyTypeUrl('pkg.Msg'))).toBe('pkg.Msg')

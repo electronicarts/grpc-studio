@@ -1,12 +1,11 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-/**
- * Shared method-kind values used by /api/grpc/discover, /api/grpc/invoke,
- * and /ws/grpc stream start messages.
- */
 import type { DescMethod } from '@bufbuild/protobuf'
 
-/** The kind of an RPC, exactly as buf's `DescMethod.methodKind` reports it. */
+/**
+ * The kind of an RPC, exactly as buf's `DescMethod.methodKind` reports it. Used by /api/grpc/discover,
+ * /api/grpc/invoke and /ws/grpc stream start messages.
+ */
 export type MethodKind = DescMethod['methodKind']
 
 export const MethodKind = {

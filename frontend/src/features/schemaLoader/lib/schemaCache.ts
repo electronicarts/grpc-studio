@@ -36,11 +36,6 @@ class SchemaCache {
     for (const listener of this.listeners) listener()
   }
 
-  /** Increases whenever the cached schemas change, so derived data (e.g. registries) knows to rebuild. */
-  get version(): number {
-    return this.changes
-  }
-
   // ── synchronous reads ─────────────────────────────────────────
 
   getCachedSchema(target: string, messageType: string): DescMessage | null {
@@ -53,8 +48,12 @@ class SchemaCache {
     return [...this.schemas].filter(([key]) => key.startsWith(prefix)).map(([, desc]) => desc)
   }
 
-  getCacheSize(): number {
-    return this.schemas.size
+  /**
+   * Increases whenever the cached schemas change. Subscribers use it as their snapshot, and derived data
+   * (e.g. registries) uses it to know when to rebuild.
+   */
+  getVersion(): number {
+    return this.changes
   }
 
   get allLoaded(): boolean {

@@ -2,11 +2,11 @@
 
 import React, { useState, useMemo, useSyncExternalStore } from 'react'
 import { Code, ChevronDown, ChevronRight } from 'lucide-react'
+import { ScalarType } from '@bufbuild/protobuf'
 import { GrpcService, GrpcMethod } from '../../../types/grpc'
+import { scalarTypeName } from '../../../utils/descUtils'
 import { schemaCache } from '../../schemaLoader/lib/schemaCache'
 import { formatMethodProto } from '../utils/protoFormatter'
-import { ScalarType } from '@bufbuild/protobuf'
-import { scalarTypeName } from '../../../utils/descUtils'
 
 // Proto syntax highlighting via regex tokenisation
 const PROTO_KEYWORDS = new Set([
@@ -76,9 +76,9 @@ const ProtoViewer: React.FC<ProtoViewerProps> = ({ selectedTarget, selectedServi
   const [expanded, setExpanded] = useState(!inline)
 
   // Re-render when schemas arrive in the cache
-  const cacheSize = useSyncExternalStore(
+  const cacheVersion = useSyncExternalStore(
     (cb) => schemaCache.subscribe(cb),
-    () => schemaCache.getCacheSize()
+    () => schemaCache.getVersion()
   )
 
   const protoText = useMemo(() => {
@@ -89,7 +89,7 @@ const ProtoViewer: React.FC<ProtoViewerProps> = ({ selectedTarget, selectedServi
       outputOnly ? { outputOnly: true } : undefined
     )
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedTarget, selectedService.name, selectedMethod, cacheSize, outputOnly])
+  }, [selectedTarget, selectedService.name, selectedMethod, cacheVersion, outputOnly])
 
   const highlighted = useMemo(() => highlightProto(protoText), [protoText])
 

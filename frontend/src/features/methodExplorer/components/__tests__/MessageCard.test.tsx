@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest'
 import MessageCard from '../MessageCard'
 import {
   allScalarsSchema,
-} from '../../../schemaRenderer/__tests__/protoMessageRenderer.fixtures'
+} from '@/test/protoMessageRenderer.fixtures'
 
 vi.mock('../../stores', () => ({
   useMethodExplorerContext: () => ({ selectedTarget: 'test-target' }),
@@ -13,7 +13,7 @@ vi.mock('../../stores', () => ({
 
 vi.mock('../../../schemaLoader/lib/schemaCache', async () => {
   const { schemaCacheModule } = await import('@/test/schemaCacheMock')
-  const { schemaCache } = await import('../../../schemaRenderer/__tests__/protoMessageRenderer.fixtures')
+  const { schemaCache } = await import('@/test/protoMessageRenderer.fixtures')
   return schemaCacheModule(schemaCache)
 })
 

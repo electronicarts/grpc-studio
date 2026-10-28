@@ -50,12 +50,15 @@ export function formatMethodProto(
   const input = resolveSchema(method.inputType)
   const output = resolveSchema(method.outputType)
   // A type that hasn't loaded yet has only its full name to go by
-  const nameOf = (desc: DescMessage | null, fullName: string) => desc?.name ?? fullName.slice(fullName.lastIndexOf('.') + 1)
+  const nameOf = (desc: DescMessage | null, fullName: string) =>
+    desc?.name ?? fullName.slice(fullName.lastIndexOf('.') + 1)
   const streams = (kinds: string[]) => kinds.includes(method.kind)
   const inputName = nameOf(input, method.inputType)
   const outputName = nameOf(output, method.outputType)
-  const inputWrap = streams([MethodKind.CLIENT_STREAMING, MethodKind.BIDI_STREAMING]) ? `stream ${inputName}` : inputName
-  const outputWrap = streams([MethodKind.SERVER_STREAMING, MethodKind.BIDI_STREAMING]) ? `stream ${outputName}` : outputName
+  const clientStreams = streams([MethodKind.CLIENT_STREAMING, MethodKind.BIDI_STREAMING])
+  const serverStreams = streams([MethodKind.SERVER_STREAMING, MethodKind.BIDI_STREAMING])
+  const inputWrap = clientStreams ? `stream ${inputName}` : inputName
+  const outputWrap = serverStreams ? `stream ${outputName}` : outputName
 
   const blocks = [[
     `service ${serviceName} {`,

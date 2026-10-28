@@ -15,8 +15,12 @@ import { describe, it, expect, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import SchemaRenderer from '../components/core/SchemaRenderer'
-import { petSchema } from './petstore.fixtures'
-import { structMessageSchema, durationMessageSchema, fieldMaskMessageSchema } from './protoMessageRenderer.fixtures'
+import { petSchema } from '@/test/petstore.fixtures'
+import {
+  structMessageSchema,
+  durationMessageSchema,
+  fieldMaskMessageSchema,
+} from '@/test/protoMessageRenderer.fixtures'
 import { latestCall } from '@/test/latestCall'
 
 describe('SchemaRenderer - Pet Message WRITE Path', () => {

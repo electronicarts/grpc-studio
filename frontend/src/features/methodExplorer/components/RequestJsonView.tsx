@@ -15,12 +15,20 @@ import JsonViewSwitch from './JsonViewSwitch'
 const RequestJsonView: React.FC = () => {
   const { selectedTarget, request } = useMethodExplorerContext()
   const jsonInput = usePersistentHeight<HTMLTextAreaElement>('grpc-studio-request-json-height', '10rem')
-  const json = useJsonView(request.schema !== null, () => toWireJson(JSON.parse(request.body), request.schema, selectedTarget))
+  const json = useJsonView(
+    request.schema !== null,
+    () => toWireJson(JSON.parse(request.body), request.schema, selectedTarget),
+  )
 
   return (
     <div className="space-y-2">
       {json.canShowWire && (
-        <JsonViewSwitch view={json.view} onChange={json.setView} fullLabel="Request" fullHint="The fields ticked in the form" />
+        <JsonViewSwitch
+          view={json.view}
+          onChange={json.setView}
+          fullLabel="Request"
+          fullHint="The fields ticked in the form"
+        />
       )}
 
       {json.view === 'full' ? (
@@ -34,7 +42,7 @@ const RequestJsonView: React.FC = () => {
           placeholder="Enter your gRPC request as JSON..."
         />
       ) : json.wireUnavailable ? (
-        <p className="text-sm text-destructive">{json.wireText}</p>
+        <p className="text-sm text-danger">{json.wireText}</p>
       ) : (
         <textarea
           readOnly

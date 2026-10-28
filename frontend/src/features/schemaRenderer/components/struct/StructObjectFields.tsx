@@ -1,6 +1,5 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
 import { useKeyedRows } from '../../hooks/useKeyedRows'
 import AddButton from '../shared/AddButton'
 import KeyInput from '../shared/KeyInput'
@@ -12,7 +11,6 @@ interface StructObjectFieldsProps {
 }
 
 export function StructObjectFields({ value, onChange }: StructObjectFieldsProps) {
-  const { readOnly } = useProtoMessageRendererContext()
   const { rows, addRow, keys } = useKeyedRows<unknown>(value, onChange, () => '')
 
   return (
@@ -21,7 +19,7 @@ export function StructObjectFields({ value, onChange }: StructObjectFieldsProps)
         <StructValue
           key={row.id}
           label={row.key || 'new field'}
-          labelEditor={!readOnly && (
+          labelEditor={(
             <KeyInput
               value={row.key}
               existingKeys={keys}
@@ -30,6 +28,7 @@ export function StructObjectFields({ value, onChange }: StructObjectFieldsProps)
               aria-label="Struct field name"
               autoFocus={row.isPending}
               className="max-w-56"
+              renderReadOnly={key => <span className="font-medium text-foreground">{key}</span>}
             />
           )}
           value={row.value}

@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { FormInput, Code, FileCode2, Tags } from 'lucide-react'
-import { segmentedControlClass, viewTabClass } from './viewTabClass'
+import { SegmentedControl, SegmentedControlItem } from '@/components/ui/segmentedControl'
 
 export type ViewTab = 'form' | 'json' | 'schema' | 'metadata'
 
@@ -27,25 +27,25 @@ const ViewTabs: React.FC<ViewTabsProps> = ({
   showMetadataTab = true,
   metadataCount = 0,
 }) => (
-  <div className={segmentedControlClass}>
+  <SegmentedControl aria-label="View">
     {hasSchema && (
-      <button type="button" onClick={() => onTabChange('form')} className={viewTabClass(activeTab === 'form')}>
+      <SegmentedControlItem selected={activeTab === 'form'} onClick={() => onTabChange('form')}>
         <FormInput className="size-3.5" />
         Form
-      </button>
+      </SegmentedControlItem>
     )}
-    <button type="button" onClick={() => onTabChange('json')} className={viewTabClass(activeTab === 'json')}>
+    <SegmentedControlItem selected={activeTab === 'json'} onClick={() => onTabChange('json')}>
       <Code className="size-3.5" />
       JSON
-    </button>
+    </SegmentedControlItem>
     {showSchemaTab && (
-      <button type="button" onClick={() => onTabChange('schema')} className={viewTabClass(activeTab === 'schema')}>
+      <SegmentedControlItem selected={activeTab === 'schema'} onClick={() => onTabChange('schema')}>
         <FileCode2 className="size-3.5" />
         Schema
-      </button>
+      </SegmentedControlItem>
     )}
     {showMetadataTab && (
-      <button type="button" onClick={() => onTabChange('metadata')} className={viewTabClass(activeTab === 'metadata')}>
+      <SegmentedControlItem selected={activeTab === 'metadata'} onClick={() => onTabChange('metadata')}>
         <Tags className="size-3.5" />
         Metadata
         {metadataCount > 0 && (
@@ -53,9 +53,9 @@ const ViewTabs: React.FC<ViewTabsProps> = ({
             {metadataCount}
           </span>
         )}
-      </button>
+      </SegmentedControlItem>
     )}
-  </div>
+  </SegmentedControl>
 )
 
 export default ViewTabs

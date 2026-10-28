@@ -29,15 +29,21 @@ export function defaultFieldValue(field: DescField): unknown {
 export function defaultElementValue(field: DescField & { fieldKind: 'list' | 'map' }): unknown {
   if (field.fieldKind === 'list') {
     switch (field.listKind) {
-      case 'scalar': return jsonZeroValue(field.scalar)
-      case 'enum': return enumValueName(field.enum, undefined)
-      case 'message': return defaultMessageValue(field.message)
+      case 'scalar':
+        return jsonZeroValue(field.scalar)
+      case 'enum':
+        return enumValueName(field.enum, undefined)
+      case 'message':
+        return defaultMessageValue(field.message)
     }
   }
   switch (field.mapKind) {
-    case 'scalar': return jsonZeroValue(field.scalar)
-    case 'enum': return enumValueName(field.enum, undefined)
-    case 'message': return defaultMessageValue(field.message)
+    case 'scalar':
+      return jsonZeroValue(field.scalar)
+    case 'enum':
+      return enumValueName(field.enum, undefined)
+    case 'message':
+      return defaultMessageValue(field.message)
   }
 }
 

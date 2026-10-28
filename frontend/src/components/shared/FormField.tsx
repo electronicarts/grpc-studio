@@ -13,6 +13,8 @@ interface FormFieldProps {
   className?: string
   labelClassName?: string
   inline?: boolean
+  /** Renders only the control, e.g. where the surrounding row already names it. Name the control with aria-label. */
+  hideLabel?: boolean
 }
 
 const FormField: React.FC<FormFieldProps> = ({
@@ -24,8 +26,13 @@ const FormField: React.FC<FormFieldProps> = ({
   children,
   className,
   labelClassName,
-  inline = false
+  inline = false,
+  hideLabel = false,
 }) => {
+  if (hideLabel) {
+    return <div className={className}>{children}</div>
+  }
+
   if (inline) {
     return (
       <label className={cn('flex cursor-pointer items-center gap-2', className)}>

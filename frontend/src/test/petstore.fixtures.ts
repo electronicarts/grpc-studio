@@ -12,7 +12,10 @@ import { createFileRegistry, fromBinary, type DescMessage } from '@bufbuild/prot
 import { FileDescriptorSetSchema } from '@bufbuild/protobuf/wkt'
 
 // A path, not a URL object: jsdom replaces the global URL class, which node:fs doesn't accept
-const descriptorSetPath = resolve(dirname(fileURLToPath(import.meta.url)), '../../../../../examples/petstore/proto/petstore_descriptor.bin')
+const descriptorSetPath = resolve(
+  dirname(fileURLToPath(import.meta.url)),
+  '../../../examples/petstore/proto/petstore_descriptor.bin',
+)
 
 export const petstoreRegistry = createFileRegistry(fromBinary(FileDescriptorSetSchema, readFileSync(descriptorSetPath)))
 

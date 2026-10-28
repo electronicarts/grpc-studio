@@ -3,16 +3,16 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import { fromJson, toJson } from '@bufbuild/protobuf'
-import { AnySchema, FieldDescriptorProto_Type } from '@bufbuild/protobuf/wkt'
+import { AnySchema } from '@bufbuild/protobuf/wkt'
 import { withWellKnownTypes } from '@grpc-studio/shared'
-import { field, fileDescriptor, fileRegistry } from './protoFixtures.js'
+import * as protoFixtures from './protoFixtures.js'
 
-const reflected = fileRegistry(fileDescriptor({
+const reflected = protoFixtures.fileRegistry(protoFixtures.fileDescriptor({
   name: 'outer.proto',
   messageType: [{
     name: 'Outer',
-    field: [field('id', 1, FieldDescriptorProto_Type.STRING)],
-    nestedType: [{ name: 'Inner', field: [field('label', 1, FieldDescriptorProto_Type.STRING)] }],
+    field: [protoFixtures.field('id', 1, protoFixtures.FieldType.STRING)],
+    nestedType: [{ name: 'Inner', field: [protoFixtures.field('label', 1, protoFixtures.FieldType.STRING)] }],
   }],
 }))
 

@@ -1,8 +1,6 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import React from 'react'
-import { Input } from '@/components/ui/input'
-import { cn } from '@/utils/cn'
 import { Badge } from '@/components/ui/badge'
 import type { DescField } from '@bufbuild/protobuf'
 import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
@@ -10,9 +8,9 @@ import { useKeyedRows, type KeyedRow } from '../../hooks/useKeyedRows'
 import { filterMapEntries } from '../../utils/mapUtils'
 import { fieldTypeName } from '../../../../utils/descUtils'
 import EnumField from './EnumField'
+import ScalarField from './ScalarField'
 import MessageValue from './MessageValue'
 import { defaultElementValue } from '../../utils/fieldDefaults'
-import { getInputType, parseValue } from '../../utils/scalarTypeUtils'
 import MessageFieldFrame from '../shared/MessageFieldFrame'
 import type { FieldPresence } from '../shared/fieldPresence'
 import AddButton from '../shared/AddButton'
@@ -28,26 +26,29 @@ interface MapFieldProps {
 }
 
 const MapField: React.FC<MapFieldProps> = ({ field, value, onChange, path, presence }) => {
-  const { readOnly, searchQuery } = useProtoMessageRendererContext()
+  const { searchQuery } = useProtoMessageRendererContext()
 
   const isMapObject = value !== null && typeof value === 'object' && !Array.isArray(value)
   const mapValue = isMapObject ? value as Record<string, unknown> : {}
 
   const { allEntries, entries, countDisplay } = filterMapEntries({ mapValue, searchQuery })
-  const { rows, addRow, keys } = useKeyedRows<unknown>(mapValue, onChange, () => defaultElementValue(field), entries.map(([key]) => key))
+  const { rows, addRow, keys } = useKeyedRows<unknown>(
+    mapValue,
+    onChange,
+    () => defaultElementValue(field),
+    entries.map(([key]) => key),
+  )
 
   const renderValue = (row: KeyedRow<unknown>) => {
     switch (field.mapKind) {
       case 'scalar':
         return (
-          <Input
-            type={getInputType(field.scalar)}
-            value={String(row.value ?? '')}
-            onChange={e => row.setValue(parseValue(e.target.value, field.scalar) ?? '')}
-            placeholder="Value"
-            aria-label={`${field.name} value`}
-            disabled={readOnly}
-            className="w-full"
+          <ScalarField
+            name={`${field.name} value`}
+            scalar={field.scalar}
+            value={row.value}
+            onChange={value => row.setValue(value ?? defaultElementValue(field))}
+            hideLabel
           />
         )
       case 'enum':
@@ -60,7 +61,15 @@ const MapField: React.FC<MapFieldProps> = ({ field, value, onChange, path, prese
           />
         )
       case 'message':
-        return <MessageValue schema={field.message} name="value" value={row.value} onChange={row.setValue} path={`${path}[${row.key}]`} />
+        return (
+          <MessageValue
+            schema={field.message}
+            name="value"
+            value={row.value}
+            onChange={row.setValue}
+            path={`${path}[${row.key}]`}
+          />
+        )
     }
   }
 
@@ -80,20 +89,17 @@ const MapField: React.FC<MapFieldProps> = ({ field, value, onChange, path, prese
     >
       {rows.map(row => (
         <div key={row.id} className="flex items-start gap-2 border-l-2 border-l-info pl-3">
-          <div className={cn('flex-1', !readOnly && 'space-y-2')}>
-            {readOnly ? (
-              <div className="mb-1 text-sm font-medium text-info">Key: {row.key}</div>
-            ) : (
-              <KeyInput
-                value={row.key}
-                existingKeys={keys}
-                onCommit={row.commitKey}
-                placeholder="Key"
-                aria-label={`${field.name} key`}
-                autoFocus={row.isPending}
-                className="max-w-56"
-              />
-            )}
+          <div className="flex-1 space-y-1">
+            <KeyInput
+              value={row.key}
+              existingKeys={keys}
+              onCommit={row.commitKey}
+              placeholder="Key"
+              aria-label={`${field.name} key`}
+              autoFocus={row.isPending}
+              className="max-w-56"
+              renderReadOnly={key => <div className="text-sm font-medium text-info">Key: {key}</div>}
+            />
             {renderValue(row)}
           </div>
           <RemoveButton label={row.key ? `entry ${row.key}` : 'new entry'} onClick={row.remove} />

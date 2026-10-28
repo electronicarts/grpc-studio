@@ -4,10 +4,14 @@ import { afterEach, describe, it, mock } from 'node:test'
 import assert from 'node:assert/strict'
 import type { FileRegistry } from '@bufbuild/protobuf'
 import { ReflectionSchemaRepository } from '../repositories/reflectionSchemaRepository.js'
-import { fileDescriptor, fileRegistry } from './protoFixtures.js'
+import * as protoFixtures from './protoFixtures.js'
 
 function serviceRegistry(pkg: string, message: string): FileRegistry {
-  return fileRegistry(fileDescriptor({ name: `${pkg}.proto`, package: pkg, messageType: [{ name: message, nestedType: [{ name: 'Inner' }] }] }))
+  return protoFixtures.fileRegistry(protoFixtures.fileDescriptor({
+    name: `${pkg}.proto`,
+    package: pkg,
+    messageType: [{ name: message, nestedType: [{ name: 'Inner' }] }],
+  }))
 }
 
 /** A repository whose reflection lookups are stubbed: `services` maps a service name to its registry. */
@@ -27,7 +31,10 @@ describe('ReflectionSchemaRepository.getTargetRegistry', () => {
   afterEach(() => new ReflectionSchemaRepository().clearCache())
 
   it("merges every service's types, nested ones included, with the well-known types", async () => {
-    const { repo } = repositoryWith({ 'a.ServiceA': serviceRegistry('a', 'Alpha'), 'b.ServiceB': serviceRegistry('b', 'Beta') })
+    const { repo } = repositoryWith({
+      'a.ServiceA': serviceRegistry('a', 'Alpha'),
+      'b.ServiceB': serviceRegistry('b', 'Beta'),
+    })
 
     const registry = await repo.getTargetRegistry('target-1')
 
@@ -47,7 +54,10 @@ describe('ReflectionSchemaRepository.getTargetRegistry', () => {
   })
 
   it('skips a service whose schema cannot be loaded', async () => {
-    const { repo } = repositoryWith({ 'a.ServiceA': serviceRegistry('a', 'Alpha'), 'broken.Service': new Error('reflection failed') })
+    const { repo } = repositoryWith({
+      'a.ServiceA': serviceRegistry('a', 'Alpha'),
+      'broken.Service': new Error('reflection failed'),
+    })
 
     const registry = await repo.getTargetRegistry('target-3')
 

@@ -13,7 +13,7 @@ export function useSchemaCacheStatus(
 ): UseSchemaCacheStatusResult {
   const cacheVersion = useSyncExternalStore(
     (callback) => schemaCache.subscribe(callback),
-    () => schemaCache.getCacheSize(),
+    () => schemaCache.getVersion(),
   )
 
   const [schemasLoaded, setSchemasLoaded] = useState(false)

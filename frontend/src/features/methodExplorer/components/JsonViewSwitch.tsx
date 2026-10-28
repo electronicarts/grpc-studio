@@ -1,9 +1,8 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import React from 'react'
-import { segmentedControlClass, viewTabClass } from './viewTabClass'
-
-export type JsonView = 'full' | 'wire'
+import { SegmentedControl, SegmentedControlItem } from '@/components/ui/segmentedControl'
+import type { JsonView } from '../types'
 
 interface JsonViewSwitchProps {
   view: JsonView
@@ -24,14 +23,14 @@ const JsonViewSwitch: React.FC<JsonViewSwitchProps> = ({
   fullHint = 'Every field, including those at their default value',
 }) => (
   <div className="flex items-center gap-3">
-    <div className={segmentedControlClass} role="group" aria-label="JSON view">
-      <button type="button" aria-pressed={view === 'full'} onClick={() => onChange('full')} className={viewTabClass(view === 'full')}>
+    <SegmentedControl aria-label="JSON view">
+      <SegmentedControlItem selected={view === 'full'} onClick={() => onChange('full')}>
         {fullLabel}
-      </button>
-      <button type="button" aria-pressed={view === 'wire'} onClick={() => onChange('wire')} className={viewTabClass(view === 'wire')}>
+      </SegmentedControlItem>
+      <SegmentedControlItem selected={view === 'wire'} onClick={() => onChange('wire')}>
         Wire
-      </button>
-    </div>
+      </SegmentedControlItem>
+    </SegmentedControl>
     <span className="text-xs text-muted-foreground">{view === 'full' ? fullHint : WIRE_HINT}</span>
   </div>
 )

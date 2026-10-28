@@ -12,7 +12,7 @@ import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import SchemaRenderer from '../components/core/SchemaRenderer'
-import { petSchema } from './petstore.fixtures'
+import { petSchema } from '@/test/petstore.fixtures'
 import { collectExpandablePaths } from '../utils/pathAnalysis'
 
 // Create complete Pet schema with ALL field types

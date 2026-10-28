@@ -36,7 +36,8 @@ function isRetryableConnectionError(codeName: string, errorMessage: string): boo
 
 export class GrpcMethodInvokerService {
   constructor(
-    private readonly schemaRepository: Pick<ReflectionSchemaRepository, 'getFileRegistry' | 'getTargetRegistry'> = reflectionSchemaRepository
+    private readonly schemaRepository: Pick<ReflectionSchemaRepository, 'getFileRegistry' | 'getTargetRegistry'> =
+      reflectionSchemaRepository
   ) {}
 
   close(): void {

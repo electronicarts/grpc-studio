@@ -12,6 +12,7 @@ import * as reflectionMetadataCache from '../cache/reflectionMetadataCache.js'
 import multiClientManager from '../grpc/multiClientManager.js'
 import { withWellKnownTypes } from '@grpc-studio/shared'
 import logger from '../utils/logger.js'
+import { errorMessage } from '../utils/errorMessage.js'
 
 const repositoryLogger = logger.child({ module: 'reflection-schema-repository' })
 
@@ -52,7 +53,7 @@ export class ReflectionSchemaRepository {
     } catch (error) {
       repositoryLogger.error('Failed to list services', {
         target,
-        error: error instanceof Error ? error.message : String(error),
+        error: errorMessage(error),
       })
       throw error
     }
@@ -88,7 +89,7 @@ export class ReflectionSchemaRepository {
       repositoryLogger.error('Failed to build FileDescriptorSet', {
         target,
         symbol,
-        error: error instanceof Error ? error.message : String(error),
+        error: errorMessage(error),
       })
       throw error
     }
@@ -115,7 +116,7 @@ export class ReflectionSchemaRepository {
       repositoryLogger.error('Failed to build FileRegistry', {
         target,
         symbol,
-        error: error instanceof Error ? error.message : String(error),
+        error: errorMessage(error),
       })
       throw error
     }
@@ -143,7 +144,7 @@ export class ReflectionSchemaRepository {
       repositoryLogger.warn('Failed to get registry for service, skipping', {
         target,
         serviceName: serviceNames[index],
-        error: result.reason instanceof Error ? result.reason.message : String(result.reason),
+        error: errorMessage(result.reason),
       })
     })
 

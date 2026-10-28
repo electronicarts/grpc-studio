@@ -2,16 +2,16 @@
 
 import React from 'react'
 import type { DescField } from '@bufbuild/protobuf'
+import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
 import { defaultFieldValue } from '../../utils/fieldDefaults'
+import { isFramedMessageType } from '../../utils/wellKnownTypes'
 import ScalarField from '../fields/ScalarField'
 import EnumField from '../fields/EnumField'
 import ListField from '../fields/ListField'
 import MapField from '../fields/MapField'
 import MessageField from '../fields/MessageField'
 import PresenceCheckbox from '../shared/PresenceCheckbox'
-import { isFramedMessageType } from '../../utils/wellKnownTypes'
 import type { FieldPresence } from '../shared/fieldPresence'
-import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
 
 interface FieldRendererProps {
   field: DescField
@@ -50,13 +50,36 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onChange, p
         return <ScalarField name={field.name} scalar={field.scalar} value={value} onChange={onChange} />
 
       case 'enum':
-        return <EnumField name={field.name} enumDesc={field.enum} value={value as string | number | undefined} onChange={onChange} />
+        return (
+          <EnumField
+            name={field.name}
+            enumDesc={field.enum}
+            value={value as string | number | undefined}
+            onChange={onChange}
+          />
+        )
 
       case 'list':
-        return <ListField field={field} value={value as unknown[]} onChange={onChange as (v: unknown[]) => void} path={path} presence={presence} />
+        return (
+          <ListField
+            field={field}
+            value={value as unknown[]}
+            onChange={onChange as (v: unknown[]) => void}
+            path={path}
+            presence={presence}
+          />
+        )
 
       case 'map':
-        return <MapField field={field} value={value as Record<string, unknown>} onChange={onChange} path={path} presence={presence} />
+        return (
+          <MapField
+            field={field}
+            value={value as Record<string, unknown>}
+            onChange={onChange}
+            path={path}
+            presence={presence}
+          />
+        )
 
       case 'message':
         return <MessageField field={field} value={value} onChange={onChange} path={path} presence={presence} />

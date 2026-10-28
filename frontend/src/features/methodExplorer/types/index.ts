@@ -144,3 +144,6 @@ export interface MethodInvocation {
   endStream(): void
   cancelStream(): void
 }
+
+/** Which form a JSON view shows: everything, or only what goes over the wire. */
+export type JsonView = 'full' | 'wire'

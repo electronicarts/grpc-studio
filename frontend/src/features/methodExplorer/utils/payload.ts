@@ -17,9 +17,10 @@ const registries = new Map<string, { version: number; registry: Registry }>()
  */
 function targetRegistry(target: string): Registry {
   const cached = registries.get(target)
-  if (cached?.version === schemaCache.version) return cached.registry
+  const version = schemaCache.getVersion()
+  if (cached?.version === version) return cached.registry
   const registry = withWellKnownTypes(...schemaCache.getTargetSchemas(target))
-  registries.set(target, { version: schemaCache.version, registry })
+  registries.set(target, { version, registry })
   return registry
 }
 
@@ -97,7 +98,10 @@ function keepPresentFields(
       result[field.name] = value.map((item, i) => keepPresentInMessage(item, inputValue[i], nested, registry))
     } else if (field.fieldKind === 'map' && isJsonObject(value) && isRecord(inputValue)) {
       result[field.name] = Object.fromEntries(
-        Object.entries(value).map(([key, item]) => [key, keepPresentInMessage(item, inputValue[key], nested, registry)]),
+        Object.entries(value).map(([key, item]) => [
+          key,
+          keepPresentInMessage(item, inputValue[key], nested, registry),
+        ]),
       )
     } else {
       result[field.name] = keepPresentInMessage(value, inputValue, nested, registry)

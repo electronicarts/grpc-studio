@@ -24,7 +24,10 @@ const UnaryMessageDisplay: React.FC = () => {
   const effectiveTab = activeTab === 'form' && !hasSchema ? 'json' : activeTab
   const [expanded, setExpanded] = useState(true)
   const prevHasSchemaRef = useRef(hasSchema)
-  const json = useJsonView(hasSchema, () => wireResponseJson(response.raw, response.data, response.schema, selectedTarget))
+  const json = useJsonView(
+    hasSchema,
+    () => wireResponseJson(response.raw, response.data, response.schema, selectedTarget),
+  )
 
   // Switch to form view when schema first loads (only when schema transitions from false to true)
   useEffect(() => {

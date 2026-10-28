@@ -159,21 +159,21 @@ describe('shareableLink - parsing', () => {
     return parseShareableUrl()
   }
 
-  it('round-trips a request with Unicode, nested data and metadata', () => {
+  it('should round-trip a request with Unicode, nested data and metadata', () => {
     const body = { name: '日本語 🐶', nested: { list: [1, 'two', true] } }
     const parsed = openLink(buildShareableUrl('pkg.Service', 'Get', body, { 'x-trace': 'abc' }))
 
     expect(parsed).toEqual({ s: 'pkg.Service', m: 'Get', r: body, md: { 'x-trace': 'abc' } })
   })
 
-  it('still opens links created by the previous encoder', () => {
+  it('should still open links created by the previous encoder', () => {
     const json = JSON.stringify({ s: 'pkg.Service', m: 'Get', r: { name: 'café ☕' } })
     const legacy = btoa(unescape(encodeURIComponent(json))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 
     expect(openLink(`http://localhost:3000/#share=${legacy}`)?.r).toEqual({ name: 'café ☕' })
   })
 
-  it('returns null for a link that is not valid base64url JSON', () => {
+  it('should return null for a link that is not valid base64url JSON', () => {
     expect(openLink('http://localhost:3000/#share=%%%not-base64')).toBeNull()
     expect(openLink(`http://localhost:3000/#share=${btoa('not json')}`)).toBeNull()
   })

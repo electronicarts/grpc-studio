@@ -1,52 +1,47 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import { describe, expect, it } from 'vitest'
-import { create, createFileRegistry } from '@bufbuild/protobuf'
-import {
-  FieldDescriptorProto_Label as L,
-  FieldDescriptorProto_Type as T,
-  FileDescriptorSetSchema,
-} from '@bufbuild/protobuf/wkt'
 import { MethodKind } from '@grpc-studio/shared'
+import { L, T, enumField, field, fileRegistry, messageField } from '@/test/descriptors'
 import { formatMethodProto } from '../protoFormatter'
 
-const registry = createFileRegistry(create(FileDescriptorSetSchema, {
-  file: [{
-    name: 'zoo.proto',
-    package: 'zoo',
-    syntax: 'proto3',
-    enumType: [
-      { name: 'Color', value: [{ name: 'COLOR_UNSPECIFIED', number: 0 }, { name: 'COLOR_RED', number: 1 }] },
-      { name: 'Size', value: [{ name: 'SIZE_UNSPECIFIED', number: 0 }] },
-      { name: 'Mood', value: [{ name: 'MOOD_UNSPECIFIED', number: 0 }] },
-    ],
-    messageType: [
-      {
-        name: 'Animal',
-        oneofDecl: [{ name: 'diet' }],
-        field: [
-          { name: 'name', number: 1, type: T.STRING, label: L.OPTIONAL, jsonName: 'name' },
-          { name: 'colors', number: 2, type: T.ENUM, typeName: '.zoo.Color', label: L.REPEATED, jsonName: 'colors' },
-          { name: 'sizes', number: 3, type: T.MESSAGE, typeName: '.zoo.Animal.SizesEntry', label: L.REPEATED, jsonName: 'sizes' },
-          { name: 'parent', number: 4, type: T.MESSAGE, typeName: '.zoo.Animal', label: L.OPTIONAL, jsonName: 'parent' },
-          { name: 'mood', number: 5, type: T.ENUM, typeName: '.zoo.Mood', label: L.OPTIONAL, jsonName: 'mood' },
-          { name: 'grams', number: 6, type: T.INT32, label: L.OPTIONAL, oneofIndex: 0, jsonName: 'grams' },
-        ],
-        nestedType: [{
-          name: 'SizesEntry',
-          options: { mapEntry: true },
-          field: [
-            { name: 'key', number: 1, type: T.STRING, label: L.OPTIONAL, jsonName: 'key' },
-            { name: 'value', number: 2, type: T.ENUM, typeName: '.zoo.Size', label: L.OPTIONAL, jsonName: 'value' },
-          ],
-        }],
-      },
-      { name: 'GetAnimalRequest', field: [{ name: 'animal', number: 1, type: T.MESSAGE, typeName: '.zoo.Animal', label: L.OPTIONAL, jsonName: 'animal' }] },
-    ],
-  }],
-}))
+const registry = fileRegistry({
+  name: 'zoo.proto',
+  package: 'zoo',
+  syntax: 'proto3',
+  enumType: [
+    { name: 'Color', value: [{ name: 'COLOR_UNSPECIFIED', number: 0 }, { name: 'COLOR_RED', number: 1 }] },
+    { name: 'Size', value: [{ name: 'SIZE_UNSPECIFIED', number: 0 }] },
+    { name: 'Mood', value: [{ name: 'MOOD_UNSPECIFIED', number: 0 }] },
+  ],
+  messageType: [
+    {
+      name: 'Animal',
+      oneofDecl: [{ name: 'diet' }],
+      field: [
+        field({ name: 'name', number: 1, type: T.STRING }),
+        enumField('colors', 2, '.zoo.Color', { label: L.REPEATED }),
+        messageField('sizes', 3, '.zoo.Animal.SizesEntry', { label: L.REPEATED }),
+        messageField('parent', 4, '.zoo.Animal'),
+        enumField('mood', 5, '.zoo.Mood'),
+        field({ name: 'grams', number: 6, type: T.INT32, oneofIndex: 0 }),
+      ],
+      nestedType: [{
+        name: 'SizesEntry',
+        options: { mapEntry: true },
+        field: [field({ name: 'key', number: 1, type: T.STRING }), enumField('value', 2, '.zoo.Size')],
+      }],
+    },
+    { name: 'GetAnimalRequest', field: [messageField('animal', 1, '.zoo.Animal')] },
+  ],
+})
 
-const method = { name: 'GetAnimal', inputType: 'zoo.GetAnimalRequest', outputType: 'zoo.Animal', kind: MethodKind.UNARY }
+const method = {
+  name: 'GetAnimal',
+  inputType: 'zoo.GetAnimalRequest',
+  outputType: 'zoo.Animal',
+  kind: MethodKind.UNARY,
+}
 const format = (options?: { outputOnly?: boolean }) =>
   formatMethodProto('ZooService', method, type => registry.getMessage(type) ?? null, options)
 

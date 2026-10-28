@@ -16,9 +16,11 @@ interface ScalarFieldProps {
   value: unknown
   onChange: (value: unknown) => void
   typeNameOverride?: string
+  /** Shows only the input, for rows that name the value themselves (e.g. map entries) */
+  hideLabel?: boolean
 }
 
-const ScalarField: React.FC<ScalarFieldProps> = ({ name, scalar, value, onChange, typeNameOverride }) => {
+const ScalarField: React.FC<ScalarFieldProps> = ({ name, scalar, value, onChange, typeNameOverride, hideLabel }) => {
   const { readOnly } = useProtoMessageRendererContext()
   const inputType = getInputType(scalar)
   const isBytes = scalar === ScalarType.BYTES
@@ -32,8 +34,8 @@ const ScalarField: React.FC<ScalarFieldProps> = ({ name, scalar, value, onChange
 
   if (isBool && readOnly) {
     return (
-      <FormField label={name} labelMeta={typeMeta} inline>
-        <Checkbox checked={!!value} disabled />
+      <FormField label={name} labelMeta={typeMeta} inline hideLabel={hideLabel}>
+        <Checkbox aria-label={name} checked={!!value} disabled />
       </FormField>
     )
   }
@@ -42,7 +44,7 @@ const ScalarField: React.FC<ScalarFieldProps> = ({ name, scalar, value, onChange
   // whether the field is sent.
   if (isBool) {
     return (
-      <FormField label={name} labelMeta={typeMeta}>
+      <FormField label={name} labelMeta={typeMeta} hideLabel={hideLabel}>
         <Select
           aria-label={name}
           value={isUnset ? '' : String(!!value)}
@@ -57,9 +59,10 @@ const ScalarField: React.FC<ScalarFieldProps> = ({ name, scalar, value, onChange
   }
 
   return (
-    <FormField label={name} labelMeta={typeMeta}>
+    <FormField label={name} labelMeta={typeMeta} hideLabel={hideLabel}>
       <Input
         type={inputType}
+        aria-label={name}
         value={displayValue}
         onChange={e => onChange(parseValue(e.target.value, scalar))}
         placeholder={readOnly ? '' : isBytes ? 'Base64-encoded bytes' : `Enter ${name}`}

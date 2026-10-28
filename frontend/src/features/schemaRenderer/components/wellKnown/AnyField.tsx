@@ -42,7 +42,7 @@ const AnyField: React.FC<AnyFieldProps> = ({ name, value, onChange }) => {
   // Subscribe to cache updates so the type list refreshes after reflection loads.
   const cacheVersion = useSyncExternalStore(
     cb => schemaCache.subscribe(cb),
-    () => schemaCache.getCacheSize(),
+    () => schemaCache.getVersion(),
   )
 
   const knownTypeNames = useMemo(

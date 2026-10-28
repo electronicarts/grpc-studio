@@ -73,7 +73,8 @@ export function filterMembers(
 
   return schema.members.filter(member => {
     if (member.kind === 'oneof') {
-      if (query && !member.name.toLowerCase().includes(query.toLowerCase()) && !member.fields.some(matches)) return false
+      const oneofMatches = member.name.toLowerCase().includes(query.toLowerCase()) || member.fields.some(matches)
+      if (query && !oneofMatches) return false
       return !hideEmptyFields || member.fields.some(hasData)
     }
     if (query && !matches(member)) return false

@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import React, { useId, useState } from 'react'
+import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/utils/cn'
 
@@ -14,6 +15,8 @@ interface KeyInputProps {
   'aria-label': string
   autoFocus?: boolean
   className?: string
+  /** How the key looks in read-only views, where it cannot be edited. Defaults to plain text. */
+  renderReadOnly?: (key: string) => React.ReactNode
 }
 
 function keyError(key: string, ownKey: string, existingKeys: ReadonlySet<string>): string | null {
@@ -26,6 +29,7 @@ function keyError(key: string, ownKey: string, existingKeys: ReadonlySet<string>
  * Edits a map key, struct field name or mask path. Typing only changes a local draft; the key is committed on
  * blur or Enter, so a half-typed key never collides with another entry. Escape reverts the draft.
  * An empty or duplicate key is not committed and shows an inline error instead.
+ * Read-only views show the key through `renderReadOnly` instead of an input.
  */
 const KeyInput: React.FC<KeyInputProps> = ({
   value,
@@ -35,7 +39,9 @@ const KeyInput: React.FC<KeyInputProps> = ({
   'aria-label': ariaLabel,
   autoFocus,
   className,
+  renderReadOnly = key => <span className="font-mono text-sm">{key}</span>,
 }) => {
+  const { readOnly } = useProtoMessageRendererContext()
   const errorId = useId()
   const [draft, setDraft] = useState<string | null>(null)
   const [touched, setTouched] = useState(false)
@@ -60,6 +66,8 @@ const KeyInput: React.FC<KeyInputProps> = ({
       setTouched(false)
     }
   }
+
+  if (readOnly) return <>{renderReadOnly(value)}</>
 
   return (
     <div className={cn('space-y-1', className)}>
