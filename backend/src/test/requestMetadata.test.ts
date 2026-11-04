@@ -40,10 +40,18 @@ describe('sanitizeRequestMetadata', () => {
     assert.match(result.error ?? '', /invalid metadata key/)
   })
 
-  it('rejects binary (-bin) metadata keys', () => {
-    const result = sanitizeRequestMetadata({ 'x-token-bin': 'AAAA' })
-    assert.equal(result.ok, false)
-    assert.match(result.error ?? '', /binary metadata key/)
+  it('accepts binary (-bin) metadata keys with padded or unpadded base64 values', () => {
+    const result = sanitizeRequestMetadata({ 'X-Trace-Bin': 'AP8QgP4=', 'x-raw-bin': 'AP8QgP4', 'x-empty-bin': '' })
+    assert.equal(result.ok, true)
+    assert.deepEqual(result.metadata, { 'x-trace-bin': 'AP8QgP4=', 'x-raw-bin': 'AP8QgP4', 'x-empty-bin': '' })
+  })
+
+  it('rejects binary (-bin) metadata values that are not standard base64', () => {
+    for (const value of ['not base64', 'AP8_gP4', 'A', 'AP8QgP4==', 'AA=A', 'AAAA\n']) {
+      const result = sanitizeRequestMetadata({ 'x-trace-bin': value })
+      assert.equal(result.ok, false, `expected ${JSON.stringify(value)} to be rejected`)
+      assert.match(result.error ?? '', /must be base64/)
+    }
   })
 
   it('rejects non-ASCII values', () => {

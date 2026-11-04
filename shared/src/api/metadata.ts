@@ -2,9 +2,11 @@
 
 /**
  * User-supplied gRPC request metadata (custom headers) sent along with an RPC.
- * Keys are ASCII header names; values are ASCII header values. The backend
- * merges these onto the outbound gRPC call, but auth/identity headers always
- * take precedence over user-supplied entries with the same key.
+ * Keys are ASCII header names; values are ASCII header values. Binary keys
+ * (ending in `-bin`) carry their value as base64, which is also how gRPC
+ * transmits binary metadata on the wire. The backend merges these onto the
+ * outbound gRPC call, but auth/identity headers always take precedence over
+ * user-supplied entries with the same key.
  */
 export type RequestMetadata = Record<string, string>
 
@@ -22,11 +24,17 @@ const METADATA_KEY_RE = /^[0-9a-z_.-]+$/
 // eslint-disable-next-line no-control-regex
 const METADATA_VALUE_RE = /^[\x20-\x7E]*$/
 
-// Keys ending in `-bin` carry base64-encoded binary values in gRPC. We don't
-// support editing binary metadata from the UI, so reject them explicitly.
+// Keys ending in `-bin` carry binary values. gRPC sends them base64-encoded
+// over HTTP/2 and the receiving gRPC library decodes them back to bytes, so the
+// UI accepts the value as base64 and it is forwarded as-is.
 function isBinaryMetadataKey(key: string): boolean {
   return key.endsWith('-bin')
 }
+
+// Standard base64 alphabet (RFC 4648 section 4), with or without padding, as
+// required for gRPC binary header values. URL-safe characters and whitespace
+// are rejected because servers may decode them strictly or silently drop them.
+const BASE64_VALUE_RE = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}(?:==)?|[A-Za-z0-9+/]{3}=?)?$/
 
 export interface RequestMetadataValidationResult {
   ok: boolean
@@ -62,10 +70,10 @@ export function sanitizeRequestMetadata(input: unknown): RequestMetadataValidati
     }
 
     if (isBinaryMetadataKey(key)) {
-      return { ok: false, metadata: {}, error: `binary metadata key "${rawKey}" (ending in -bin) is not supported` }
-    }
-
-    if (!METADATA_VALUE_RE.test(rawValue)) {
+      if (!BASE64_VALUE_RE.test(rawValue)) {
+        return { ok: false, metadata: {}, error: `invalid metadata value for "${rawKey}": binary (-bin) values must be base64` }
+      }
+    } else if (!METADATA_VALUE_RE.test(rawValue)) {
       return { ok: false, metadata: {}, error: `invalid metadata value for "${rawKey}": only printable ASCII is allowed` }
     }
 

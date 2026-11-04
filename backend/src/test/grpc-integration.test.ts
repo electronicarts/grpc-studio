@@ -134,8 +134,8 @@ async function httpPost(urlPath: string, body?: unknown) {
 }
 
 /** Invoke a unary RPC and return the parsed envelope. */
-async function invokeUnary(method: string, data: unknown) {
-  return httpPost('/api/grpc/invoke', { target: TARGET, service: SERVICE, method, methodKind: 'unary', data })
+async function invokeUnary(method: string, data: unknown, metadata?: Record<string, string>) {
+  return httpPost('/api/grpc/invoke', { target: TARGET, service: SERVICE, method, methodKind: 'unary', data, metadata })
 }
 
 // ---------------------------------------------------------------------------
@@ -191,13 +191,16 @@ async function streamRpc(opts: {
   method: string
   methodKind: string
   data?: unknown
+  metadata?: Record<string, string>
   clientMessages?: WsFrame[]
 }): Promise<WsFrame[]> {
   const ws = await openWs()
   try {
     wsSend(ws, {
       type: 'start',
-      payload: { target: TARGET, service: SERVICE, method: opts.method, methodKind: opts.methodKind, data: opts.data },
+      payload: {
+        target: TARGET, service: SERVICE, method: opts.method, methodKind: opts.methodKind, data: opts.data, metadata: opts.metadata,
+      },
     })
 
     if (opts.clientMessages) {
@@ -940,6 +943,52 @@ describe('Integration: gRPC pipeline (PetStore)', () => {
       } finally {
         ws.close()
       }
+    })
+  })
+
+  // ===== Binary (-bin) request metadata ===================================
+  // Byte-level delivery is asserted against a real grpc-js server in
+  // binaryMetadata.wire.test.ts; these cover the HTTP and WebSocket ingress.
+
+  describe('binary (-bin) request metadata', () => {
+    const traceBin = Buffer.from([0x00, 0xff, 0x10, 0x80, 0xfe]).toString('base64')
+
+    it('unary invoke accepts base64 -bin metadata', async () => {
+      const res = await invokeUnary('ListPets', { page_size: 1 }, { 'x-trace-bin': traceBin, 'x-request-id': 'bin-test' })
+      assertSuccessEnvelope(res)
+      assert.equal((res.body.data as { success: boolean }).success, true)
+    })
+
+    it('unary invoke rejects a -bin value that is not base64', async () => {
+      const res = await invokeUnary('ListPets', {}, { 'x-trace-bin': 'not base64!' })
+      assertErrorResponse(res, 'VALIDATION_ERROR')
+      assert.match((res.body.error as { message: string }).message, /must be base64/)
+    })
+
+    it('client streaming over WebSocket accepts base64 -bin metadata', async () => {
+      const frames = await streamRpc({
+        method: 'BulkCreatePets',
+        methodKind: 'client_streaming',
+        metadata: { 'x-trace-bin': traceBin },
+        clientMessages: [
+          { type: 'data', payload: { pet: { name: 'BinMeta', species: 'SPECIES_DOG' } } },
+          { type: 'end' },
+        ],
+      })
+      assert.ok(!frames.some((f) => f.type === 'error'), `Unexpected error frame: ${JSON.stringify(frames)}`)
+      assert.ok(frames.some((f) => f.type === 'response'), 'Expected a response frame')
+      assert.ok(frames.some((f) => f.type === 'complete'), 'Expected a complete frame')
+    })
+
+    it('WebSocket start rejects a -bin value that is not base64', async () => {
+      const frames = await streamRpc({
+        method: 'WatchPets',
+        methodKind: 'server_streaming',
+        data: {},
+        metadata: { 'x-trace-bin': 'AP8_gP4' },
+      })
+      assert.ok(frames.some((f) => f.type === 'error'), 'Expected an error frame for invalid -bin metadata')
+      assert.ok(!frames.some((f) => f.type === 'response'), 'The stream must not start with invalid metadata')
     })
   })
 

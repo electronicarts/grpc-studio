@@ -237,7 +237,7 @@ See `OBSERVABILITY.md` for complete documentation.
 - Protobuf descriptors are resolved transitively from reflection and cached by TTL.
 - Streaming calls are controlled with JSON WebSocket messages and encoded to real gRPC messages on the backend.
 - mTLS certificate status is surfaced in the UI when mTLS is configured.
-- Request metadata (custom gRPC headers) can be added per request from the **Metadata** tab of the request panel, for both unary and streaming RPCs. Keys are lowercased and validated (letters, digits, and `-_.`; binary `-bin` keys are not supported). Configured auth-plugin and trusted user (`x-user-*`) headers always take precedence over user-supplied metadata with the same key, so the UI cannot spoof identity or auth. Metadata is saved with per-method request history and included in shareable request links (re-validated on open).
+- Request metadata (custom gRPC headers) can be added per request from the **Metadata** tab of the request panel, for both unary and streaming RPCs. Keys are lowercased and validated (letters, digits, and `-_.`). Values for binary keys ending in `-bin` are entered as standard base64 (padding optional) and arrive at the server as the decoded bytes; other values must be printable ASCII. Configured auth-plugin and trusted user (`x-user-*`) headers always take precedence over user-supplied metadata with the same key, so the UI cannot spoof identity or auth. Metadata is saved with per-method request history and included in shareable request links (re-validated on open).
 
 ## Docker Deployment
 
