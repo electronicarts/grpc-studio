@@ -1,0 +1,15 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  // System tools the scripts call, not npm packages
+  "ignoreBinaries": ["openssl", "ffmpeg", "lsof", "pkill"],
+  "workspaces": {
+    "backend": {
+      // Auth plugins are found at runtime by scanning src/auth/plugins (see authManager.ts), not imported
+      "entry": ["src/auth/plugins/*.ts"]
+    },
+    "examples/*": {
+      // Handlers and the store are consumed as whole objects (server.addService, store.get, …), not by name
+      "entry": ["src/handlers.js", "src/store.js"]
+    }
+  }
+}

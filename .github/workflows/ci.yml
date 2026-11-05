@@ -204,7 +204,8 @@ jobs:
         run: |
           cd backend
           node --check dist/server/httpServer.js
-          node -e "import('./dist/app.js')" --input-type=module
+          # `production` resolves #src/* imports to dist/ (see backend/package.json "imports")
+          node --conditions=production -e "import('./dist/app.js')" --input-type=module
 
   test-backend:
     name: Test Backend
