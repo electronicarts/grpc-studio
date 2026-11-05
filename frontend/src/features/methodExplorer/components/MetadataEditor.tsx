@@ -25,6 +25,7 @@ const MetadataEditor: React.FC<MetadataEditorProps> = ({ metadata, disabled = fa
           <p className="text-sm font-medium">Request Metadata</p>
           <p className="text-xs text-muted-foreground">
             Custom gRPC headers sent with the call. Keys are lowercased; auth headers take precedence.
+            Values for binary keys ending in -bin are entered as base64.
           </p>
         </div>
         <Button
@@ -65,7 +66,7 @@ const MetadataEditor: React.FC<MetadataEditorProps> = ({ metadata, disabled = fa
               <Input
                 value={row.value}
                 onChange={(e) => metadata.updateRow(row.id, { value: e.target.value })}
-                placeholder="value"
+                placeholder={row.key.trim().toLowerCase().endsWith('-bin') ? 'base64 value' : 'value'}
                 disabled={disabled}
                 className="h-8 flex-1 font-mono text-xs"
                 spellCheck={false}
