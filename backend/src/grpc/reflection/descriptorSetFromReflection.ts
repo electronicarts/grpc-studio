@@ -12,12 +12,25 @@ import {
   DescriptorProtoSchema,
   FieldDescriptorProtoSchema,
 } from '@bufbuild/protobuf/wkt'
-import type { FileDescriptorProto, FileDescriptorSet } from '@bufbuild/protobuf/wkt'
+import type { GenFile } from '@bufbuild/protobuf/codegenv2'
+import * as wkt from '@bufbuild/protobuf/wkt'
+import type { DescriptorProto, FileDescriptorProto, FileDescriptorSet } from '@bufbuild/protobuf/wkt'
 import type { CallOptions } from '@grpc/grpc-js'
 import type { GrpcReflection } from 'grpc-js-reflection-client'
 import logger from '#src/utils/logger.js'
 
 const descriptorSetLogger = logger.child({ module: 'descriptor-set-from-reflection' })
+
+/**
+ * Google's well-known type files (timestamp.proto, struct.proto, ...) as bundled with @bufbuild/protobuf,
+ * keyed by file name. Used when a reflection server does not serve them, which some servers don't.
+ */
+const bundledWellKnownFiles = new Map(
+  Object.entries(wkt)
+    .filter(([exportName]) => exportName.startsWith('file_google_protobuf_'))
+    .map(([, genFile]) => (genFile as GenFile).proto)
+    .map(proto => [proto.name, proto]),
+)
 
 type DescriptorByteFetchMethods = {
   getProtoDescriptorBySymbol(symbol: string, options?: CallOptions): Promise<Uint8Array[]>
@@ -50,6 +63,7 @@ export async function buildFileDescriptorSet(
   const collected = await collectDescriptorsForSymbol(methods, symbol, options)
   const normalized = normalizeJsonNames(collected.files)
   const pruned = pruneUnresolvedImports(normalized, collected.unresolvedImports)
+  assertNoMissingTypes(pruned, collected.unresolvedImports)
 
   return create(FileDescriptorSetSchema, { file: orderDescriptorsByDependency(pruned) })
 }
@@ -82,6 +96,12 @@ async function collectDescriptorsForSymbol(
           queue.push(importedFile)
         }
       } catch (error) {
+        const bundled = bundledWellKnownFiles.get(importName)
+        if (bundled) {
+          descriptorSetLogger.debug(`Using bundled '${importName}' as reflection did not return it`)
+          queue.push(clone(FileDescriptorProtoSchema, bundled))
+          continue
+        }
         unresolvedImports.add(importName)
         logReflectionFetchFailure(importName, error)
       }
@@ -169,6 +189,47 @@ function pruneDependencyList(
   return { file: prunedFile, removedImports }
 }
 
+/**
+ * Pruning an import that reflection could not return is harmless while nothing uses it. When something
+ * does, the registry would fail with a bare "type_name not found", so fail here naming the missing imports.
+ */
+function assertNoMissingTypes(files: Map<string, FileDescriptorProto>, unresolvedImports: Set<string>): void {
+  if (unresolvedImports.size === 0) return
+
+  const defined = new Set<string>()
+  const referenced = new Set<string>()
+  for (const file of files.values()) {
+    const prefix = file.package ? `.${file.package}` : ''
+    file.enumType.forEach(enumType => defined.add(`${prefix}.${enumType.name}`))
+    file.messageType.forEach(message => collectMessageTypes(message, prefix, defined, referenced))
+    file.extension.forEach(extension => referenced.add(extension.typeName).add(extension.extendee))
+    file.service.forEach(service =>
+      service.method.forEach(method => referenced.add(method.inputType).add(method.outputType)),
+    )
+  }
+
+  const missing = [...referenced].filter(name => name.length > 0 && !defined.has(name))
+  if (missing.length === 0) return
+
+  throw new Error(
+    `Types ${missing.join(', ')} not found; reflection could not return imports ${[...unresolvedImports].join(', ')}`,
+  )
+}
+
+function collectMessageTypes(
+  message: DescriptorProto,
+  prefix: string,
+  defined: Set<string>,
+  referenced: Set<string>,
+): void {
+  const name = `${prefix}.${message.name}`
+  defined.add(name)
+  message.enumType.forEach(enumType => defined.add(`${name}.${enumType.name}`))
+  message.field.forEach(field => referenced.add(field.typeName))
+  message.extension.forEach(extension => referenced.add(extension.typeName).add(extension.extendee))
+  message.nestedType.forEach(nested => collectMessageTypes(nested, name, defined, referenced))
+}
+
 function remapDependencyIndexes(indexes: number[], indexMap: Map<number, number>): number[] {
   const remapped: number[] = []
   for (const index of indexes) {
@@ -182,11 +243,11 @@ function normalizeJsonNames(files: Map<string, FileDescriptorProto>): Map<string
   const normalized = new Map<string, FileDescriptorProto>()
 
   for (const [name, file] of files) {
+    // Assign onto the clone rather than spreading it: proto2 messages (descriptor.proto) keep unset-field
+    // defaults on the prototype, so a spread drops them (e.g. `syntax` becomes undefined).
     const normalizedFile = clone(FileDescriptorProtoSchema, file)
-    normalized.set(name, {
-      ...normalizedFile,
-      messageType: file.messageType.map(normalizeMessageJsonNames),
-    })
+    normalizedFile.messageType = file.messageType.map(normalizeMessageJsonNames)
+    normalized.set(name, normalizedFile)
   }
 
   return normalized

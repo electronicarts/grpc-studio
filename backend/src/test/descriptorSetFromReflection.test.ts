@@ -99,6 +99,39 @@ describe('descriptorSetFromReflection', () => {
     assert.deepEqual(fdSet.file[0]?.dependency, [])
   })
 
+  it('uses the bundled well-known type files when reflection does not serve them', async () => {
+    const service = protoFixtures.fileDescriptor({
+      name: 'service.proto',
+      dependency: ['google/protobuf/timestamp.proto'],
+      messageType: [{ name: 'Request', field: [protoFixtures.messageField('at', 1, '.google.protobuf.Timestamp')] }],
+    })
+    const { client, requestedFiles } = reflectionClient(
+      { 'service.proto': [protoFixtures.descriptorBytes(service)] },
+      'service.proto',
+    )
+
+    const fdSet = await descriptorSetFromReflection.buildFileDescriptorSet(client, 'test.Request')
+    const field = createFileRegistry(fdSet).getMessage('test.Request')!.fields[0]
+
+    // Reflection is still asked first, so a server's own copy wins when it has one
+    assert.deepEqual(requestedFiles, ['google/protobuf/timestamp.proto'])
+    assert.equal(field.message?.typeName, 'google.protobuf.Timestamp')
+    assert.deepEqual(fdSet.file.at(-1)?.dependency, ['google/protobuf/timestamp.proto'])
+  })
+
+  it('names the missing imports when a type they define is used', async () => {
+    const service = protoFixtures.fileDescriptor({
+      name: 'service.proto',
+      dependency: ['missing.proto'],
+      messageType: [{ name: 'Request', field: [protoFixtures.messageField('thing', 1, '.test.Missing')] }],
+    })
+    const { client } = reflectionClient({ 'service.proto': [protoFixtures.descriptorBytes(service)] }, 'service.proto')
+
+    await assert.rejects(descriptorSetFromReflection.buildFileDescriptorSet(client, 'test.Request'), {
+      message: 'Types .test.Missing not found; reflection could not return imports missing.proto',
+    })
+  })
+
   it('restores default JSON names when reflection omits json_name', async () => {
     const request = protoFixtures.fileDescriptor({
       name: 'request.proto',
@@ -135,10 +168,11 @@ describe('descriptorSetFromReflection', () => {
   })
 
   it('loads a file that reflection returns without a syntax as proto2', async () => {
-    // proto2 files compiled by protoc leave `syntax` empty
+    // proto2 files compiled by protoc (e.g. google/protobuf/descriptor.proto) leave `syntax` unset, so it
+    // is absent on the wire and decodes to a prototype default rather than an own property
     const legacy = protoFixtures.fileDescriptor({
       name: 'legacy.proto',
-      syntax: '',
+      syntax: undefined,
       messageType: [{ name: 'Legacy', field: [protoFixtures.field('id', 1, protoFixtures.FieldType.STRING)] }],
     })
     const { client } = reflectionClient({ 'legacy.proto': [protoFixtures.descriptorBytes(legacy)] }, 'legacy.proto')
@@ -148,6 +182,24 @@ describe('descriptorSetFromReflection', () => {
 
     // proto2 singular fields track presence; proto3 ones would not
     assert.equal(field.presence, FeatureSet_FieldPresence.EXPLICIT)
+  })
+
+  it('loads a proto3 file that reflection returns without a package', async () => {
+    // A file with no `package` statement leaves it unset, so it decodes to a prototype default rather than
+    // an own property
+    const unpackaged = protoFixtures.fileDescriptor({
+      name: 'unpackaged.proto',
+      package: undefined,
+      messageType: [{ name: 'Unpackaged', field: [protoFixtures.field('id', 1, protoFixtures.FieldType.STRING)] }],
+    })
+    const { client } = reflectionClient(
+      { 'unpackaged.proto': [protoFixtures.descriptorBytes(unpackaged)] },
+      'unpackaged.proto',
+    )
+
+    const set = await descriptorSetFromReflection.buildFileDescriptorSet(client, 'Unpackaged')
+
+    assert.ok(createFileRegistry(set).getMessage('Unpackaged'))
   })
 
   it('passes call options to reflection descriptor requests', async () => {
