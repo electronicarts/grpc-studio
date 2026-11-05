@@ -12,39 +12,31 @@
 import React from 'react'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, act } from '@testing-library/react'
-import { useServiceSelection } from '../../serviceExplorer/hooks/useServiceDiscovery'
-import { useMethodTabs } from '../hooks/useMethodTabs'
+import { useServiceSelection } from '@/features/serviceExplorer/hooks/useServiceDiscovery'
+import { useMethodTabs } from '@/features/tabs/hooks/useMethodTabs'
 import { tabStateStore } from '@/stores'
-import { MethodExplorerProvider, useMethodExplorerContext } from '../../methodExplorer/stores'
-import { buildShareableUrl } from '../../../utils/shareableLink'
-import type { ApiServer, GrpcService, GrpcMethod } from '../../../types/grpc'
+import { MethodExplorerProvider, useMethodExplorerContext } from '@/features/methodExplorer/stores'
+import { buildShareableUrl } from '@/utils/shareableLink'
+import type { ApiServer, GrpcService, GrpcMethod } from '@/types/grpc'
 import { MethodKind } from '@grpc-studio/shared'
 
 // ── deterministic schema source ───────────────────────────────────────────
 const service: GrpcService = {
   name: 'UserService',
   fullName: 'com.example.UserService',
-  methods: [
-    { name: 'GetUser', inputType: 'GetUserRequest', outputType: 'User', kind: MethodKind.UNARY },
-  ],
+  methods: [{ name: 'GetUser', inputType: 'GetUserRequest', outputType: 'User', kind: MethodKind.UNARY }],
 }
 const method = service.methods[0] as GrpcMethod
 const server: ApiServer = { name: 'Server1', target: 'localhost:50051', services: [service] }
 
 // The schema cache is consulted synchronously during render; return null so the
 // request body is used verbatim (no canonicalization rewrites in this test).
-vi.mock('../../schemaLoader/lib/schemaCache', () => ({
-  schemaCache: {
-    subscribe: vi.fn(() => () => {}),
-    getCachedSchema: vi.fn(() => null),
-    getSchema: vi.fn(() => Promise.resolve(null)),
-    getCacheSize: vi.fn(() => 0),
-    getSchemaMap: vi.fn(() => new Map()),
-  },
-}))
+vi.mock('@/features/schemaLoader/lib/schemaCache', async () =>
+  (await import('@/test/schemaCacheMock')).schemaCacheModule(),
+)
 
 // Servers/services come from React Query in the real app; feed them directly.
-vi.mock('../../schemaLoader', () => ({
+vi.mock('@/features/schemaLoader', () => ({
   useSchemas: vi.fn(() => ({
     servers: [server],
     services: [service],
@@ -55,10 +47,15 @@ vi.mock('../../schemaLoader', () => ({
 }))
 
 // Keep the WebSocket inert (unary path here never opens it, but be safe).
-vi.mock('../../methodExplorer/hooks/useGrpcWebSocket', () => ({
+vi.mock('@/features/methodExplorer/hooks/useGrpcWebSocket', () => ({
   useGrpcWebSocket: () => ({
-    start: vi.fn(), sendData: vi.fn(), endStream: vi.fn(), cancel: vi.fn(), close: vi.fn(),
-    isConnected: false, isStreaming: false,
+    start: vi.fn(),
+    sendData: vi.fn(),
+    endStream: vi.fn(),
+    cancel: vi.fn(),
+    close: vi.fn(),
+    isConnected: false,
+    isStreaming: false,
   }),
 }))
 
@@ -77,19 +74,21 @@ function Probe() {
 // (render the active tab) but injects a probe inside the real provider so the
 // restored request body is observable.
 function MiniApp() {
-  const {
-    selectedTarget, selectedService, selectedMethod, pendingShare, consumeShare, clearSelection,
-  } = useServiceSelection()
+  const { selectedTarget, selectedService, selectedMethod, pendingShare, consumeShare, clearSelection } =
+    useServiceSelection()
 
   const { tabs, activeTabId } = useMethodTabs({
-    selectedTarget, selectedService, selectedMethod, pendingShare,
+    selectedTarget,
+    selectedService,
+    selectedMethod,
+    pendingShare,
     onShareConsumed: consumeShare,
     onClearSelection: clearSelection,
   })
 
   return (
     <>
-      {tabs.map((tab) => (
+      {tabs.map(tab => (
         <div key={tab.id} className={tab.id === activeTabId ? '' : 'hidden'}>
           <MethodExplorerProvider
             tabId={tab.id}
@@ -137,9 +136,10 @@ describe('share restore (integration)', () => {
   it('applies the shared body even when a tab for the method is already persisted (e.g. by another browser tab)', async () => {
     // Another browser tab already has this method open and has persisted it.
     const existingId = `${server.name}::${service.fullName}::${method.name}`
-    localStorage.setItem('grpc-studio-tabs', JSON.stringify([
-      { id: existingId, target: server.name, service, method, label: method.name },
-    ]))
+    localStorage.setItem(
+      'grpc-studio-tabs',
+      JSON.stringify([{ id: existingId, target: server.name, service, method, label: method.name }]),
+    )
     localStorage.setItem('grpc-studio-active-tab', JSON.stringify(existingId))
 
     const sharedBody = { id: '99' }

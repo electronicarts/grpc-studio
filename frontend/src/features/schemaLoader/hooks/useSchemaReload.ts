@@ -2,9 +2,9 @@
 
 import { useCallback, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { reloadSchemas, type SchemaData } from '../api'
-import { SCHEMA_QUERY_KEY, useSchemas } from './useSchemas'
-import type { SchemaLoaderState } from '../types'
+import { reloadSchemas, type SchemaData } from '@/features/schemaLoader/api'
+import { SCHEMA_QUERY_KEY, useSchemas } from '@/features/schemaLoader/hooks/useSchemas'
+import type { SchemaLoaderState } from '@/features/schemaLoader/types'
 
 export function useSchemaLoader(): SchemaLoaderState {
   const queryClient = useQueryClient()
@@ -26,22 +26,26 @@ export function useSchemaLoader(): SchemaLoaderState {
         return await Promise.race([
           reloadSchemas(current, target),
           new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error('Schema reload timed out. Please try again.')), timeoutMs)
+            setTimeout(() => reject(new Error('Schema reload timed out. Please try again.')), timeoutMs),
           ),
         ])
       } finally {
         setReloadingServer(null)
       }
     },
-    onSuccess: (result) => {
+    onSuccess: result => {
       queryClient.setQueryData<SchemaData>(SCHEMA_QUERY_KEY, result)
     },
   })
 
-  const reload = useCallback((target?: string) => { mutate(target) }, [mutate])
+  const reload = useCallback(
+    (target?: string) => {
+      mutate(target)
+    },
+    [mutate],
+  )
 
-  const lastReloadSuccess: boolean | null =
-    reloadSucceeded ? true : reloadFailed ? false : null
+  const lastReloadSuccess: boolean | null = reloadSucceeded ? true : reloadFailed ? false : null
 
   return {
     loading,

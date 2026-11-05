@@ -1,10 +1,10 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import { useState, useCallback } from 'react'
-import { GrpcService, GrpcMethod, ApiServer } from '../../../types/grpc'
-import { useSchemas } from '../../schemaLoader'
-import { useShareableLink } from './useShareableLink'
-import type { PendingShare, ServiceSelectionResult } from '../types'
+import { GrpcService, GrpcMethod, ApiServer } from '@/types/grpc'
+import { useSchemas } from '@/features/schemaLoader'
+import { useShareableLink } from '@/features/serviceExplorer/hooks/useShareableLink'
+import type { PendingShare, ServiceSelectionResult } from '@/features/serviceExplorer/types'
 
 // ---------------------------------------------------------------------------
 // Manages service/method selection state. Services come from React Query.

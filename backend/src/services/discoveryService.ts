@@ -5,11 +5,13 @@
  * methods, and orchestrates discovery across all configured targets.
  */
 
-import reflectionSchemaRepository, { type ReflectionSchemaRepository } from '../repositories/reflectionSchemaRepository.js'
-import multiClientManager from '../grpc/multiClientManager.js'
-import logger from '../utils/logger.js'
-import { errorMessage } from '../utils/errorMessage.js'
-import type { ApiMethod, ApiService } from '../types/index.js'
+import reflectionSchemaRepository, {
+  type ReflectionSchemaRepository,
+} from '#src/repositories/reflectionSchemaRepository.js'
+import multiClientManager from '#src/grpc/multiClientManager.js'
+import logger from '#src/utils/logger.js'
+import { errorMessage } from '#src/utils/errorMessage.js'
+import type { ApiMethod, ApiService } from '#src/types/index.js'
 import type { ApiServer } from '@grpc-studio/shared'
 
 const discoveryLogger = logger.child({ module: 'native-service-discovery' })
@@ -47,7 +49,7 @@ export class DiscoveryService {
       }))
 
       const description: ApiService = {
-        name: serviceName.split('.').pop(),
+        name: descService.name,
         fullName: serviceName,
         methods,
       }
@@ -94,9 +96,7 @@ export class DiscoveryService {
 
   private resolveTargetNames(targetFilter?: string): string[] {
     const allTargetNames = multiClientManager.getTargetNames()
-    return targetFilter
-      ? allTargetNames.filter(name => name === targetFilter)
-      : allTargetNames
+    return targetFilter ? allTargetNames.filter(name => name === targetFilter) : allTargetNames
   }
 
   private async discoverTarget(targetName: string): Promise<ApiServer> {
@@ -115,7 +115,10 @@ export class DiscoveryService {
       discoveryLogger.info('Discovery completed for target', { target: targetName, servicesFound: serviceNames.length })
       return { name: targetName, target: targetAddress, services }
     } catch (error) {
-      discoveryLogger.error('Failed to discover services from target', { target: targetName, error: errorMessage(error) })
+      discoveryLogger.error('Failed to discover services from target', {
+        target: targetName,
+        error: errorMessage(error),
+      })
       // Still list the target so the frontend knows it exists but failed.
       return { name: targetName, target: targetAddress, services: [] }
     }
@@ -125,8 +128,13 @@ export class DiscoveryService {
     try {
       return await this.describeService(targetName, serviceName)
     } catch (error) {
-      discoveryLogger.warn('Failed to describe service', { target: targetName, service: serviceName, error: errorMessage(error) })
-      return { name: serviceName.split('.').pop(), fullName: serviceName, methods: [] }
+      discoveryLogger.warn('Failed to describe service', {
+        target: targetName,
+        service: serviceName,
+        error: errorMessage(error),
+      })
+      // No descriptor to read the name from, so take the part after the package
+      return { name: serviceName.slice(serviceName.lastIndexOf('.') + 1), fullName: serviceName, methods: [] }
     }
   }
 }

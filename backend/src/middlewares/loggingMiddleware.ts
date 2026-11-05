@@ -5,28 +5,28 @@
  * Request logging and tracking
  */
 
-import type { Request, Response, NextFunction } from 'express';
-import logger from '../utils/logger.js';
-import { getUserContextFromHeaders } from './userContextMiddleware.js';
-import { randomUUID } from 'node:crypto';
+import type { Request, Response, NextFunction } from 'express'
+import logger from '#src/utils/logger.js'
+import { getUserContextFromHeaders } from '#src/middlewares/userContextMiddleware.js'
+import { randomUUID } from 'node:crypto'
 
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 function generateRequestId() {
-  return randomUUID();
+  return randomUUID()
 }
 
 function validateRequestId(input: string | undefined): string {
-  if (!input) return generateRequestId();
+  if (!input) return generateRequestId()
 
   // Only accept valid UUID format to prevent header injection
   if (UUID_REGEX.test(input)) {
-    return input;
+    return input
   }
 
   // Reject invalid input and log attempt
-  logger.warn('Invalid X-Request-Id format received', { input });
-  return generateRequestId();
+  logger.warn('Invalid X-Request-Id format received', { input })
+  return generateRequestId()
 }
 
 /**
@@ -34,36 +34,36 @@ function validateRequestId(input: string | undefined): string {
  * Logs request start and completion with timing
  */
 export const requestLogger = (req: Request, res: Response, next: NextFunction): void => {
-  const start = Date.now();
-  req.id = validateRequestId(req.get('X-Request-Id'));
-  res.setHeader('X-Request-Id', req.id);
+  const start = Date.now()
+  req.id = validateRequestId(req.get('X-Request-Id'))
+  res.setHeader('X-Request-Id', req.id)
 
   // Derive the user id straight from the trusted proxy/SSO headers so it appears on
   // both the started and completed log lines. This runs before userContextMiddleware,
   // so req.userContext isn't populated yet — but the underlying headers already are.
-  const { userId } = getUserContextFromHeaders(req.headers);
+  const { userId } = getUserContextFromHeaders(req.headers)
 
   const reqLogger = logger.child({
     requestId: req.id,
     method: req.method,
     path: req.path,
-    userId: userId ?? undefined
-  });
+    userId: userId ?? undefined,
+  })
 
   reqLogger.info('Request started', {
     userAgent: req.get('User-Agent'),
-    contentType: req.get('Content-Type')
-  });
+    contentType: req.get('Content-Type'),
+  })
 
   // Log response when finished
   res.on('finish', () => {
-    const duration = Date.now() - start;
+    const duration = Date.now() - start
     reqLogger.info('Request completed', {
       statusCode: res.statusCode,
       durationMs: duration,
-      contentLength: res.get('Content-Length')
-    });
-  });
+      contentLength: res.get('Content-Length'),
+    })
+  })
 
-  next();
-};
+  next()
+}

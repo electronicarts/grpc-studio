@@ -22,9 +22,7 @@ export const valueMatchesSearch = (value: unknown, query: string): boolean => {
     return value.some(item => valueMatchesSearch(item, query))
   }
   if (typeof value === 'object') {
-    return Object.entries(value).some(([k, v]) =>
-      k.toLowerCase().includes(lowerQuery) || valueMatchesSearch(v, query)
-    )
+    return Object.entries(value).some(([k, v]) => k.toLowerCase().includes(lowerQuery) || valueMatchesSearch(v, query))
   }
   return false
 }

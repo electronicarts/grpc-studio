@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import { describe, expect, it, vi } from 'vitest'
-import { dispatchWebSocketMessage } from '../wsMessageDispatcher'
+import { dispatchWebSocketMessage } from '@/features/methodExplorer/utils/wsMessageDispatcher'
 
 function messageEvent(payload: unknown): MessageEvent {
   return new MessageEvent('message', { data: JSON.stringify(payload) })
@@ -40,11 +40,7 @@ describe('dispatchWebSocketMessage', () => {
     const onComplete = vi.fn()
     const setIsStreaming = vi.fn()
 
-    dispatchWebSocketMessage(
-      messageEvent({ type: 'complete', sentAtMs: 1 }),
-      { onComplete },
-      setIsStreaming,
-    )
+    dispatchWebSocketMessage(messageEvent({ type: 'complete', sentAtMs: 1 }), { onComplete }, setIsStreaming)
 
     expect(setIsStreaming).toHaveBeenCalledWith(false)
     expect(onComplete).toHaveBeenCalled()
@@ -65,11 +61,7 @@ describe('dispatchWebSocketMessage', () => {
   it('reports malformed messages as parse errors', () => {
     const onError = vi.fn()
 
-    dispatchWebSocketMessage(
-      new MessageEvent('message', { data: '{' }),
-      { onError },
-      vi.fn(),
-    )
+    dispatchWebSocketMessage(new MessageEvent('message', { data: '{' }), { onError }, vi.fn())
 
     expect(onError).toHaveBeenCalledWith('Failed to parse server message')
   })

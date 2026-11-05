@@ -5,8 +5,8 @@
  * Schema descriptors are not persisted (they're fetched on demand and
  * cached in memory by SchemaCache).
  */
-import type { ApiServer } from '../../../types/grpc'
-import { safeGetJSON, safeSetJSON, safeGetString, safeSetString } from '../../../utils/storageHelpers'
+import type { ApiServer } from '@/types/grpc'
+import { safeGetJSON, safeSetJSON, safeGetString, safeSetString } from '@/utils/storageHelpers'
 
 const LS_SERVERS_KEY = 'grpc-servers'
 const LS_FETCHED_AT_KEY = 'grpc-servers-ts'
@@ -27,4 +27,3 @@ export function persistServers(servers: ApiServer[], fetchedAt: Date) {
   safeSetJSON(LS_SERVERS_KEY, servers)
   safeSetString(LS_FETCHED_AT_KEY, fetchedAt.toISOString())
 }
-

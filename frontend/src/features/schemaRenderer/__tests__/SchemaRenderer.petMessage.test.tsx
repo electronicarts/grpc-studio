@@ -11,274 +11,14 @@
 import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import type { DescMessage, DescField, DescEnum, DescOneof } from '@bufbuild/protobuf'
-import SchemaRenderer from '../components/core/SchemaRenderer'
-import { collectExpandablePaths } from '../utils/pathAnalysis'
-
-// ScalarType enum values from @bufbuild/protobuf
-const ScalarType = {
-  DOUBLE: 1,
-  FLOAT: 2,
-  INT64: 3,
-  UINT64: 4,
-  INT32: 5,
-  FIXED64: 6,
-  FIXED32: 7,
-  BOOL: 8,
-  STRING: 9,
-  BYTES: 12,
-  UINT32: 13,
-  SFIXED32: 15,
-  SFIXED64: 16,
-  SINT32: 17,
-  SINT64: 18,
-}
+import SchemaRenderer from '@/features/schemaRenderer/components/core/SchemaRenderer'
+import { petSchema } from '@/test/petstore.fixtures'
+import { collectExpandablePaths } from '@/features/schemaRenderer/utils/pathAnalysis'
 
 // Create complete Pet schema with ALL field types
-const createPetSchema = (): DescMessage => {
-  // Enums
-  const SpeciesEnum: DescEnum = {
-    typeName: 'petstore.v1.Species',
-    values: [
-      { name: 'SPECIES_UNSPECIFIED', number: 0 },
-      { name: 'SPECIES_DOG', number: 1 },
-      { name: 'SPECIES_CAT', number: 2 },
-      { name: 'SPECIES_BIRD', number: 3 },
-    ],
-  } as DescEnum
-
-  const StatusEnum: DescEnum = {
-    typeName: 'petstore.v1.Status',
-    values: [
-      { name: 'STATUS_UNSPECIFIED', number: 0 },
-      { name: 'STATUS_AVAILABLE', number: 1 },
-      { name: 'STATUS_ADOPTED', number: 2 },
-    ],
-  } as DescEnum
-
-  // Nested messages (3 levels deep)
-  const CoordinatesSchema: DescMessage = {
-    typeName: 'petstore.v1.Coordinates',
-    fields: [
-      { name: 'latitude', fieldKind: 'scalar', scalar: ScalarType.DOUBLE } as DescField,
-      { name: 'longitude', fieldKind: 'scalar', scalar: ScalarType.DOUBLE } as DescField,
-    ],
-    oneofs: [],
-    nestedMessages: [],
-    nestedEnums: [],
-  } as DescMessage
-
-  const AddressSchema: DescMessage = {
-    typeName: 'petstore.v1.Address',
-    fields: [
-      { name: 'street', fieldKind: 'scalar', scalar: ScalarType.STRING } as DescField,
-      { name: 'city', fieldKind: 'scalar', scalar: ScalarType.STRING } as DescField,
-      { name: 'state', fieldKind: 'scalar', scalar: ScalarType.STRING } as DescField,
-      { name: 'zip_code', fieldKind: 'scalar', scalar: ScalarType.STRING } as DescField,
-      { name: 'country', fieldKind: 'scalar', scalar: ScalarType.STRING } as DescField,
-      { name: 'coordinates', fieldKind: 'message', message: CoordinatesSchema } as DescField,
-    ],
-    oneofs: [],
-    nestedMessages: [],
-    nestedEnums: [],
-  } as DescMessage
-
-  const TimestampSchema: DescMessage = {
-    typeName: 'google.protobuf.Timestamp',
-    fields: [
-      { name: 'seconds', fieldKind: 'scalar', scalar: ScalarType.INT64 } as DescField,
-      { name: 'nanos', fieldKind: 'scalar', scalar: ScalarType.INT32 } as DescField,
-    ],
-    oneofs: [],
-    nestedMessages: [],
-    nestedEnums: [],
-  } as DescMessage
-
-  const OwnerSchema: DescMessage = {
-    typeName: 'petstore.v1.Owner',
-    fields: [
-      { name: 'id', fieldKind: 'scalar', scalar: ScalarType.STRING } as DescField,
-      { name: 'name', fieldKind: 'scalar', scalar: ScalarType.STRING } as DescField,
-      { name: 'email', fieldKind: 'scalar', scalar: ScalarType.STRING } as DescField,
-      { name: 'phone', fieldKind: 'scalar', scalar: ScalarType.STRING } as DescField,
-      { name: 'address', fieldKind: 'message', message: AddressSchema } as DescField,
-      { name: 'registered_at', fieldKind: 'message', message: TimestampSchema } as DescField,
-    ],
-    oneofs: [],
-    nestedMessages: [],
-    nestedEnums: [],
-  } as DescMessage
-
-  // OneOf nested message
-  const CollarInfoSchema: DescMessage = {
-    typeName: 'petstore.v1.CollarInfo',
-    fields: [
-      { name: 'color', fieldKind: 'scalar', scalar: ScalarType.STRING } as DescField,
-      { name: 'material', fieldKind: 'scalar', scalar: ScalarType.STRING } as DescField,
-      { name: 'has_gps', fieldKind: 'scalar', scalar: ScalarType.BOOL } as DescField,
-    ],
-    oneofs: [],
-    nestedMessages: [],
-    nestedEnums: [],
-  } as DescMessage
-
-  const identificationOneof: DescOneof = {
-    name: 'method',
-    fields: [
-      { name: 'microchip_id', fieldKind: 'scalar', scalar: ScalarType.STRING, oneof: { name: 'method' } } as DescField,
-      { name: 'tattoo_code', fieldKind: 'scalar', scalar: ScalarType.STRING, oneof: { name: 'method' } } as DescField,
-      { name: 'tag_number', fieldKind: 'scalar', scalar: ScalarType.INT32, oneof: { name: 'method' } } as DescField,
-      { name: 'collar', fieldKind: 'message', message: CollarInfoSchema, oneof: { name: 'method' } } as DescField,
-    ],
-  } as DescOneof
-
-  const IdentificationSchema: DescMessage = {
-    typeName: 'petstore.v1.Identification',
-    fields: [
-      { name: 'microchip_id', fieldKind: 'scalar', scalar: ScalarType.STRING, oneof: identificationOneof } as DescField,
-      { name: 'tattoo_code', fieldKind: 'scalar', scalar: ScalarType.STRING, oneof: identificationOneof } as DescField,
-      { name: 'tag_number', fieldKind: 'scalar', scalar: ScalarType.INT32, oneof: identificationOneof } as DescField,
-      { name: 'collar', fieldKind: 'message', message: CollarInfoSchema, oneof: identificationOneof } as DescField,
-    ],
-    oneofs: [identificationOneof],
-    nestedMessages: [],
-    nestedEnums: [],
-  } as DescMessage
-
-  // Repeated message types
-  const StringValueSchema: DescMessage = {
-    typeName: 'google.protobuf.StringValue',
-    fields: [
-      { name: 'value', fieldKind: 'scalar', scalar: ScalarType.STRING } as DescField,
-    ],
-    oneofs: [],
-    nestedMessages: [],
-    nestedEnums: [],
-  } as DescMessage
-
-  const VaccinationSchema: DescMessage = {
-    typeName: 'petstore.v1.Vaccination',
-    fields: [
-      { name: 'name', fieldKind: 'scalar', scalar: ScalarType.STRING } as DescField,
-      { name: 'administered_at', fieldKind: 'message', message: TimestampSchema } as DescField,
-      { name: 'expires_at', fieldKind: 'message', message: TimestampSchema } as DescField,
-      { name: 'veterinarian', fieldKind: 'scalar', scalar: ScalarType.STRING } as DescField,
-      { name: 'batch_number', fieldKind: 'message', message: StringValueSchema } as DescField,
-    ],
-    oneofs: [],
-    nestedMessages: [],
-    nestedEnums: [],
-  } as DescMessage
-
-  const DurationSchema: DescMessage = {
-    typeName: 'google.protobuf.Duration',
-    fields: [
-      { name: 'seconds', fieldKind: 'scalar', scalar: ScalarType.INT64 } as DescField,
-      { name: 'nanos', fieldKind: 'scalar', scalar: ScalarType.INT32 } as DescField,
-    ],
-    oneofs: [],
-    nestedMessages: [],
-    nestedEnums: [],
-  } as DescMessage
-
-  const FloatValueSchema: DescMessage = {
-    typeName: 'google.protobuf.FloatValue',
-    fields: [
-      { name: 'value', fieldKind: 'scalar', scalar: ScalarType.FLOAT } as DescField,
-    ],
-    oneofs: [],
-    nestedMessages: [],
-    nestedEnums: [],
-  } as DescMessage
-
-  const MedicalRecordSchema: DescMessage = {
-    typeName: 'petstore.v1.MedicalRecord',
-    fields: [
-      { name: 'id', fieldKind: 'scalar', scalar: ScalarType.STRING } as DescField,
-      { name: 'diagnosis', fieldKind: 'scalar', scalar: ScalarType.STRING } as DescField,
-      { name: 'treatment', fieldKind: 'scalar', scalar: ScalarType.STRING } as DescField,
-      { name: 'date', fieldKind: 'message', message: TimestampSchema } as DescField,
-      { name: 'recovery_time', fieldKind: 'message', message: DurationSchema } as DescField,
-      { name: 'cost', fieldKind: 'message', message: FloatValueSchema } as DescField,
-      { name: 'follow_up_required', fieldKind: 'scalar', scalar: ScalarType.BOOL } as DescField,
-    ],
-    oneofs: [],
-    nestedMessages: [],
-    nestedEnums: [],
-  } as DescMessage
-
-  const Int32ValueSchema: DescMessage = {
-    typeName: 'google.protobuf.Int32Value',
-    fields: [
-      { name: 'value', fieldKind: 'scalar', scalar: ScalarType.INT32 } as DescField,
-    ],
-    oneofs: [],
-    nestedMessages: [],
-    nestedEnums: [],
-  } as DescMessage
-
-  // Struct schema - simplified placeholder (actual Struct is more complex with Value type)
-  const StructSchema: DescMessage = {
-    typeName: 'google.protobuf.Struct',
-    fields: [],
-    oneofs: [],
-    nestedMessages: [],
-    nestedEnums: [],
-  } as DescMessage
-
-  // Main Pet message with ALL field types
-  return {
-    typeName: 'petstore.v1.Pet',
-    fields: [
-      // Scalars
-      { name: 'id', fieldKind: 'scalar', scalar: ScalarType.STRING } as DescField,
-      { name: 'name', fieldKind: 'scalar', scalar: ScalarType.STRING } as DescField,
-      { name: 'breed', fieldKind: 'scalar', scalar: ScalarType.STRING } as DescField,
-      { name: 'age_months', fieldKind: 'scalar', scalar: ScalarType.INT32 } as DescField,
-      { name: 'weight_kg', fieldKind: 'scalar', scalar: ScalarType.DOUBLE } as DescField,
-      { name: 'is_neutered', fieldKind: 'scalar', scalar: ScalarType.BOOL } as DescField,
-      { name: 'photo_thumbnail', fieldKind: 'scalar', scalar: ScalarType.BYTES } as DescField,
-
-      // Enums
-      { name: 'species', fieldKind: 'enum', enum: SpeciesEnum } as DescField,
-      { name: 'status', fieldKind: 'enum', enum: StatusEnum } as DescField,
-
-      // Nested message (3 levels deep)
-      { name: 'owner', fieldKind: 'message', message: OwnerSchema } as DescField,
-
-      // Well-known types
-      { name: 'created_at', fieldKind: 'message', message: TimestampSchema } as DescField,
-      { name: 'updated_at', fieldKind: 'message', message: TimestampSchema } as DescField,
-      { name: 'description', fieldKind: 'message', message: StringValueSchema } as DescField,
-      { name: 'microchip_frequency', fieldKind: 'message', message: Int32ValueSchema } as DescField,
-
-      // OneOf
-      { name: 'identification', fieldKind: 'message', message: IdentificationSchema } as DescField,
-
-      // Repeated scalar
-      { name: 'nicknames', fieldKind: 'list', listKind: 'scalar', scalar: ScalarType.STRING } as DescField,
-
-      // Repeated messages
-      { name: 'vaccinations', fieldKind: 'list', listKind: 'message', message: VaccinationSchema } as DescField,
-      { name: 'medical_history', fieldKind: 'list', listKind: 'message', message: MedicalRecordSchema } as DescField,
-
-      // Map<string, string>
-      { name: 'tags', fieldKind: 'map', mapKind: 'scalar', scalar: ScalarType.STRING } as DescField,
-
-      // Map<string, message>
-      { name: 'records_by_vet', fieldKind: 'map', mapKind: 'message', message: MedicalRecordSchema } as DescField,
-
-      // Struct
-      { name: 'metadata', fieldKind: 'message', message: StructSchema } as DescField,
-    ],
-    oneofs: [],
-    nestedMessages: [],
-    nestedEnums: [],
-  } as DescMessage
-}
 
 describe('SchemaRenderer - Complete Pet Message Integration', () => {
-  const schema = createPetSchema()
+  const schema = petSchema
 
   // Comprehensive pet data with EVERY field type populated
   const completePetData = {
@@ -359,7 +99,7 @@ describe('SchemaRenderer - Complete Pet Message Integration', () => {
         treatment: 'Antibiotic drops',
         date: '2023-08-15T13:20:00Z',
         recovery_time: { seconds: 604800 }, // 7 days
-        cost: { value: 85.50 },
+        cost: { value: 85.5 },
         follow_up_required: true,
       },
       {
@@ -368,7 +108,7 @@ describe('SchemaRenderer - Complete Pet Message Integration', () => {
         treatment: 'Routine examination',
         date: '2024-02-20T14:00:00Z',
         recovery_time: { seconds: 0 },
-        cost: { value: 120.00 },
+        cost: { value: 120.0 },
         follow_up_required: false,
       },
     ],
@@ -484,14 +224,7 @@ describe('SchemaRenderer - Complete Pet Message Integration', () => {
     it('renders scalar fields correctly', async () => {
       const user = userEvent.setup()
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={completePetData}
-          onChange={() => {}}
-          readOnly={true}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={completePetData} onChange={() => {}} readOnly={true} />)
 
       // Expand all
       await user.click(screen.getByRole('button', { name: /expand/i }))
@@ -506,7 +239,8 @@ describe('SchemaRenderer - Complete Pet Message Integration', () => {
       expect(screen.getByDisplayValue('32.5')).toBeInTheDocument() // weight_kg
 
       // Boolean scalar
-      const neuteredCheckbox = screen.getByRole('checkbox', { name: /is_neutered/i })
+      // Pet.parent is itself a Pet, so expanding everything shows its fields too; the first is the top-level pet's
+      const neuteredCheckbox = screen.getAllByRole('checkbox', { name: /is_neutered/i })[0]
       expect(neuteredCheckbox).toBeChecked()
 
       // Bytes (base64)
@@ -516,33 +250,20 @@ describe('SchemaRenderer - Complete Pet Message Integration', () => {
     it('renders enum fields', async () => {
       const user = userEvent.setup()
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={completePetData}
-          onChange={() => {}}
-          readOnly={true}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={completePetData} onChange={() => {}} readOnly={true} />)
 
       await user.click(screen.getByRole('button', { name: /expand/i }))
 
       // Enum fields should be rendered (exact UI depends on EnumField implementation)
-      expect(screen.getByText('species')).toBeInTheDocument()
-      expect(screen.getByText('status')).toBeInTheDocument()
+      // Also present inside the expanded Pet.parent, hence getAll
+      expect(screen.getAllByText('species')[0]).toBeInTheDocument()
+      expect(screen.getAllByText('status')[0]).toBeInTheDocument()
     })
 
     it('renders deeply nested messages (3 levels)', async () => {
       const user = userEvent.setup()
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={completePetData}
-          onChange={() => {}}
-          readOnly={true}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={completePetData} onChange={() => {}} readOnly={true} />)
 
       await user.click(screen.getByRole('button', { name: /expand/i }))
 
@@ -561,14 +282,7 @@ describe('SchemaRenderer - Complete Pet Message Integration', () => {
     it('renders repeated scalar fields', async () => {
       const user = userEvent.setup()
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={completePetData}
-          onChange={() => {}}
-          readOnly={true}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={completePetData} onChange={() => {}} readOnly={true} />)
 
       await user.click(screen.getByRole('button', { name: /expand/i }))
 
@@ -581,14 +295,7 @@ describe('SchemaRenderer - Complete Pet Message Integration', () => {
     it('renders repeated message fields with all items', async () => {
       const user = userEvent.setup()
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={completePetData}
-          onChange={() => {}}
-          readOnly={true}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={completePetData} onChange={() => {}} readOnly={true} />)
 
       await user.click(screen.getByRole('button', { name: /expand/i }))
 
@@ -609,14 +316,7 @@ describe('SchemaRenderer - Complete Pet Message Integration', () => {
     it('renders map with scalar values', async () => {
       const user = userEvent.setup()
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={completePetData}
-          onChange={() => {}}
-          readOnly={true}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={completePetData} onChange={() => {}} readOnly={true} />)
 
       await user.click(screen.getByRole('button', { name: /expand/i }))
 
@@ -630,14 +330,7 @@ describe('SchemaRenderer - Complete Pet Message Integration', () => {
     it('renders map with message values', async () => {
       const user = userEvent.setup()
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={completePetData}
-          onChange={() => {}}
-          readOnly={true}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={completePetData} onChange={() => {}} readOnly={true} />)
 
       await user.click(screen.getByRole('button', { name: /expand/i }))
 
@@ -651,14 +344,7 @@ describe('SchemaRenderer - Complete Pet Message Integration', () => {
     it('renders wrapper types (StringValue, Int32Value, FloatValue)', async () => {
       const user = userEvent.setup()
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={completePetData}
-          onChange={() => {}}
-          readOnly={true}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={completePetData} onChange={() => {}} readOnly={true} />)
 
       await user.click(screen.getByRole('button', { name: /expand/i }))
 
@@ -685,7 +371,7 @@ describe('SchemaRenderer - Complete Pet Message Integration', () => {
           onChange={() => {}}
           readOnly={true}
           defaultCollapsed={true}
-        />
+        />,
       )
 
       // Top level scalars are always visible (not collapsible)
@@ -782,14 +468,7 @@ describe('SchemaRenderer - Complete Pet Message Integration', () => {
         name: 'Minimal Pet',
       }
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={minimalData}
-          onChange={() => {}}
-          readOnly={true}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={minimalData} onChange={() => {}} readOnly={true} />)
 
       // Should render without crashing
       expect(screen.getByDisplayValue('Minimal Pet')).toBeInTheDocument()

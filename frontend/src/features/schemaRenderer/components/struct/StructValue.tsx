@@ -1,15 +1,15 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
+import React, { type ReactNode } from 'react'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { FormField } from '@/components/shared'
-import { X } from 'lucide-react'
-import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
-import ScalarField from '../fields/ScalarField'
-import { StructArrayItems } from './StructArrayItems'
-import { StructObjectFields } from './StructObjectFields'
+import { useProtoMessageRendererContext } from '@/features/schemaRenderer/stores/schemaRendererContext'
+import ScalarField from '@/features/schemaRenderer/components/fields/ScalarField'
+import RemoveButton from '@/features/schemaRenderer/components/shared/RemoveButton'
+import StructArrayItems from '@/features/schemaRenderer/components/struct/StructArrayItems'
+import StructObjectFields from '@/features/schemaRenderer/components/struct/StructObjectFields'
 import {
   STRUCT_KIND_OPTIONS,
   defaultStructValue,
@@ -18,16 +18,18 @@ import {
   structKind,
   structKindFieldName,
   type StructKind,
-} from '../../utils/structValueUtils'
+} from '@/features/schemaRenderer/utils/structValueUtils'
 
 interface StructValueProps {
   label: string
+  /** Shown in place of the label, for struct fields whose name can be edited. */
+  labelEditor?: ReactNode
   value: unknown
   onChange: (value: unknown) => void
   onRemove?: () => void
 }
 
-export function StructValue({ label, value, onChange, onRemove }: StructValueProps) {
+const StructValue: React.FC<StructValueProps> = ({ label, labelEditor, value, onChange, onRemove }) => {
   const { readOnly } = useProtoMessageRendererContext()
   const kind = structKind(value)
   const selectedFieldName = structKindFieldName(kind)
@@ -54,7 +56,7 @@ export function StructValue({ label, value, onChange, onRemove }: StructValuePro
         name={selectedFieldName}
         scalar={scalarType(value)}
         value={value}
-        onChange={(nextValue) => onChange(nextValue ?? defaultStructValue(kind))}
+        onChange={nextValue => onChange(nextValue ?? defaultStructValue(kind))}
       />
     )
   }
@@ -63,39 +65,30 @@ export function StructValue({ label, value, onChange, onRemove }: StructValuePro
     <div className="space-y-3 rounded-lg border-2 border-brand/30 bg-brand/10 p-4">
       <div className="flex items-center gap-2">
         <Badge className="bg-brand text-white">oneof</Badge>
-        <span className="font-medium text-foreground">{label}</span>
+        {labelEditor || <span className="font-medium text-foreground">{label}</span>}
         <span className="text-xs text-muted-foreground">(google.protobuf.Value)</span>
         {onRemove && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={onRemove}
-            className="ml-auto size-7 p-0"
-            data-testid="structField-removeButton"
-          >
-            <X className="size-3" />
-          </Button>
+          <RemoveButton label={label} onClick={onRemove} className="ml-auto" testId="structField-removeButton" />
         )}
       </div>
 
       <Select
         value={kind}
-        onChange={(event) => !readOnly && onChange(defaultStructValue(event.target.value as StructKind))}
+        onChange={event => onChange(defaultStructValue(event.target.value as StructKind))}
         disabled={readOnly}
         className="border-brand/30"
         data-testid="structField-kindSelect"
       >
-        {STRUCT_KIND_OPTIONS.map((option) => (
+        {STRUCT_KIND_OPTIONS.map(option => (
           <option key={option.kind} value={option.kind}>
             {option.label}
           </option>
         ))}
       </Select>
 
-      <div className="mt-3 border-t border-brand/30 pt-3">
-        {renderSelectedValue()}
-      </div>
+      <div className="mt-3 border-t border-brand/30 pt-3">{renderSelectedValue()}</div>
     </div>
   )
 }
+
+export default StructValue

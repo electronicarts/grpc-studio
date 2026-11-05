@@ -3,7 +3,7 @@
 import React from 'react'
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
-import { SelectableButton } from '../selectableButton'
+import { SelectableButton } from '@/components/ui/selectableButton'
 
 function selectContentsOf(node: Node) {
   const range = document.createRange()
@@ -40,7 +40,7 @@ describe('SelectableButton', () => {
       <>
         <p>Unrelated text</p>
         <SelectableButton onActivate={onActivate}>Endpoint: localhost:50051</SelectableButton>
-      </>
+      </>,
     )
 
     selectContentsOf(screen.getByText('Unrelated text'))
@@ -65,9 +65,9 @@ describe('SelectableButton', () => {
   it("runs the caller's onKeyDown and respects preventDefault", () => {
     const onActivate = vi.fn()
     render(
-      <SelectableButton onActivate={onActivate} onKeyDown={(e) => e.preventDefault()}>
+      <SelectableButton onActivate={onActivate} onKeyDown={e => e.preventDefault()}>
         Row
-      </SelectableButton>
+      </SelectableButton>,
     )
 
     fireEvent.keyDown(screen.getByRole('button'), { key: 'Enter' })

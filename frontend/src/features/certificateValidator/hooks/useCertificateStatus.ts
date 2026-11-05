@@ -2,10 +2,10 @@
 
 import { useCallback } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { fetchCertificateInfo } from '../api/fetchCertificateInfo'
-import { statusConfigs } from '../constants/statusConfigs'
+import { fetchCertificateInfo } from '@/features/certificateValidator/api/fetchCertificateInfo'
+import { statusConfigs } from '@/features/certificateValidator/constants/statusConfigs'
 import type { CertificateInfo } from '@grpc-studio/shared'
-import type { StatusConfig } from '../types'
+import type { StatusConfig } from '@/features/certificateValidator/types'
 
 type ReadableCertificateInfo = Exclude<CertificateInfo, { status: 'unreadable' }>
 
@@ -38,13 +38,8 @@ export interface UseCertificateStatusResult {
   getStatusConfig: () => StatusConfig
 }
 
-export function useCertificateStatus(
-  options: UseCertificateStatusOptions = {}
-): UseCertificateStatusResult {
-  const {
-    pollingInterval = 60000,
-    enabled = true
-  } = options
+export function useCertificateStatus(options: UseCertificateStatusOptions = {}): UseCertificateStatusResult {
+  const { pollingInterval = 60000, enabled = true } = options
 
   const { data, isPending, refetch } = useQuery({
     queryKey: ['certificateInfo'],
@@ -56,7 +51,9 @@ export function useCertificateStatus(
   const certificate: CertificateInfo | null = data?.configured ? data.certificate : null
   const configured = data?.configured ?? false
 
-  const refresh = useCallback(async () => { await refetch() }, [refetch])
+  const refresh = useCallback(async () => {
+    await refetch()
+  }, [refetch])
 
   const formatTimeRemaining = useCallback((): string | null => {
     if (!isReadableCertificate(certificate)) {
@@ -128,6 +125,6 @@ export function useCertificateStatus(
     refresh,
     formatTimeRemaining,
     getShortDisplay,
-    getStatusConfig
+    getStatusConfig,
   }
 }

@@ -15,7 +15,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import SchemaRenderer from '../components/core/SchemaRenderer'
+import SchemaRenderer from '@/features/schemaRenderer/components/core/SchemaRenderer'
 import {
   enumSchema,
   oneofBasicSchema,
@@ -28,27 +28,19 @@ import {
   durationMessageSchema,
   fieldMaskMessageSchema,
   anyMessageSchema,
-  schemaCache as testSchemaMap,
-} from './protoMessageRenderer.fixtures'
+  typedCollectionsSchema,
+} from '@/test/protoMessageRenderer.fixtures'
+import { latestCall } from '@/test/latestCall'
 
 // ---------------------------------------------------------------------------
 // Mocks
 // ---------------------------------------------------------------------------
 
-vi.mock('../../schemaLoader/lib/schemaCache', () => ({
-  schemaCache: {
-    // Match the real signatures: getSchema(target, messageType) and
-    // getCachedSchema(target, messageType). These tests key purely on the
-    // message type (target is undefined here), so the target arg is ignored.
-    getSchema: vi.fn((_target: string, type: string) => Promise.resolve(testSchemaMap.get(type) ?? null)),
-    getCacheSize: vi.fn(() => testSchemaMap.size),
-    getCachedSchema: vi.fn((_target: string, type: string) => testSchemaMap.get(type) ?? null),
-    getSchemaMap: vi.fn(() => new Map(testSchemaMap)),
-    subscribe: vi.fn(() => () => {}),
-    get allLoaded() { return true },
-  },
-  needsSchemaLoad: vi.fn(() => false),
-}))
+vi.mock('@/features/schemaLoader/lib/schemaCache', async () => {
+  const { schemaCacheModule } = await import('@/test/schemaCacheMock')
+  const { schemaCache } = await import('@/test/protoMessageRenderer.fixtures')
+  return schemaCacheModule(schemaCache)
+})
 
 // Replace MuiDateTimePicker with a simple controlled text input so
 // TimestampField can be tested without MUI/dayjs browser-env complexity.
@@ -70,11 +62,7 @@ vi.mock('@/components/ui/mui-datetime-picker', () => ({
         disabled={disabled}
         onChange={e => onChange(e.target.value || undefined)}
       />
-      <button
-        data-testid="timestamp-clear"
-        type="button"
-        onClick={() => onChange(undefined)}
-      />
+      <button data-testid="timestamp-clear" type="button" onClick={() => onChange(undefined)} />
     </>
   ),
 }))
@@ -84,10 +72,6 @@ vi.mock('@/components/ui/mui-datetime-picker', () => ({
 // ---------------------------------------------------------------------------
 
 beforeEach(() => vi.clearAllMocks())
-
-function latestCall(onChange: ReturnType<typeof vi.fn>) {
-  return onChange.mock.calls.at(-1)![0] as Record<string, unknown>
-}
 
 // ---------------------------------------------------------------------------
 // EnumField
@@ -108,17 +92,18 @@ describe('EnumField onChange', () => {
     })
   })
 
-  it('emits undefined (field deleted) when the blank option is selected', async () => {
+  it('emits undefined (field deleted) when its checkbox is unticked', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
     render(
-      <SchemaRenderer schema={enumSchema} data={{ status: 'STATUS_ACTIVE' }} onChange={onChange} readOnly={false} />
+      <SchemaRenderer schema={enumSchema} data={{ status: 'STATUS_ACTIVE' }} onChange={onChange} readOnly={false} />,
     )
 
-    await user.selectOptions(screen.getByRole('combobox'), '')
+    // A set enum has no blank option; it is unset through its checkbox
+    expect(screen.queryByRole('option', { name: 'Select status' })).not.toBeInTheDocument()
+    await user.click(screen.getByRole('checkbox', { name: 'Send status' }))
 
     await waitFor(() => {
-      // e.target.value = '' → `'' || undefined` = undefined → setFieldValue deletes key
       expect('status' in latestCall(onChange)).toBe(false)
     })
   })
@@ -127,7 +112,7 @@ describe('EnumField onChange', () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
     render(
-      <SchemaRenderer schema={enumSchema} data={{ status: 'STATUS_ACTIVE' }} onChange={onChange} readOnly={false} />
+      <SchemaRenderer schema={enumSchema} data={{ status: 'STATUS_ACTIVE' }} onChange={onChange} readOnly={false} />,
     )
 
     await user.selectOptions(screen.getByRole('combobox'), 'STATUS_INACTIVE')
@@ -167,7 +152,7 @@ describe('TimestampField onChange', () => {
         data={{ createdAt: '2025-01-01T00:00:00.000Z' }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
 
     await user.click(screen.getByTestId('timestamp-clear'))
@@ -186,7 +171,7 @@ describe('TimestampField onChange', () => {
         data={{ createdAt: '2025-01-01T00:00:00.000Z' }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
 
     // Clear current value and type a new date
@@ -224,7 +209,7 @@ describe('DurationField onChange', () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
     render(
-      <SchemaRenderer schema={durationMessageSchema} data={{ dur: '86400s' }} onChange={onChange} readOnly={false} />
+      <SchemaRenderer schema={durationMessageSchema} data={{ dur: '86400s' }} onChange={onChange} readOnly={false} />,
     )
 
     await user.clear(screen.getByDisplayValue('86400s'))
@@ -238,7 +223,7 @@ describe('DurationField onChange', () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
     render(
-      <SchemaRenderer schema={durationMessageSchema} data={{ dur: '86400s' }} onChange={onChange} readOnly={false} />
+      <SchemaRenderer schema={durationMessageSchema} data={{ dur: '86400s' }} onChange={onChange} readOnly={false} />,
     )
 
     const input = screen.getByDisplayValue('86400s')
@@ -279,8 +264,8 @@ describe('FieldMaskField onChange', () => {
     const onChange = vi.fn()
     render(<SchemaRenderer schema={fieldMaskMessageSchema} data={{}} onChange={onChange} readOnly={false} />)
 
-    await user.type(screen.getByPlaceholderText(/lowerCamelCase path/i), 'user.displayName')
     await user.click(screen.getByTestId('fieldMask-addButton'))
+    await user.keyboard('user.displayName{Enter}')
 
     await waitFor(() => {
       expect(latestCall(onChange).mask).toBe('user.displayName')
@@ -292,22 +277,27 @@ describe('FieldMaskField onChange', () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
     render(
-      <SchemaRenderer schema={fieldMaskMessageSchema} data={{ mask: 'name' }} onChange={onChange} readOnly={false} />
+      <SchemaRenderer schema={fieldMaskMessageSchema} data={{ mask: 'name' }} onChange={onChange} readOnly={false} />,
     )
 
-    await user.type(screen.getByPlaceholderText(/lowerCamelCase path/i), 'email')
     await user.click(screen.getByTestId('fieldMask-addButton'))
+    await user.keyboard('email{Enter}')
 
     await waitFor(() => {
       expect(latestCall(onChange).mask).toBe('name,email')
     })
   })
 
-  it('emits undefined (field deleted) when the last path chip is removed', async () => {
+  it('emits undefined (field deleted) when the last path is removed', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
     render(
-      <SchemaRenderer schema={fieldMaskMessageSchema} data={{ mask: 'displayName' }} onChange={onChange} readOnly={false} />
+      <SchemaRenderer
+        schema={fieldMaskMessageSchema}
+        data={{ mask: 'displayName' }}
+        onChange={onChange}
+        readOnly={false}
+      />,
     )
 
     await user.click(screen.getByRole('button', { name: 'Remove path displayName' }))
@@ -317,11 +307,16 @@ describe('FieldMaskField onChange', () => {
     })
   })
 
-  it('removes only the clicked path chip, preserving others', async () => {
+  it('removes only the clicked path, preserving others', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
     render(
-      <SchemaRenderer schema={fieldMaskMessageSchema} data={{ mask: 'name,email,phone' }} onChange={onChange} readOnly={false} />
+      <SchemaRenderer
+        schema={fieldMaskMessageSchema}
+        data={{ mask: 'name,email,phone' }}
+        onChange={onChange}
+        readOnly={false}
+      />,
     )
 
     await user.click(screen.getByRole('button', { name: 'Remove path email' }))
@@ -331,18 +326,18 @@ describe('FieldMaskField onChange', () => {
     })
   })
 
-  it('ignores duplicate paths — does not add the same path twice', async () => {
+  it('rejects duplicate paths with an inline error instead of adding them twice', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
     render(
-      <SchemaRenderer schema={fieldMaskMessageSchema} data={{ mask: 'name' }} onChange={onChange} readOnly={false} />
+      <SchemaRenderer schema={fieldMaskMessageSchema} data={{ mask: 'name' }} onChange={onChange} readOnly={false} />,
     )
 
     const countBefore = onChange.mock.calls.length
-    await user.type(screen.getByPlaceholderText(/lowerCamelCase path/i), 'name')
     await user.click(screen.getByTestId('fieldMask-addButton'))
+    await user.keyboard('name{Enter}')
 
-    await new Promise(r => setTimeout(r, 30))
+    expect(screen.getByText('Already exists')).toBeInTheDocument()
     expect(onChange.mock.calls.length).toBe(countBefore)
   })
 
@@ -351,8 +346,8 @@ describe('FieldMaskField onChange', () => {
     const onChange = vi.fn()
     render(<SchemaRenderer schema={fieldMaskMessageSchema} data={{}} onChange={onChange} readOnly={false} />)
 
-    await user.type(screen.getByPlaceholderText(/lowerCamelCase path/i), 'foo.barBaz')
     await user.click(screen.getByTestId('fieldMask-addButton'))
+    await user.keyboard('foo.barBaz{Enter}')
 
     await waitFor(() => {
       for (const [call] of onChange.mock.calls as [Record<string, unknown>][]) {
@@ -385,7 +380,7 @@ describe('AnyField onChange', () => {
     const onChange = vi.fn()
     const initial = { '@type': 'type.googleapis.com/test.AllScalars', stringField: 'hi' }
     render(
-      <SchemaRenderer schema={anyMessageSchema} data={{ payload: initial }} onChange={onChange} readOnly={false} />
+      <SchemaRenderer schema={anyMessageSchema} data={{ payload: initial }} onChange={onChange} readOnly={false} />,
     )
 
     await user.selectOptions(screen.getByTestId('anyField-typeSelect'), '')
@@ -418,7 +413,7 @@ describe('AnyField onChange', () => {
     const onChange = vi.fn()
     const initial = { '@type': 'type.googleapis.com/test.AllScalars', stringField: 'hello' }
     render(
-      <SchemaRenderer schema={anyMessageSchema} data={{ payload: initial }} onChange={onChange} readOnly={false} />
+      <SchemaRenderer schema={anyMessageSchema} data={{ payload: initial }} onChange={onChange} readOnly={false} />,
     )
 
     await user.clear(screen.getByDisplayValue('hello'))
@@ -436,7 +431,7 @@ describe('AnyField onChange', () => {
 
     const select = screen.getByTestId('anyField-typeSelect') as HTMLSelectElement
     const optionValues = Array.from(select.options).map(o => o.value)
-    // The mock provides testSchemaMap which includes test.AllScalars, test.EnumMessage, etc.
+    // The schema cache mock serves the fixture schemas, which include test.AllScalars, test.EnumMessage, etc.
     expect(optionValues).toContain('test.AllScalars')
     expect(optionValues).toContain('test.EnumMessage')
     expect(optionValues).toContain('google.protobuf.Timestamp')
@@ -447,7 +442,7 @@ describe('AnyField onChange', () => {
     const onChange = vi.fn()
     const initial = { '@type': 'type.googleapis.com/test.AllScalars', stringField: 'hello' }
     render(
-      <SchemaRenderer schema={anyMessageSchema} data={{ payload: initial }} onChange={onChange} readOnly={false} />
+      <SchemaRenderer schema={anyMessageSchema} data={{ payload: initial }} onChange={onChange} readOnly={false} />,
     )
 
     // Switch to a different type — field data from old type must be gone
@@ -515,7 +510,7 @@ describe('AnyField onChange', () => {
     const onChange = vi.fn()
     const initial = { '@type': 'type.googleapis.com/google.protobuf.StringValue', value: 'pre-filled' }
     render(
-      <SchemaRenderer schema={anyMessageSchema} data={{ payload: initial }} onChange={onChange} readOnly={false} />
+      <SchemaRenderer schema={anyMessageSchema} data={{ payload: initial }} onChange={onChange} readOnly={false} />,
     )
 
     // Check that the input shows the pre-filled value
@@ -543,7 +538,7 @@ describe('AnyField onChange', () => {
     const onChange = vi.fn()
     const initial = { '@type': 'type.googleapis.com/google.protobuf.StringValue', value: 'existing' }
     render(
-      <SchemaRenderer schema={anyMessageSchema} data={{ payload: initial }} onChange={onChange} readOnly={false} />
+      <SchemaRenderer schema={anyMessageSchema} data={{ payload: initial }} onChange={onChange} readOnly={false} />,
     )
 
     // Clear the value
@@ -571,7 +566,7 @@ describe('OneOfField onChange', () => {
         data={{ id: 'x', stringOption: 'old', intOption: 5 }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
 
     await user.selectOptions(screen.getByRole('combobox'), 'stringOption')
@@ -631,7 +626,7 @@ describe('OneOfField onChange', () => {
         data={{ messageOption: { name: 'existing' } }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
 
     await user.clear(screen.getByDisplayValue('existing'))
@@ -653,7 +648,7 @@ describe('OneOfField onChange', () => {
         data={{ id: 'y', stringOption: 'hello' }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
 
     await user.selectOptions(screen.getByRole('combobox'), '')
@@ -691,7 +686,7 @@ describe('OneOfField onChange', () => {
         data={{ stringOption: 'original' }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
 
     // The field is already populated and the select should reflect stringOption
@@ -717,7 +712,7 @@ describe('ListField (scalar items) onChange', () => {
     const onChange = vi.fn()
     render(<SchemaRenderer schema={repeatedFieldsSchema} data={{}} onChange={onChange} readOnly={false} />)
 
-    await user.click(screen.getByRole('button', { name: /expand/i }))
+    await user.click(screen.getByRole('checkbox', { name: 'Send repeatedString' }))
     await user.click(screen.getByRole('button', { name: /Add repeatedString/i }))
 
     await waitFor(() => {
@@ -737,10 +732,9 @@ describe('ListField (scalar items) onChange', () => {
         data={{ repeatedString: ['alpha', 'beta', 'gamma'] }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
 
-    await user.click(screen.getByRole('button', { name: /expand/i }))
     const betaInput = screen.getByDisplayValue('beta')
     await user.clear(betaInput)
     await user.type(betaInput, 'BETA')
@@ -762,10 +756,9 @@ describe('ListField (scalar items) onChange', () => {
         data={{ repeatedString: ['alpha', 'beta'] }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
 
-    await user.click(screen.getByRole('button', { name: /expand/i }))
     await user.clear(screen.getByDisplayValue('beta'))
 
     await waitFor(() => {
@@ -785,10 +778,9 @@ describe('ListField (scalar items) onChange', () => {
         data={{ repeatedString: ['alpha', 'beta', 'gamma'] }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
 
-    await user.click(screen.getByRole('button', { name: /expand/i }))
     const xButtons = screen.getAllByRole('button').filter(b => b.querySelector('svg'))
     // find the X buttons inside the list items (not expand/collapse)
     const removeButton = xButtons.find(b => b.closest('[class*="border-l-2"]'))
@@ -812,12 +804,16 @@ describe('MapField (scalar values) onChange', () => {
   it('adding an entry emits the map with the new key/value pair', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
-    render(<SchemaRenderer schema={mapFieldsSchema} data={{}} onChange={onChange} readOnly={false} />)
+    render(
+      <SchemaRenderer schema={mapFieldsSchema} data={{ stringToString: {} }} onChange={onChange} readOnly={false} />,
+    )
 
-    await user.click(screen.getByRole('button', { name: /expand/i }))
-    await user.type(screen.getByPlaceholderText('Key'), 'color')
-    await user.type(screen.getByPlaceholderText('Value'), 'red')
     await user.click(screen.getByTestId('mapField-addEntryButton'))
+    // The new key input is focused; tabbing out commits it and lands in the value input
+    await user.keyboard('color')
+    await user.tab()
+    expect(screen.getByRole('textbox', { name: 'stringToString value' })).toHaveFocus()
+    await user.keyboard('red')
 
     await waitFor(() => {
       const map = latestCall(onChange).stringToString as Record<string, string>
@@ -825,18 +821,91 @@ describe('MapField (scalar values) onChange', () => {
     })
   })
 
-  it('adding an entry with no value gives an empty-string value (not undefined)', async () => {
+  it('keeps a value typed before the key, and adds it once the key is committed', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
-    render(<SchemaRenderer schema={mapFieldsSchema} data={{}} onChange={onChange} readOnly={false} />)
+    render(
+      <SchemaRenderer schema={mapFieldsSchema} data={{ stringToString: {} }} onChange={onChange} readOnly={false} />,
+    )
 
-    await user.click(screen.getByRole('button', { name: /expand/i }))
-    await user.type(screen.getByPlaceholderText('Key'), 'size')
     await user.click(screen.getByTestId('mapField-addEntryButton'))
+    await user.type(screen.getByRole('textbox', { name: 'stringToString value' }), 'red')
+
+    // Without a key the entry can't be sent, and says so instead of disappearing
+    expect(onChange).not.toHaveBeenCalled()
+    expect(screen.getByText('Required')).toBeInTheDocument()
+
+    await user.type(screen.getByPlaceholderText('Key'), 'color{Enter}')
+
+    await waitFor(() => {
+      expect(latestCall(onChange).stringToString).toEqual({ color: 'red' })
+    })
+    expect(screen.queryByText('Required')).not.toBeInTheDocument()
+  })
+
+  it('renames a key in place, keeping its value and position', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(
+      <SchemaRenderer
+        schema={mapFieldsSchema}
+        data={{ stringToString: { a: '1', b: '2' } }}
+        onChange={onChange}
+        readOnly={false}
+      />,
+    )
+
+    const keyInput = screen.getByDisplayValue('a')
+    await user.clear(keyInput)
+    await user.type(keyInput, 'z{Enter}')
 
     await waitFor(() => {
       const map = latestCall(onChange).stringToString as Record<string, string>
-      // KeyInputAdder passes '' when value input is blank
+      expect(Object.entries(map)).toEqual([
+        ['z', '1'],
+        ['b', '2'],
+      ])
+    })
+  })
+
+  it('rejects renaming a key to one that already exists', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(
+      <SchemaRenderer
+        schema={mapFieldsSchema}
+        data={{ stringToString: { a: '1', b: '2' } }}
+        onChange={onChange}
+        readOnly={false}
+      />,
+    )
+
+    const keyInput = screen.getByDisplayValue('a')
+    await user.clear(keyInput)
+    await user.type(keyInput, 'b{Enter}')
+
+    expect(screen.getByText('Already exists')).toBeInTheDocument()
+    expect(onChange).not.toHaveBeenCalled()
+
+    // Escape abandons the edit
+    await user.keyboard('{Escape}')
+    expect(keyInput).toHaveValue('a')
+    expect(screen.queryByText('Already exists')).not.toBeInTheDocument()
+  })
+
+  it('adding an entry with no value gives an empty-string value (not undefined)', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(
+      <SchemaRenderer schema={mapFieldsSchema} data={{ stringToString: {} }} onChange={onChange} readOnly={false} />,
+    )
+
+    await user.click(screen.getByTestId('mapField-addEntryButton'))
+    await user.keyboard('size{Enter}')
+
+    await waitFor(() => {
+      const map = latestCall(onChange).stringToString as Record<string, string>
+      // A new scalar entry starts with ''
       expect(map.size).toBe('')
     })
   })
@@ -850,10 +919,9 @@ describe('MapField (scalar values) onChange', () => {
         data={{ stringToString: { color: 'blue', size: 'large' } }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
 
-    await user.click(screen.getByRole('button', { name: /expand/i }))
     const colorInput = screen.getByDisplayValue('blue')
     await user.clear(colorInput)
     await user.type(colorInput, 'red')
@@ -874,10 +942,9 @@ describe('MapField (scalar values) onChange', () => {
         data={{ stringToString: { color: 'blue' } }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
 
-    await user.click(screen.getByRole('button', { name: /expand/i }))
     await user.clear(screen.getByDisplayValue('blue'))
 
     await waitFor(() => {
@@ -896,13 +963,12 @@ describe('MapField (scalar values) onChange', () => {
         data={{ stringToString: { color: 'blue', size: 'large' } }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
 
-    await user.click(screen.getByRole('button', { name: /expand/i }))
-    const removeButtons = screen.getAllByRole('button').filter(
-      b => b.closest('[class*="border-l-2"]') && b.querySelector('svg')
-    )
+    const removeButtons = screen
+      .getAllByRole('button')
+      .filter(b => b.closest('[class*="border-l-2"]') && b.querySelector('svg'))
     await user.click(removeButtons[0])
 
     await waitFor(() => {
@@ -914,20 +980,17 @@ describe('MapField (scalar values) onChange', () => {
 })
 
 // ---------------------------------------------------------------------------
-// StructFieldAdder — adding fields to a Struct
+// StructObjectFields — adding fields to a Struct
 // ---------------------------------------------------------------------------
 
-describe('StructFieldAdder onChange', () => {
+describe('StructObjectFields onChange', () => {
   it('adding a new field emits the struct with the key initialised to empty string', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
-    render(
-      <SchemaRenderer schema={structMessageSchema} data={{ metadata: {} }} onChange={onChange} readOnly={false} />
-    )
+    render(<SchemaRenderer schema={structMessageSchema} data={{ metadata: {} }} onChange={onChange} readOnly={false} />)
 
-    await user.click(screen.getByRole('button', { name: /expand/i }))
-    await user.type(screen.getByPlaceholderText('Field name'), 'priority')
     await user.click(screen.getByTestId('structField-addButton'))
+    await user.keyboard('priority{Enter}')
 
     await waitFor(() => {
       const struct = latestCall(onChange).metadata as Record<string, unknown>
@@ -936,7 +999,7 @@ describe('StructFieldAdder onChange', () => {
     })
   })
 
-  it('adding a duplicate key is a no-op — onChange is not called again', async () => {
+  it('adding a duplicate key shows an inline error and does not call onChange', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
     render(
@@ -945,20 +1008,17 @@ describe('StructFieldAdder onChange', () => {
         data={{ metadata: { priority: 'high' } }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
-
-    await user.click(screen.getByRole('button', { name: /expand/i }))
 
     // Wait for initial render to stabilise
     await waitFor(() => expect(screen.getByTestId('structField-addButton')).toBeInTheDocument())
     const countBefore = onChange.mock.calls.length
 
-    await user.type(screen.getByPlaceholderText('Field name'), 'priority')
     await user.click(screen.getByTestId('structField-addButton'))
+    await user.keyboard('priority{Enter}')
 
-    // Give React a tick to process
-    await new Promise(r => setTimeout(r, 50))
+    expect(screen.getByText('Already exists')).toBeInTheDocument()
     expect(onChange.mock.calls.length).toBe(countBefore)
   })
 })
@@ -977,10 +1037,9 @@ describe('StructArrayItems onChange', () => {
         data={{ metadata: { items: ['a', 'b'] } }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
 
-    await user.click(screen.getByRole('button', { name: /expand/i }))
     await user.click(screen.getByTestId('structField-addItemButton'))
 
     await waitFor(() => {
@@ -1000,10 +1059,9 @@ describe('StructArrayItems onChange', () => {
         data={{ metadata: { items: ['only'] } }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
 
-    await user.click(screen.getByRole('button', { name: /expand/i }))
     // Two remove buttons: [0] = outer (remove 'items' key), [1] = inner (remove items[0])
     const removeButtons = screen.getAllByTestId('structField-removeButton')
     await user.click(removeButtons[1]) // inner — removes the array item
@@ -1024,10 +1082,9 @@ describe('StructArrayItems onChange', () => {
         data={{ metadata: { items: ['original', 'second'] } }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
 
-    await user.click(screen.getByRole('button', { name: /expand/i }))
     const originalInput = screen.getByDisplayValue('original')
     await user.clear(originalInput)
     await user.type(originalInput, 'updated')
@@ -1054,10 +1111,9 @@ describe('StructObjectFields (existing field) onChange', () => {
         data={{ metadata: { label: 'old-label', count: 5 } }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
 
-    await user.click(screen.getByRole('button', { name: /expand/i }))
     const labelInput = screen.getByDisplayValue('old-label')
     await user.clear(labelInput)
     await user.type(labelInput, 'new-label')
@@ -1078,10 +1134,8 @@ describe('StructObjectFields (existing field) onChange', () => {
         data={{ metadata: { score: 42 } }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
-
-    await user.click(screen.getByRole('button', { name: /expand/i }))
 
     // Verify kind is number before editing
     const kindSelect = screen.getByTestId('structField-kindSelect')
@@ -1109,18 +1163,15 @@ describe('StructObjectFields (existing field) onChange', () => {
         data={{ metadata: { active: true } }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
-
-    await user.click(screen.getByRole('button', { name: /expand/i }))
 
     // Verify kind is bool
     const kindSelect = screen.getByTestId('structField-kindSelect')
     expect((kindSelect as HTMLSelectElement).value).toBe('bool')
 
-    // Toggle the bool — bool_value renders as a checkbox via ScalarField
-    const checkbox = screen.getByRole('checkbox')
-    await user.click(checkbox)
+    // Flip the bool — bool_value renders as a true/false select via ScalarField
+    await user.selectOptions(screen.getByRole('combobox', { name: 'bool_value' }), 'false')
 
     await waitFor(() => {
       const struct = latestCall(onChange).metadata as Record<string, unknown>
@@ -1153,9 +1204,8 @@ describe('StructValue kind selector onChange', () => {
         data={{ metadata: { field: initialValue } }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
-    await user.click(screen.getByRole('button', { name: /expand/i }))
     return { user, onChange, kindSelect: screen.getByTestId('structField-kindSelect') }
   }
 
@@ -1261,7 +1311,7 @@ describe('ListField (message items) onChange', () => {
     const onChange = vi.fn()
     render(<SchemaRenderer schema={repeatedWithOneofSchema} data={{}} onChange={onChange} readOnly={false} />)
 
-    await user.click(screen.getByRole('button', { name: /expand/i }))
+    await user.click(screen.getByRole('checkbox', { name: 'Send items' }))
     await user.click(screen.getByRole('button', { name: /Add items/i }))
 
     await waitFor(() => {
@@ -1280,10 +1330,9 @@ describe('ListField (message items) onChange', () => {
         data={{ items: [{ label: 'first' }, { label: 'second' }] }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
 
-    await user.click(screen.getByRole('button', { name: /expand/i }))
     const firstInput = screen.getByDisplayValue('first')
     await user.clear(firstInput)
     await user.type(firstInput, 'UPDATED')
@@ -1304,10 +1353,9 @@ describe('ListField (message items) onChange', () => {
         data={{ items: [{ label: 'hello' }] }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
 
-    await user.click(screen.getByRole('button', { name: /expand/i }))
     await user.clear(screen.getByDisplayValue('hello'))
 
     await waitFor(() => {
@@ -1325,11 +1373,12 @@ describe('ListField (message items) onChange', () => {
         data={{ items: [{ label: 'first' }, { label: 'second' }] }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
 
-    await user.click(screen.getByRole('button', { name: /expand/i }))
-    const xButtons = screen.getAllByRole('button').filter(b => b.closest('[class*="border-l-2"]') && b.querySelector('svg'))
+    const xButtons = screen
+      .getAllByRole('button')
+      .filter(b => b.closest('[class*="border-l-2"]') && b.querySelector('svg'))
     await user.click(xButtons[0])
 
     await waitFor(() => {
@@ -1353,11 +1402,10 @@ describe('MapField (message values) onChange', () => {
   it('adding an entry initialises the message value to {}', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
-    render(<SchemaRenderer schema={mapWithOneofSchema} data={{}} onChange={onChange} readOnly={false} />)
+    render(<SchemaRenderer schema={mapWithOneofSchema} data={{ entries: {} }} onChange={onChange} readOnly={false} />)
 
-    await user.click(screen.getByRole('button', { name: /expand/i }))
-    await user.type(screen.getByPlaceholderText('Key'), 'myKey')
     await user.click(screen.getByTestId('mapField-addEntryButton'))
+    await user.keyboard('myKey{Enter}')
 
     await waitFor(() => {
       const entries = latestCall(onChange).entries as Record<string, unknown>
@@ -1374,10 +1422,9 @@ describe('MapField (message values) onChange', () => {
         data={{ entries: { alpha: { label: 'a' }, beta: { label: 'b' } } }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
 
-    await user.click(screen.getByRole('button', { name: /expand/i }))
     const aInput = screen.getByDisplayValue('a')
     await user.clear(aInput)
     await user.type(aInput, 'UPDATED')
@@ -1398,10 +1445,9 @@ describe('MapField (message values) onChange', () => {
         data={{ entries: { item: { label: 'hello' } } }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
 
-    await user.click(screen.getByRole('button', { name: /expand/i }))
     await user.clear(screen.getByDisplayValue('hello'))
 
     await waitFor(() => {
@@ -1419,13 +1465,12 @@ describe('MapField (message values) onChange', () => {
         data={{ entries: { keep: { label: 'keep' }, drop: { label: 'drop' } } }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
 
-    await user.click(screen.getByRole('button', { name: /expand/i }))
-    const removeButtons = screen.getAllByRole('button').filter(
-      b => b.closest('[class*="border-l-2"]') && b.querySelector('svg')
-    )
+    const removeButtons = screen
+      .getAllByRole('button')
+      .filter(b => b.closest('[class*="border-l-2"]') && b.querySelector('svg'))
     await user.click(removeButtons[0])
 
     await waitFor(() => {
@@ -1433,5 +1478,88 @@ describe('MapField (message values) onChange', () => {
       expect(Object.keys(entries)).toHaveLength(1)
       expect(Object.values(entries).includes(undefined)).toBe(false)
     })
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Collections of numbers, enums and well-known types
+// ---------------------------------------------------------------------------
+
+describe('Typed collection items', () => {
+  it('starts a new number map value at 0 and stores typed numbers as numbers', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(
+      <SchemaRenderer schema={typedCollectionsSchema} data={{ counts: {} }} onChange={onChange} readOnly={false} />,
+    )
+
+    await user.click(screen.getByTestId('mapField-addEntryButton'))
+    await user.keyboard('a{Enter}')
+    await waitFor(() => expect(latestCall(onChange).counts).toEqual({ a: 0 }))
+
+    const valueInput = screen.getByLabelText('counts value')
+    await user.clear(valueInput)
+    await user.type(valueInput, '5')
+    await waitFor(() => expect(latestCall(onChange).counts).toEqual({ a: 5 }))
+  })
+
+  it('starts a new enum map value at the first enum value and edits it with a select', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(
+      <SchemaRenderer schema={typedCollectionsSchema} data={{ statuses: {} }} onChange={onChange} readOnly={false} />,
+    )
+
+    await user.click(screen.getByTestId('mapField-addEntryButton'))
+    await user.keyboard('x{Enter}')
+    await waitFor(() => expect(latestCall(onChange).statuses).toEqual({ x: 'STATUS_UNKNOWN' }))
+
+    await user.selectOptions(screen.getByRole('combobox'), 'STATUS_ACTIVE')
+    await waitFor(() => expect(latestCall(onChange).statuses).toEqual({ x: 'STATUS_ACTIVE' }))
+  })
+
+  it('edits a bool map value with a true/false select, like any other bool', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(
+      <SchemaRenderer
+        schema={typedCollectionsSchema}
+        data={{ flags: { on: false } }}
+        onChange={onChange}
+        readOnly={false}
+      />,
+    )
+
+    await user.selectOptions(screen.getByRole('combobox', { name: 'flags value' }), 'true')
+    await waitFor(() => expect(latestCall(onChange).flags).toEqual({ on: true }))
+  })
+
+  it('gives a repeated Timestamp item a valid value and the Timestamp editor, not seconds/nanos', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(<SchemaRenderer schema={typedCollectionsSchema} data={{ times: [] }} onChange={onChange} readOnly={false} />)
+
+    await user.click(screen.getByRole('button', { name: /Add times/i }))
+
+    await waitFor(() => {
+      const times = latestCall(onChange).times as unknown[]
+      expect(times).toHaveLength(1)
+      expect(Number.isNaN(Date.parse(times[0] as string))).toBe(false)
+    })
+    expect(screen.getByText('UTC')).toBeInTheDocument()
+    expect(screen.queryByPlaceholderText(/Enter seconds/i)).not.toBeInTheDocument()
+  })
+
+  it('shows no add or remove buttons in read-only views', () => {
+    render(
+      <SchemaRenderer
+        schema={typedCollectionsSchema}
+        data={{ counts: { a: 1 }, times: [] }}
+        onChange={vi.fn()}
+        readOnly
+      />,
+    )
+    expect(screen.queryByRole('button', { name: /^Add / })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^Remove / })).not.toBeInTheDocument()
   })
 })

@@ -6,7 +6,7 @@
  * `metricsRegistry` in ./registry.js and is used directly by its callers.
  */
 
-export * from './collectors/cacheMetrics.js'
-export * from './collectors/grpcMetrics.js'
-export * from './collectors/httpMetrics.js'
-export * from './collectors/websocketMetrics.js'
+export * from '#src/metrics/collectors/cacheMetrics.js'
+export * from '#src/metrics/collectors/grpcMetrics.js'
+export * from '#src/metrics/collectors/httpMetrics.js'
+export * from '#src/metrics/collectors/websocketMetrics.js'

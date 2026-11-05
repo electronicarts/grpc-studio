@@ -40,10 +40,10 @@ export function DropdownMenu({
     <div className="relative flex-1">
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => setOpen(v => !v)}
         className={cn(
           'flex w-full items-center justify-between rounded-lg border border-input bg-card px-4 py-2.5 text-left text-sm text-foreground hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring',
-          triggerClassName
+          triggerClassName,
         )}
       >
         <span className="truncate font-medium">{label}</span>
@@ -59,7 +59,7 @@ export function DropdownMenu({
           <div
             className={cn(
               'absolute z-20 mt-1 max-h-96 w-full overflow-y-auto rounded-lg border border-input bg-popover shadow-lg',
-              menuClassName
+              menuClassName,
             )}
           >
             {/* Single-select menus close on inside click; multi-select stay open. */}

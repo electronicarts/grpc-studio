@@ -1,6 +1,6 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-import type { MethodKind } from './methodKind.js'
+import type { MethodKind } from '#src/api/methodKind.js'
 
 /**
  * POST /api/grpc/discover
@@ -17,7 +17,8 @@ export interface ApiMethod {
 }
 
 export interface ApiService {
-  name?: string
+  /** The service's short name, e.g. "PetStoreService" for "petstore.v1.PetStoreService". */
+  name: string
   fullName: string
   methods: ApiMethod[]
 }

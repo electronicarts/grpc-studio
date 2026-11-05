@@ -9,8 +9,8 @@
  * them synchronously during render.
  */
 import type { DescMessage } from '@bufbuild/protobuf'
-import { schemaLogger } from '../../../utils/debugLogger'
-import { fetchDescriptorSet } from './descriptorSetFetcher'
+import { schemaLogger } from '@/utils/debugLogger'
+import { fetchDescriptorSet } from '@/features/schemaLoader/lib/descriptorSetFetcher'
 
 type Listener = () => void
 
@@ -22,15 +22,19 @@ class SchemaCache {
   private schemas = new Map<string, DescMessage>()
   private loadingPromises = new Map<string, Promise<DescMessage | null>>()
   private listeners = new Set<Listener>()
+  private changes = 0
 
   // ── subscriptions ─────────────────────────────────────────────
 
   subscribe(listener: Listener): () => void {
     this.listeners.add(listener)
-    return () => { this.listeners.delete(listener) }
+    return () => {
+      this.listeners.delete(listener)
+    }
   }
 
   private notify() {
+    this.changes++
     for (const listener of this.listeners) listener()
   }
 
@@ -40,12 +44,18 @@ class SchemaCache {
     return this.schemas.get(scopedKey(target, messageType)) ?? null
   }
 
-  getSchemaMap(): Map<string, DescMessage> {
-    return new Map(this.schemas)
+  /** Every message type loaded from one target server. */
+  getTargetSchemas(target: string): DescMessage[] {
+    const prefix = scopedKey(target, '')
+    return [...this.schemas].filter(([key]) => key.startsWith(prefix)).map(([, desc]) => desc)
   }
 
-  getCacheSize(): number {
-    return this.schemas.size
+  /**
+   * Increases whenever the cached schemas change. Subscribers use it as their snapshot, and derived data
+   * (e.g. registries) uses it to know when to rebuild.
+   */
+  getVersion(): number {
+    return this.changes
   }
 
   get allLoaded(): boolean {
@@ -60,14 +70,18 @@ class SchemaCache {
     if (cached) return cached
 
     if (this.loadingPromises.has(key)) {
-      try { return await this.loadingPromises.get(key)! }
-      catch { return null }
+      try {
+        return await this.loadingPromises.get(key)!
+      } catch {
+        return null
+      }
     }
 
     const promise = fetchDescriptorSet(target, messageType, this.schemas)
       .then(desc => {
         this.loadingPromises.delete(key)
-        if (desc) this.notify()
+        // Notify even when the requested type was missing: the response may still have added other types
+        this.notify()
         return desc
       })
       .catch(error => {

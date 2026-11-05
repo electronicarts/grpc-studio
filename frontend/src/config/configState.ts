@@ -1,16 +1,16 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-import type { FrontendConfig } from './types';
+import type { FrontendConfig } from '@/config/types'
 
 // Configuration state — starts null, must be loaded before use
-let config: FrontendConfig | null = null;
+let config: FrontendConfig | null = null
 
 /**
  * Store the loaded configuration.
  */
 export const setConfig = (loaded: FrontendConfig): void => {
-  config = loaded;
-};
+  config = loaded
+}
 
 /**
  * Get current configuration.
@@ -18,14 +18,14 @@ export const setConfig = (loaded: FrontendConfig): void => {
  */
 export const getConfig = (): FrontendConfig => {
   if (!config) {
-    throw new Error('Configuration not loaded. Call loadConfig() first.');
+    throw new Error('Configuration not loaded. Call loadConfig() first.')
   }
-  return config;
-};
+  return config
+}
 
 /**
  * Check if configuration has been loaded.
  */
 export const isConfigLoaded = (): boolean => {
-  return config !== null;
-};
+  return config !== null
+}

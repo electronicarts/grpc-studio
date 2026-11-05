@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import { useSyncExternalStore } from 'react'
-import { tabStateStore } from './tabStateStore'
+import { tabStateStore } from '@/stores/tabStateStore'
 
 /**
  * Reactive predicate: does the given tab currently have live work (in-flight
@@ -10,7 +10,7 @@ import { tabStateStore } from './tabStateStore'
  */
 export function useHasLiveWork(tabId: string): boolean {
   return useSyncExternalStore(
-    (cb) => tabStateStore.subscribe(cb),
+    cb => tabStateStore.subscribe(cb),
     () => tabStateStore.hasLiveWork(tabId),
   )
 }

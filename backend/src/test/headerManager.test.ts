@@ -2,8 +2,8 @@
 
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { HeaderManager } from '../headers/headerManager.js'
-import type { UserContext } from '../types/index.js'
+import { HeaderManager } from '#src/headers/headerManager.js'
+import type { UserContext } from '#src/types/index.js'
 
 describe('HeaderManager', () => {
   it('keeps auth headers and user headers separate until outbound headers are built', async () => {
@@ -38,10 +38,10 @@ describe('HeaderManager', () => {
   it('merges user-supplied request metadata into outbound headers', async () => {
     const manager = new HeaderManager({ getCurrentPlugin: () => null })
 
-    assert.deepEqual(
-      await manager.getOutboundHeaders(null, { 'x-request-id': 'abc123', 'x-tenant': 'acme' }),
-      { 'x-request-id': 'abc123', 'x-tenant': 'acme' },
-    )
+    assert.deepEqual(await manager.getOutboundHeaders(null, { 'x-request-id': 'abc123', 'x-tenant': 'acme' }), {
+      'x-request-id': 'abc123',
+      'x-tenant': 'acme',
+    })
   })
 
   it('lets auth and user headers win over conflicting request metadata', async () => {

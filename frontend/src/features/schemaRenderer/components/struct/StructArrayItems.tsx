@@ -1,19 +1,16 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-import { Plus } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
-import { removeArrayItem, replaceArrayItem } from '../../utils/collectionMutation'
-import { StructValue } from './StructValue'
+import React from 'react'
+import { removeArrayItem, replaceArrayItem } from '@/features/schemaRenderer/utils/collectionMutation'
+import AddButton from '@/features/schemaRenderer/components/shared/AddButton'
+import StructValue from '@/features/schemaRenderer/components/struct/StructValue'
 
 interface StructArrayItemsProps {
   value: unknown[]
   onChange: (value: unknown[]) => void
 }
 
-export function StructArrayItems({ value, onChange }: StructArrayItemsProps) {
-  const { readOnly } = useProtoMessageRendererContext()
-
+const StructArrayItems: React.FC<StructArrayItemsProps> = ({ value, onChange }) => {
   const updateItem = (index: number, nextValue: unknown) => {
     onChange(replaceArrayItem(value, index, nextValue))
   }
@@ -29,27 +26,16 @@ export function StructArrayItems({ value, onChange }: StructArrayItemsProps) {
           key={index}
           label={`Item ${index + 1}`}
           value={item}
-          onChange={(nextValue) => updateItem(index, nextValue)}
-          onRemove={!readOnly ? () => removeItem(index) : undefined}
+          onChange={nextValue => updateItem(index, nextValue)}
+          onRemove={() => removeItem(index)}
         />
       ))}
 
-      {value.length === 0 && (
-        <div className="text-sm italic text-muted-foreground">No items</div>
-      )}
+      {value.length === 0 && <div className="text-sm italic text-muted-foreground">No items</div>}
 
-      {!readOnly && (
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => onChange([...value, ''])}
-          data-testid="structField-addItemButton"
-        >
-          <Plus className="mr-1 size-3" />
-          Add item
-        </Button>
-      )}
+      <AddButton noun="item" onClick={() => onChange([...value, ''])} testId="structField-addItemButton" />
     </div>
   )
 }
+
+export default StructArrayItems

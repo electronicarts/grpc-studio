@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import type { DescMessage } from '@bufbuild/protobuf'
-import { detectOneOfSelections } from '../utils'
-import { useAutoExpand } from './useAutoExpand'
+import { detectOneOfSelections } from '@/features/schemaRenderer/utils'
+import { useAutoExpand } from '@/features/schemaRenderer/hooks/useAutoExpand'
 
 export interface UseFormStateResult {
   formData: Record<string, unknown>
@@ -11,7 +11,7 @@ export interface UseFormStateResult {
   allPaths: Set<string>
   oneOfSelections: Map<string, string>
   searchQuery: string
-  
+
   updateForm: (data: Record<string, unknown>) => void
   toggleExpand: (path: string) => void
   expandAll: () => void
@@ -25,12 +25,12 @@ export function useFormState(
   data: Record<string, unknown>,
   onChange: (data: Record<string, unknown>) => void,
   schemasLoaded: boolean,
-  defaultCollapsed?: boolean
+  defaultCollapsed?: boolean,
 ): UseFormStateResult {
   const [formData, setFormData] = useState<Record<string, unknown>>(data || {})
   const [searchQuery, setSearchQuery] = useState('')
   const [dataVersion, setDataVersion] = useState(0)
-  
+
   // Track oneOf selections: key = "path.groupName", value = selected field name
   const [oneOfSelections, setOneOfSelections] = useState<Map<string, string>>(() => {
     if (schema && data) {
@@ -39,8 +39,12 @@ export function useFormState(
     return new Map()
   })
 
-  const { expanded, allPaths, toggleExpand, expandAll, collapseAll } =
-    useAutoExpand(schema, formData, schemasLoaded, defaultCollapsed)
+  const { expanded, allPaths, toggleExpand, expandAll, collapseAll } = useAutoExpand(
+    schema,
+    formData,
+    schemasLoaded,
+    defaultCollapsed,
+  )
 
   // Sync from parent when data prop changes
   useEffect(() => {
@@ -50,9 +54,9 @@ export function useFormState(
 
   useEffect(() => {
     if (!schema || !formData || !schemasLoaded) return
-    
+
     const detected = detectOneOfSelections(schema, formData, '')
-    
+
     setOneOfSelections(prev => {
       const merged = new Map(detected)
       prev.forEach((v, k) => {
@@ -60,7 +64,7 @@ export function useFormState(
           merged.set(k, v)
         }
       })
-      
+
       if (merged.size !== prev.size) return merged
       let changed = false
       merged.forEach((v, k) => {
@@ -70,10 +74,13 @@ export function useFormState(
     })
   }, [schema, formData, schemasLoaded, dataVersion])
 
-  const updateForm = useCallback((newData: Record<string, unknown>) => {
-    setFormData(newData)
-    onChange(newData)
-  }, [onChange])
+  const updateForm = useCallback(
+    (newData: Record<string, unknown>) => {
+      setFormData(newData)
+      onChange(newData)
+    },
+    [onChange],
+  )
 
   const setOneOfSelection = useCallback((groupPath: string, fieldName: string) => {
     setOneOfSelections(prev => {
@@ -94,6 +101,6 @@ export function useFormState(
     expandAll,
     collapseAll,
     setOneOfSelection,
-    setSearchQuery
+    setSearchQuery,
   }
 }

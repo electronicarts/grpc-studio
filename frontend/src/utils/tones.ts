@@ -9,18 +9,11 @@
  * class, so the class strings here deliberately contain NO `dark:` variants —
  * the pairing lives in one place (globals.css), not scattered across components.
  *
- * Prefer routing through shared components (AlertPanel, StatusBadge, StatusDot)
+ * Prefer routing through shared components (e.g. AlertPanel)
  * or referencing TONES[tone] directly instead of hand-writing color classes.
  */
 
-export type Tone =
-  | 'danger'
-  | 'success'
-  | 'warning'
-  | 'critical'
-  | 'info'
-  | 'brand'
-  | 'neutral'
+export type Tone = 'danger' | 'success' | 'warning' | 'critical' | 'info' | 'brand' | 'neutral'
 
 export interface ToneClasses {
   /** Foreground text/icon in the tone color. */

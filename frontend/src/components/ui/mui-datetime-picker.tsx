@@ -49,7 +49,7 @@ export function MuiDateTimePicker({ value, onChange, disabled, className }: MuiD
           },
         },
       }),
-    [isDarkMode]
+    [isDarkMode],
   )
 
   const dayjsValue = value ? dayjs(value).utc() : null

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import type { DescMessage } from '@bufbuild/protobuf'
-import { collectExpandablePaths, hasDataAtPath } from '../utils/pathAnalysis'
+import { collectExpandablePaths, hasDataAtPath } from '@/features/schemaRenderer/utils/pathAnalysis'
 
 export interface UseAutoExpandResult {
   expanded: Set<string>
@@ -16,7 +16,7 @@ export function useAutoExpand(
   schema: DescMessage | null,
   formData: Record<string, unknown>,
   schemasLoaded: boolean,
-  defaultCollapsed?: boolean
+  defaultCollapsed?: boolean,
 ): UseAutoExpandResult {
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [allPaths, setAllPaths] = useState<Set<string>>(new Set())

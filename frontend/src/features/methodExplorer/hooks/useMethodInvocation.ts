@@ -1,17 +1,24 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import { useCallback, useRef, useState } from 'react'
-import { GrpcService, GrpcMethod } from '../../../types/grpc'
-import { ApiClientError } from '../../../lib/http/apiClient'
-import { formLogger } from '../../../utils/debugLogger'
-import { invokeUnary } from '../api'
-import { toWireFormat, type Payload } from '../utils/payload'
-import { useGrpcWebSocket } from './useGrpcWebSocket'
-import { useStreamInvocationCallbacks } from './useStreamInvocationCallbacks'
-import { useUnaryInvocationRecorder } from './useUnaryInvocationRecorder'
+import { GrpcService, GrpcMethod } from '@/types/grpc'
+import { ApiClientError } from '@/lib/http/apiClient'
+import { formLogger } from '@/utils/debugLogger'
+import { invokeUnary } from '@/features/methodExplorer/api'
+import { toWireFormat, type Payload } from '@/features/methodExplorer/utils/payload'
+import { useGrpcWebSocket } from '@/features/methodExplorer/hooks/useGrpcWebSocket'
+import { useStreamInvocationCallbacks } from '@/features/methodExplorer/hooks/useStreamInvocationCallbacks'
+import { useUnaryInvocationRecorder } from '@/features/methodExplorer/hooks/useUnaryInvocationRecorder'
 import { MethodKind } from '@grpc-studio/shared'
 import type { StreamingMethodKind } from '@grpc-studio/shared'
-import type { RequestModel, ResponseModel, StreamModel, MetadataModel, ResponseStatus, MethodInvocation } from '../types'
+import type {
+  RequestModel,
+  ResponseModel,
+  StreamModel,
+  MetadataModel,
+  ResponseStatus,
+  MethodInvocation,
+} from '@/features/methodExplorer/types'
 import type { RequestMetadata } from '@grpc-studio/shared'
 
 export function useMethodInvocation(
@@ -22,7 +29,7 @@ export function useMethodInvocation(
   response: ResponseModel,
   stream: StreamModel,
   metadata: MetadataModel,
-  saveToHistory: (obj: Record<string, unknown>, status?: ResponseStatus, metadata?: RequestMetadata) => void
+  saveToHistory: (obj: Record<string, unknown>, status?: ResponseStatus, metadata?: RequestMetadata) => void,
 ): MethodInvocation {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -132,12 +139,15 @@ export function useMethodInvocation(
       // Provide helpful error messages for common connection issues
       let errorMessage = err instanceof Error ? err.message : 'Unknown error occurred'
 
-      if (errorMessage.includes('ECONNREFUSED') ||
-          errorMessage.includes('ENOTFOUND') ||
-          errorMessage.includes('timeout') ||
-          errorMessage.includes('network') ||
-          errorMessage.includes('CONNECTION_ERROR')) {
-        errorMessage += '\n\nThis may indicate a stale connection. Try refreshing the schemas (click the refresh button in the header or server selector).'
+      if (
+        errorMessage.includes('ECONNREFUSED') ||
+        errorMessage.includes('ENOTFOUND') ||
+        errorMessage.includes('timeout') ||
+        errorMessage.includes('network') ||
+        errorMessage.includes('CONNECTION_ERROR')
+      ) {
+        errorMessage +=
+          '\n\nThis may indicate a stale connection. Try refreshing the schemas (click the refresh button in the header or server selector).'
       }
 
       setError(errorMessage)
@@ -172,14 +182,11 @@ export function useMethodInvocation(
     // Save cancelled stream to history
     const streamedRequest = stream.currentRequest()
     if (selectedService && selectedMethod && streamedRequest) {
-      saveToHistoryWithMetadata(
-        streamedRequest,
-        {
-          ok: false,
-          message: 'Cancelled by user',
-          responseTimeMs: stream.durationMs(),
-        }
-      )
+      saveToHistoryWithMetadata(streamedRequest, {
+        ok: false,
+        message: 'Cancelled by user',
+        responseTimeMs: stream.durationMs(),
+      })
     }
   }
 

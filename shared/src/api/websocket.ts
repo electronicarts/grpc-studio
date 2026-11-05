@@ -1,8 +1,8 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-import type { StreamingMethodKind } from './methodKind.js'
-import type { JsonValue } from './json.js'
-import type { RequestMetadata } from './metadata.js'
+import type { StreamingMethodKind } from '#src/api/methodKind.js'
+import type { JsonValue } from '#src/api/json.js'
+import type { RequestMetadata } from '#src/api/metadata.js'
 
 export interface InvokeStreamUserHeaders {
   'X-User-Id'?: string
@@ -100,7 +100,4 @@ export interface InvokeStreamPongResponse {
 }
 
 export type InvokeStreamResponse =
-  | InvokeStreamDataResponse
-  | InvokeStreamErrorResponse
-  | InvokeStreamCompleteResponse
-  | InvokeStreamPongResponse
+  InvokeStreamDataResponse | InvokeStreamErrorResponse | InvokeStreamCompleteResponse | InvokeStreamPongResponse

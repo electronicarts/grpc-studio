@@ -1,14 +1,14 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-import { ScalarType } from '@bufbuild/protobuf'
+import { ScalarType, protoInt64 } from '@bufbuild/protobuf'
+import { scalarZeroValue, type ScalarValue } from '@bufbuild/protobuf/reflect'
+import { base64Encode } from '@bufbuild/protobuf/wire'
 
 /**
  * Check if a scalar type is numeric (needs number input).
  */
 function isNumeric(scalar: ScalarType): boolean {
-  return scalar !== ScalarType.STRING &&
-         scalar !== ScalarType.BYTES &&
-         scalar !== ScalarType.BOOL
+  return scalar !== ScalarType.STRING && scalar !== ScalarType.BYTES && scalar !== ScalarType.BOOL
 }
 
 /**
@@ -16,6 +16,22 @@ function isNumeric(scalar: ScalarType): boolean {
  */
 function isFloat(scalar: ScalarType): boolean {
   return scalar === ScalarType.FLOAT || scalar === ScalarType.DOUBLE
+}
+
+/**
+ * 64-bit integers are strings in proto JSON, since JS numbers can't hold them exactly.
+ */
+function is64Bit(scalar: ScalarType): boolean {
+  return (
+    scalar === ScalarType.INT64 ||
+    scalar === ScalarType.SINT64 ||
+    scalar === ScalarType.SFIXED64 ||
+    isUnsigned64Bit(scalar)
+  )
+}
+
+function isUnsigned64Bit(scalar: ScalarType): boolean {
+  return scalar === ScalarType.UINT64 || scalar === ScalarType.FIXED64
 }
 
 /**
@@ -33,6 +49,15 @@ export function getInputType(scalar: ScalarType): string {
 export function parseValue(value: string, scalar: ScalarType): unknown {
   if (!value && value !== '0') return undefined
 
+  if (is64Bit(scalar)) {
+    // Kept as a string, like proto JSON, so values beyond 2^53 survive; buf validates the range
+    try {
+      return String(isUnsigned64Bit(scalar) ? protoInt64.uParse(value) : protoInt64.parse(value))
+    } catch {
+      return undefined
+    }
+  }
+
   if (isNumeric(scalar)) {
     const num = isFloat(scalar) ? parseFloat(value) : parseInt(value, 10)
     return isNaN(num) ? undefined : num
@@ -46,6 +71,21 @@ export function parseValue(value: string, scalar: ScalarType): unknown {
 }
 
 /**
+ * A scalar runtime value from buf (bigint, Uint8Array, …) in proto JSON form, the form data's representation.
+ */
+export function scalarToJson(value: ScalarValue): unknown {
+  if (typeof value === 'bigint') return String(value)
+  if (value instanceof Uint8Array) return base64Encode(value)
+  if (typeof value === 'number' && !Number.isFinite(value)) return String(value) // "NaN", "Infinity", "-Infinity"
+  return value
+}
+
+/** A scalar type's zero value (buf's `scalarZeroValue`) in proto JSON form: `0`, `"0"` for 64-bit, `false`, `""`. */
+export function jsonZeroValue(scalar: ScalarType): unknown {
+  return scalarToJson(scalarZeroValue(scalar, false))
+}
+
+/**
  * Check if a value is effectively empty
  * (null, undefined, empty string, empty object, empty array).
  */
@@ -55,52 +95,4 @@ export function isEmpty(value: unknown): boolean {
   if (Array.isArray(value) && value.length === 0) return true
   if (typeof value === 'object' && Object.keys(value).length === 0) return true
   return false
-}
-
-/**
- * Get a human-readable display name for a scalar type.
- */
-export function getScalarTypeName(scalar: ScalarType): string {
-  switch (scalar) {
-    case ScalarType.DOUBLE: return 'double'
-    case ScalarType.FLOAT: return 'float'
-    case ScalarType.INT64: return 'int64'
-    case ScalarType.UINT64: return 'uint64'
-    case ScalarType.INT32: return 'int32'
-    case ScalarType.FIXED64: return 'fixed64'
-    case ScalarType.FIXED32: return 'fixed32'
-    case ScalarType.BOOL: return 'bool'
-    case ScalarType.STRING: return 'string'
-    case ScalarType.BYTES: return 'bytes'
-    case ScalarType.UINT32: return 'uint32'
-    case ScalarType.SFIXED32: return 'sfixed32'
-    case ScalarType.SFIXED64: return 'sfixed64'
-    case ScalarType.SINT32: return 'sint32'
-    case ScalarType.SINT64: return 'sint64'
-    default: return 'unknown'
-  }
-}
-
-/**
- * Get the type name for a field's element/value type.
- * Handles scalar, enum, and message types.
- */
-export function getFieldTypeName(
-  kind: 'scalar' | 'enum' | 'message',
-  field: {
-    scalar?: ScalarType
-    enum?: { typeName: string }
-    message?: { typeName: string }
-  }
-): string {
-  if (kind === 'scalar' && field.scalar !== undefined) {
-    return getScalarTypeName(field.scalar)
-  }
-  if (kind === 'enum' && field.enum) {
-    return field.enum.typeName
-  }
-  if (kind === 'message' && field.message) {
-    return field.message.typeName
-  }
-  return 'unknown'
 }

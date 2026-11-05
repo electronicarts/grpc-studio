@@ -35,19 +35,13 @@ function App({ configError = null }: AppProps) {
         {configLoaded && !configError && (
           <>
             {isSsoEnabled && !isAuthenticated && (
-              <LoadingPanel
-                message="Authenticating..."
-                className="p-6"
-                testId="app-auth-loading"
-              />
+              <LoadingPanel message="Authenticating..." className="p-6" testId="app-auth-loading" />
             )}
 
             {(!isSsoEnabled || isAuthenticated) && (
               <main className="flex min-h-0 flex-1 flex-col px-4 py-6">
                 <ErrorBoundary>
-                  <Suspense
-                    fallback={<LoadingPanel message="Loading playground..." testId="app-playground-loading" />}
-                  >
+                  <Suspense fallback={<LoadingPanel message="Loading playground..." testId="app-playground-loading" />}>
                     <Playground />
                   </Suspense>
                 </ErrorBoundary>

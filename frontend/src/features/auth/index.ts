@@ -4,10 +4,10 @@
  * Authentication Module Exports
  */
 
-export { AuthProvider } from './components/AuthProvider';
+export { AuthProvider } from '@/features/auth/components/AuthProvider'
 
-export { useAuth } from './hooks/useAuth';
-export { useAutoLogin } from './hooks/useAutoLogin';
-export { useUserMenu } from './hooks/useUserMenu';
+export { useAuth } from '@/features/auth/hooks/useAuth'
+export { useAutoLogin } from '@/features/auth/hooks/useAutoLogin'
+export { useUserMenu } from '@/features/auth/hooks/useUserMenu'
 
-export { initializeAuthFromYaml } from './api/authInitializer';
+export { initializeAuthFromYaml } from '@/features/auth/api/authInitializer'

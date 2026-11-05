@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-import type { GrpcMethod } from '../../../types/grpc'
-import type { StreamingType } from '../types'
+import type { GrpcMethod } from '@/types/grpc'
+import type { StreamingType } from '@/features/serviceExplorer/types'
 import { MethodKind } from '@grpc-studio/shared'
 
 // ---------------------------------------------------------------------------
@@ -10,9 +10,13 @@ import { MethodKind } from '@grpc-studio/shared'
 
 export function getStreamingType(method: GrpcMethod): StreamingType {
   switch (method.kind) {
-    case MethodKind.BIDI_STREAMING:    return 'Bidirectional Stream'
-    case MethodKind.SERVER_STREAMING:  return 'Server Stream'
-    case MethodKind.CLIENT_STREAMING:  return 'Client Stream'
-    default:                           return 'Unary'
+    case MethodKind.BIDI_STREAMING:
+      return 'Bidirectional Stream'
+    case MethodKind.SERVER_STREAMING:
+      return 'Server Stream'
+    case MethodKind.CLIENT_STREAMING:
+      return 'Client Stream'
+    default:
+      return 'Unary'
   }
 }

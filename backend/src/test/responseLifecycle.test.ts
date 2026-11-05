@@ -4,10 +4,10 @@ import { EventEmitter } from 'node:events'
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import type { NextFunction, Request, Response } from 'express'
-import { AppError } from '../errors/AppError.js'
-import { errorHandler } from '../middlewares/errorMiddleware.js'
-import { requestTimeout } from '../middlewares/timeoutMiddleware.js'
-import { responseHelpers } from '../utils/responseHelpers.js'
+import { AppError } from '#src/errors/AppError.js'
+import { errorHandler } from '#src/middlewares/errorMiddleware.js'
+import { requestTimeout } from '#src/middlewares/timeoutMiddleware.js'
+import { responseHelpers } from '#src/utils/responseHelpers.js'
 
 type MockResponse = Response & {
   statusCalls: number[]
@@ -53,7 +53,7 @@ describe('response lifecycle guards', () => {
     const req = {} as Request
     const res = createEventedResponse()
 
-    const error = await new Promise<unknown>((resolve) => {
+    const error = await new Promise<unknown>(resolve => {
       requestTimeout(1)(req, res, (maybeError?: unknown) => {
         if (maybeError) resolve(maybeError)
       })
@@ -65,12 +65,14 @@ describe('response lifecycle guards', () => {
   })
 })
 
-function createMockResponse(options: {
-  headersSent?: boolean
-  writableEnded?: boolean
-  destroyed?: boolean
-  statusCode?: number
-} = {}): MockResponse {
+function createMockResponse(
+  options: {
+    headersSent?: boolean
+    writableEnded?: boolean
+    destroyed?: boolean
+    statusCode?: number
+  } = {},
+): MockResponse {
   const statusCalls: number[] = []
   const jsonCalls: unknown[] = []
 

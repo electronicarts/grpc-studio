@@ -1,8 +1,8 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import { describe, it, expect } from 'vitest'
-import { rowsToMetadata, activeRowCount, metadataToRows } from '../metadata'
-import type { MetadataRow } from '../../types'
+import { rowsToMetadata, activeRowCount, metadataToRows } from '@/features/methodExplorer/utils/metadata'
+import type { MetadataRow } from '@/features/methodExplorer/types'
 
 describe('metadata editor utils', () => {
   describe('rowsToMetadata', () => {

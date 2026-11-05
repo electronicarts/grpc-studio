@@ -2,10 +2,10 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook } from '@testing-library/react'
-import { useServerSelector } from '../useServerSelector'
+import { useServerSelector } from '@/features/serverSelector/hooks/useServerSelector'
 import { useSchemas, useSchemaLoader } from '@/features/schemaLoader'
 import { useConnectionStatus } from '@/features/connectionValidator'
-import type { ApiServer } from '../../../../types/grpc'
+import type { ApiServer } from '@/types/grpc'
 
 vi.mock('@/features/schemaLoader', () => ({
   useSchemas: vi.fn(),
@@ -40,11 +40,9 @@ describe('useServerSelector', () => {
   it('returns target servers sorted alphabetically by name', () => {
     mockServers([server('Zeta'), server('alpha'), server('Beta')])
 
-    const { result } = renderHook(() =>
-      useServerSelector({ selectedServerNames: [], onServerSelect: vi.fn() })
-    )
+    const { result } = renderHook(() => useServerSelector({ selectedServerNames: [], onServerSelect: vi.fn() }))
 
-    expect(result.current.servers.map((s) => s.name)).toEqual(['alpha', 'Beta', 'Zeta'])
+    expect(result.current.servers.map(s => s.name)).toEqual(['alpha', 'Beta', 'Zeta'])
   })
 
   it('does not mutate the source array from useSchemas', () => {
@@ -54,6 +52,6 @@ describe('useServerSelector', () => {
     renderHook(() => useServerSelector({ selectedServerNames: [], onServerSelect: vi.fn() }))
 
     // The hook must sort a copy, leaving the schema store's array order intact.
-    expect(source.map((s) => s.name)).toEqual(['Zeta', 'Alpha'])
+    expect(source.map(s => s.name)).toEqual(['Zeta', 'Alpha'])
   })
 })

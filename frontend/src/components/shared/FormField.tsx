@@ -13,6 +13,8 @@ interface FormFieldProps {
   className?: string
   labelClassName?: string
   inline?: boolean
+  /** Renders only the control, e.g. where the surrounding row already names it. Name the control with aria-label. */
+  hideLabel?: boolean
 }
 
 const FormField: React.FC<FormFieldProps> = ({
@@ -24,8 +26,13 @@ const FormField: React.FC<FormFieldProps> = ({
   children,
   className,
   labelClassName,
-  inline = false
+  inline = false,
+  hideLabel = false,
 }) => {
+  if (hideLabel) {
+    return <div className={className}>{children}</div>
+  }
+
   if (inline) {
     return (
       <label className={cn('flex cursor-pointer items-center gap-2', className)}>
@@ -41,10 +48,9 @@ const FormField: React.FC<FormFieldProps> = ({
 
   return (
     <div className={cn('space-y-1', className)}>
-      <label className={cn(
-        'flex flex-wrap items-baseline gap-x-1 text-sm font-medium text-foreground/90',
-        labelClassName
-      )}>
+      <label
+        className={cn('flex flex-wrap items-baseline gap-x-1 text-sm font-medium text-foreground/90', labelClassName)}
+      >
         <span className="break-all">
           {label}
           {required && <span className="ml-1 text-danger">*</span>}
@@ -54,13 +60,9 @@ const FormField: React.FC<FormFieldProps> = ({
 
       {children}
 
-      {hint && !error && (
-        <p className="text-xs text-muted-foreground">{hint}</p>
-      )}
+      {hint && !error && <p className="text-xs text-muted-foreground">{hint}</p>}
 
-      {error && (
-        <p className="text-xs text-danger">{error}</p>
-      )}
+      {error && <p className="text-xs text-danger">{error}</p>}
     </div>
   )
 }

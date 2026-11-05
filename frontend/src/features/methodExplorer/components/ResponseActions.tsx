@@ -3,7 +3,7 @@
 import React, { useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Copy, Check, Download } from 'lucide-react'
-import { useCopyToClipboard } from '../../../utils/useCopyToClipboard'
+import { useCopyToClipboard } from '@/utils/useCopyToClipboard'
 
 interface ResponseActionsProps {
   raw: string
@@ -11,9 +11,7 @@ interface ResponseActionsProps {
   methodName?: string
 }
 
-const ResponseActions: React.FC<ResponseActionsProps> = ({
-  raw, serviceName, methodName,
-}) => {
+const ResponseActions: React.FC<ResponseActionsProps> = ({ raw, serviceName, methodName }) => {
   const { copied, copy } = useCopyToClipboard()
 
   const copyResponse = useCallback(() => {
@@ -34,21 +32,11 @@ const ResponseActions: React.FC<ResponseActionsProps> = ({
 
   return (
     <>
-      <Button
-        variant="outline"
-        size="sm"
-        className="h-7 rounded-full px-3"
-        onClick={copyResponse}
-      >
+      <Button variant="outline" size="sm" className="h-7 rounded-full px-3" onClick={copyResponse}>
         {copied ? <Check className="mr-1 size-3 text-success" /> : <Copy className="mr-1 size-3" />}
         {copied ? 'Copied!' : 'Copy'}
       </Button>
-      <Button
-        variant="outline"
-        size="sm"
-        className="h-7 rounded-full px-3"
-        onClick={downloadResponse}
-      >
+      <Button variant="outline" size="sm" className="h-7 rounded-full px-3" onClick={downloadResponse}>
         <Download className="mr-1 size-3" />
         Save
       </Button>

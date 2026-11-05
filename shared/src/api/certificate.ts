@@ -16,7 +16,7 @@ export const CertificateStatus = {
   UNREADABLE: 'unreadable',
 } as const
 
-export type CertificateStatus = typeof CertificateStatus[keyof typeof CertificateStatus]
+export type CertificateStatus = (typeof CertificateStatus)[keyof typeof CertificateStatus]
 
 export const CERTIFICATE_STATUSES = Object.values(CertificateStatus)
 
@@ -36,9 +36,7 @@ export interface CertificateUnreadableInfo {
   error: string
 }
 
-export type CertificateInfo =
-  | CertificateReadableInfo
-  | CertificateUnreadableInfo
+export type CertificateInfo = CertificateReadableInfo | CertificateUnreadableInfo
 
 export interface CertificateNotConfiguredResponse {
   configured: false
@@ -49,6 +47,4 @@ export interface CertificateConfiguredResponse {
   certificate: CertificateInfo
 }
 
-export type CertificateResponse =
-  | CertificateNotConfiguredResponse
-  | CertificateConfiguredResponse
+export type CertificateResponse = CertificateNotConfiguredResponse | CertificateConfiguredResponse

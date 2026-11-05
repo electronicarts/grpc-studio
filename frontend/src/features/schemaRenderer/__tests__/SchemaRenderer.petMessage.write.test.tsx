@@ -14,150 +14,24 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import type { DescMessage, DescField, DescEnum } from '@bufbuild/protobuf'
-import SchemaRenderer from '../components/core/SchemaRenderer'
-import { structMessageSchema, durationMessageSchema, fieldMaskMessageSchema } from './protoMessageRenderer.fixtures'
-
-// ScalarType enum values
-const ScalarType = {
-  DOUBLE: 1,
-  FLOAT: 2,
-  INT64: 3,
-  UINT64: 4,
-  INT32: 5,
-  FIXED64: 6,
-  FIXED32: 7,
-  BOOL: 8,
-  STRING: 9,
-  BYTES: 12,
-  UINT32: 13,
-  SFIXED32: 15,
-  SFIXED64: 16,
-  SINT32: 17,
-  SINT64: 18,
-}
-
-// Reuse schema creation from read tests
-const createPetSchema = (): DescMessage => {
-  const SpeciesEnum: DescEnum = {
-    typeName: 'petstore.v1.Species',
-    values: [
-      { name: 'SPECIES_UNSPECIFIED', number: 0 },
-      { name: 'SPECIES_DOG', number: 1 },
-      { name: 'SPECIES_CAT', number: 2 },
-    ],
-  } as DescEnum
-
-  const CoordinatesSchema: DescMessage = {
-    typeName: 'petstore.v1.Coordinates',
-    fields: [
-      { name: 'latitude', fieldKind: 'scalar', scalar: ScalarType.DOUBLE } as DescField,
-      { name: 'longitude', fieldKind: 'scalar', scalar: ScalarType.DOUBLE } as DescField,
-    ],
-    oneofs: [],
-    nestedMessages: [],
-    nestedEnums: [],
-  } as DescMessage
-
-  const AddressSchema: DescMessage = {
-    typeName: 'petstore.v1.Address',
-    fields: [
-      { name: 'street', fieldKind: 'scalar', scalar: ScalarType.STRING } as DescField,
-      { name: 'city', fieldKind: 'scalar', scalar: ScalarType.STRING } as DescField,
-      { name: 'coordinates', fieldKind: 'message', message: CoordinatesSchema } as DescField,
-    ],
-    oneofs: [],
-    nestedMessages: [],
-    nestedEnums: [],
-  } as DescMessage
-
-  const OwnerSchema: DescMessage = {
-    typeName: 'petstore.v1.Owner',
-    fields: [
-      { name: 'name', fieldKind: 'scalar', scalar: ScalarType.STRING } as DescField,
-      { name: 'email', fieldKind: 'scalar', scalar: ScalarType.STRING } as DescField,
-      { name: 'address', fieldKind: 'message', message: AddressSchema } as DescField,
-    ],
-    oneofs: [],
-    nestedMessages: [],
-    nestedEnums: [],
-  } as DescMessage
-
-  const VaccinationSchema: DescMessage = {
-    typeName: 'petstore.v1.Vaccination',
-    fields: [
-      { name: 'name', fieldKind: 'scalar', scalar: ScalarType.STRING } as DescField,
-      { name: 'veterinarian', fieldKind: 'scalar', scalar: ScalarType.STRING } as DescField,
-    ],
-    oneofs: [],
-    nestedMessages: [],
-    nestedEnums: [],
-  } as DescMessage
-
-  const StringValueSchema: DescMessage = {
-    typeName: 'google.protobuf.StringValue',
-    fields: [
-      { name: 'value', fieldKind: 'scalar', scalar: ScalarType.STRING } as DescField,
-    ],
-    oneofs: [],
-    nestedMessages: [],
-    nestedEnums: [],
-  } as DescMessage
-
-  return {
-    typeName: 'petstore.v1.Pet',
-    fields: [
-      // Scalars
-      { name: 'id', fieldKind: 'scalar', scalar: ScalarType.STRING } as DescField,
-      { name: 'name', fieldKind: 'scalar', scalar: ScalarType.STRING } as DescField,
-      { name: 'age_months', fieldKind: 'scalar', scalar: ScalarType.INT32 } as DescField,
-      { name: 'weight_kg', fieldKind: 'scalar', scalar: ScalarType.DOUBLE } as DescField,
-      { name: 'is_neutered', fieldKind: 'scalar', scalar: ScalarType.BOOL } as DescField,
-      { name: 'photo_thumbnail', fieldKind: 'scalar', scalar: ScalarType.BYTES } as DescField,
-
-      // Enum
-      { name: 'species', fieldKind: 'enum', enum: SpeciesEnum } as DescField,
-
-      // Nested message
-      { name: 'owner', fieldKind: 'message', message: OwnerSchema } as DescField,
-
-      // Wrapper type
-      { name: 'description', fieldKind: 'message', message: StringValueSchema } as DescField,
-
-      // Repeated scalar
-      { name: 'nicknames', fieldKind: 'list', listKind: 'scalar', scalar: ScalarType.STRING } as DescField,
-
-      // Repeated message
-      { name: 'vaccinations', fieldKind: 'list', listKind: 'message', message: VaccinationSchema } as DescField,
-
-      // Map
-      { name: 'tags', fieldKind: 'map', mapKind: 'scalar', scalar: ScalarType.STRING } as DescField,
-    ],
-    oneofs: [],
-    nestedMessages: [],
-    nestedEnums: [],
-  } as DescMessage
-}
+import SchemaRenderer from '@/features/schemaRenderer/components/core/SchemaRenderer'
+import { petSchema } from '@/test/petstore.fixtures'
+import {
+  structMessageSchema,
+  durationMessageSchema,
+  fieldMaskMessageSchema,
+} from '@/test/protoMessageRenderer.fixtures'
+import { latestCall } from '@/test/latestCall'
 
 describe('SchemaRenderer - Pet Message WRITE Path', () => {
-  const schema = createPetSchema()
+  const schema = petSchema
 
   describe('Creating new Pet (empty form)', () => {
     it('allows filling in all scalar field types', async () => {
       const user = userEvent.setup()
       const onChange = vi.fn()
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={{}}
-          onChange={onChange}
-          readOnly={false}
-        />
-      )
-
-      // Expand all to show all fields
-      await user.click(screen.getByRole('button', { name: /expand/i }))
+      render(<SchemaRenderer schema={schema} data={{}} onChange={onChange} readOnly={false} />)
 
       // Fill in string scalar (pet.name is the first name field)
       const nameInputs = screen.getAllByPlaceholderText(/Enter name/i)
@@ -169,9 +43,9 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
       })
 
       // Get the latest call
-      const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
-      expect(latestCall.name).toBe('Max')
-      expect('name' in latestCall).toBe(true)
+      const latest = latestCall(onChange)
+      expect(latest.name).toBe('Max')
+      expect('name' in latest).toBe(true)
 
       // Fill in numeric scalar
       const ageInput = screen.getByPlaceholderText(/Enter age_months/i)
@@ -179,8 +53,8 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
       await user.type(ageInput, '36')
 
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
-        expect(latestCall.age_months).toBe(36)
+        const latest = latestCall(onChange)
+        expect(latest.age_months).toBe(36)
       })
 
       // Fill in double scalar
@@ -189,17 +63,16 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
       await user.type(weightInput, '32.5')
 
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
-        expect(latestCall.weight_kg).toBe(32.5)
+        const latest = latestCall(onChange)
+        expect(latest.weight_kg).toBe(32.5)
       })
 
-      // Toggle boolean scalar
-      const neuteredCheckbox = screen.getByRole('checkbox', { name: /is_neutered/i })
-      await user.click(neuteredCheckbox)
+      // Set boolean scalar
+      await user.selectOptions(screen.getByRole('combobox', { name: 'is_neutered' }), 'true')
 
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
-        expect(latestCall.is_neutered).toBe(true)
+        const latest = latestCall(onChange)
+        expect(latest.is_neutered).toBe(true)
       })
 
       // Fill in bytes scalar
@@ -207,8 +80,8 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
       await user.type(bytesInput, 'YWJjMTIz')
 
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
-        expect(latestCall.photo_thumbnail).toBe('YWJjMTIz')
+        const latest = latestCall(onChange)
+        expect(latest.photo_thumbnail).toBe('YWJjMTIz')
       })
     })
 
@@ -216,24 +89,18 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
       const user = userEvent.setup()
       const onChange = vi.fn()
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={{}}
-          onChange={onChange}
-          readOnly={false}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={{}} onChange={onChange} readOnly={false} />)
 
-      await user.click(screen.getByRole('button', { name: /expand/i }))
+      // A nested message is ticked to be sent before its fields show
+      await user.click(screen.getByRole('checkbox', { name: 'Send owner' }))
 
       // Fill in owner.name
       const ownerNameInput = screen.getAllByPlaceholderText(/Enter name/i)[1] // Second name input is owner.name
       await user.type(ownerNameInput, 'Alice')
 
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
-        expect(latestCall.owner?.name).toBe('Alice')
+        const latest = latestCall(onChange)
+        expect(latest.owner?.name).toBe('Alice')
       })
 
       // Fill in owner.email
@@ -241,27 +108,29 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
       await user.type(emailInput, 'alice@example.com')
 
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
-        expect(latestCall.owner?.email).toBe('alice@example.com')
+        const latest = latestCall(onChange)
+        expect(latest.owner?.email).toBe('alice@example.com')
       })
 
       // Fill in deeply nested owner.address.city
+      await user.click(screen.getByRole('checkbox', { name: 'Send address' }))
       const cityInput = screen.getByPlaceholderText(/Enter city/i)
       await user.type(cityInput, 'San Francisco')
 
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
-        expect(latestCall.owner?.address?.city).toBe('San Francisco')
+        const latest = latestCall(onChange)
+        expect(latest.owner?.address?.city).toBe('San Francisco')
       })
 
       // Fill in owner.address.coordinates.latitude
+      await user.click(screen.getByRole('checkbox', { name: 'Send coordinates' }))
       const latInput = screen.getByPlaceholderText(/Enter latitude/i)
       await user.clear(latInput)
       await user.type(latInput, '37.7749')
 
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
-        expect(latestCall.owner?.address?.coordinates?.latitude).toBe(37.7749)
+        const latest = latestCall(onChange)
+        expect(latest.owner?.address?.coordinates?.latitude).toBe(37.7749)
       })
     })
 
@@ -269,25 +138,17 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
       const user = userEvent.setup()
       const onChange = vi.fn()
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={{}}
-          onChange={onChange}
-          readOnly={false}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={{}} onChange={onChange} readOnly={false} />)
 
-      await user.click(screen.getByRole('button', { name: /expand/i }))
-
-      // Add first nickname
+      // Tick the list to send it, then add the first nickname
+      await user.click(screen.getByRole('checkbox', { name: 'Send nicknames' }))
       const addNicknameButton = screen.getByRole('button', { name: /Add nicknames/i })
       await user.click(addNicknameButton)
 
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
-        expect(Array.isArray(latestCall.nicknames)).toBe(true)
-        expect(latestCall.nicknames.length).toBe(1)
+        const latest = latestCall(onChange)
+        expect(Array.isArray(latest.nicknames)).toBe(true)
+        expect(latest.nicknames.length).toBe(1)
       })
 
       // Fill in the nickname
@@ -295,15 +156,15 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
       await user.type(nicknameInputs[0], 'Maxy')
 
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
-        expect(latestCall.nicknames[0]).toBe('Maxy')
+        const latest = latestCall(onChange)
+        expect(latest.nicknames[0]).toBe('Maxy')
       })
 
       // Add second nickname
       await user.click(addNicknameButton)
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
-        expect(latestCall.nicknames.length).toBe(2)
+        const latest = latestCall(onChange)
+        expect(latest.nicknames.length).toBe(2)
       })
     })
 
@@ -311,25 +172,17 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
       const user = userEvent.setup()
       const onChange = vi.fn()
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={{}}
-          onChange={onChange}
-          readOnly={false}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={{}} onChange={onChange} readOnly={false} />)
 
-      await user.click(screen.getByRole('button', { name: /expand/i }))
-
-      // Add first vaccination
+      // Tick the list to send it, then add the first vaccination
+      await user.click(screen.getByRole('checkbox', { name: 'Send vaccinations' }))
       const addVaccinationButton = screen.getByRole('button', { name: /Add vaccinations/i })
       await user.click(addVaccinationButton)
 
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
-        expect(Array.isArray(latestCall.vaccinations)).toBe(true)
-        expect(latestCall.vaccinations.length).toBe(1)
+        const latest = latestCall(onChange)
+        expect(Array.isArray(latest.vaccinations)).toBe(true)
+        expect(latest.vaccinations.length).toBe(1)
       })
 
       // Fill in vaccination name
@@ -338,13 +191,12 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
       await user.type(vaccinationNameInput, 'Rabies')
 
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
-        expect(latestCall.vaccinations[0]?.name).toBe('Rabies')
+        const latest = latestCall(onChange)
+        expect(latest.vaccinations[0]?.name).toBe('Rabies')
       })
     })
 
-    it('renders map fields for editing', async () => {
-      const user = userEvent.setup()
+    it('renders map fields for editing', () => {
       const onChange = vi.fn()
 
       const dataWithMap = {
@@ -353,23 +205,14 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
         },
       }
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={dataWithMap}
-          onChange={onChange}
-          readOnly={false}
-        />
-      )
-
-      await user.click(screen.getByRole('button', { name: /expand/i }))
+      render(<SchemaRenderer schema={schema} data={dataWithMap} onChange={onChange} readOnly={false} />)
 
       // Map field should be visible and show the entry
       const tagsSection = screen.getByText('tags')
       expect(tagsSection).toBeInTheDocument()
 
       // Should show the existing map key
-      expect(screen.getByText(/color/i)).toBeInTheDocument()
+      expect(screen.getByDisplayValue('color')).toBeInTheDocument()
 
       // Should show the value in an input
       expect(screen.getByDisplayValue('golden')).toBeInTheDocument()
@@ -377,7 +220,7 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
   })
 
   describe('Clearing/resetting fields (the undefined bug)', () => {
-    it('deletes scalar field when cleared, not set to undefined', async () => {
+    it('deletes scalar field when unset, not set to undefined', async () => {
       const user = userEvent.setup()
       const onChange = vi.fn()
 
@@ -387,38 +230,30 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
         weight_kg: 32.5,
       }
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={initialData}
-          onChange={onChange}
-          readOnly={false}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={initialData} onChange={onChange} readOnly={false} />)
 
-      // Clear the name field
-      const nameInput = screen.getByDisplayValue('Max')
-      await user.clear(nameInput)
+      // Untick the name field
+      await user.click(screen.getByRole('checkbox', { name: 'Send name' }))
 
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
+        const latest = latestCall(onChange)
 
         // CRITICAL: Key should be DELETED, not set to undefined
-        expect('name' in latestCall).toBe(false)
-        expect(latestCall.name).toBeUndefined()
+        expect('name' in latest).toBe(false)
+        expect(latest.name).toBeUndefined()
 
         // Other fields should remain
-        expect(latestCall.age_months).toBe(36)
-        expect(latestCall.weight_kg).toBe(32.5)
+        expect(latest.age_months).toBe(36)
+        expect(latest.weight_kg).toBe(32.5)
       })
 
       // Verify no undefined values in the object
-      const finalData = onChange.mock.calls[onChange.mock.calls.length - 1][0]
+      const finalData = latestCall(onChange)
       const values = Object.values(finalData)
       expect(values.includes(undefined)).toBe(false)
     })
 
-    it('deletes nested field when cleared, not set to undefined', async () => {
+    it('deletes nested field when unset, not set to undefined', async () => {
       const user = userEvent.setup()
       const onChange = vi.fn()
 
@@ -430,39 +265,29 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
         },
       }
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={initialData}
-          onChange={onChange}
-          readOnly={false}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={initialData} onChange={onChange} readOnly={false} />)
 
-      await user.click(screen.getByRole('button', { name: /expand/i }))
-
-      // Clear owner.email
-      const emailInput = screen.getByDisplayValue('alice@example.com')
-      await user.clear(emailInput)
+      // Unset owner.email
+      await user.click(screen.getByRole('checkbox', { name: 'Send email' }))
 
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
+        const latest = latestCall(onChange)
 
         // CRITICAL: Key should be DELETED from owner object
-        expect('email' in (latestCall.owner || {})).toBe(false)
-        expect(latestCall.owner?.email).toBeUndefined()
+        expect('email' in (latest.owner || {})).toBe(false)
+        expect(latest.owner?.email).toBeUndefined()
 
         // Other nested fields should remain
-        expect(latestCall.owner?.name).toBe('Alice')
+        expect(latest.owner?.name).toBe('Alice')
       })
 
       // Verify no undefined values anywhere
-      const finalData = onChange.mock.calls[onChange.mock.calls.length - 1][0]
+      const finalData = latestCall(onChange)
       const ownerValues = Object.values(finalData.owner || {})
       expect(ownerValues.includes(undefined)).toBe(false)
     })
 
-    it('deletes deeply nested field when cleared', async () => {
+    it('deletes deeply nested field when unset', async () => {
       const user = userEvent.setup()
       const onChange = vi.fn()
 
@@ -479,30 +304,106 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
         },
       }
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={initialData}
-          onChange={onChange}
-          readOnly={false}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={initialData} onChange={onChange} readOnly={false} />)
 
-      await user.click(screen.getByRole('button', { name: /expand/i }))
-
-      // Clear city
-      const cityInput = screen.getByDisplayValue('San Francisco')
-      await user.clear(cityInput)
+      // Unset city
+      await user.click(screen.getByRole('checkbox', { name: 'Send city' }))
 
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
+        const latest = latestCall(onChange)
 
         // City should be deleted
-        expect('city' in (latestCall.owner?.address || {})).toBe(false)
+        expect('city' in (latest.owner?.address || {})).toBe(false)
 
         // Other fields intact
-        expect(latestCall.owner?.address?.street).toBe('123 Main St')
-        expect(latestCall.owner?.address?.coordinates?.latitude).toBe(37.7749)
+        expect(latest.owner?.address?.street).toBe('123 Main St')
+        expect(latest.owner?.address?.coordinates?.latitude).toBe(37.7749)
+      })
+    })
+
+    it('keeps nested message set as {} when its last field is unset', async () => {
+      const user = userEvent.setup()
+      const onChange = vi.fn()
+
+      const initialData = {
+        name: 'Max',
+        owner: {
+          name: 'Alice',
+        },
+      }
+
+      render(<SchemaRenderer schema={schema} data={initialData} onChange={onChange} readOnly={false} />)
+
+      // The second "Send name" checkbox is owner.name (the first is the pet's own name)
+      await user.click(screen.getAllByRole('checkbox', { name: 'Send name' })[1])
+
+      await waitFor(() => {
+        const latest = latestCall(onChange)
+        expect(latest.owner).toEqual({})
+        expect(latest.name).toBe('Max')
+      })
+    })
+
+    it('removes a nested message and everything under it when its checkbox is unticked', async () => {
+      const user = userEvent.setup()
+      const onChange = vi.fn()
+
+      const initialData = {
+        name: 'Max',
+        owner: {
+          name: 'Alice',
+          address: {
+            city: 'San Francisco',
+          },
+        },
+      }
+
+      render(<SchemaRenderer schema={schema} data={initialData} onChange={onChange} readOnly={false} />)
+
+      await user.click(screen.getByRole('checkbox', { name: 'Send owner' }))
+
+      await waitFor(() => {
+        const latest = latestCall(onChange)
+        expect('owner' in latest).toBe(false)
+        expect(latest.name).toBe('Max')
+      })
+    })
+
+    it('sends an unset nested message as {} and shows its fields when its checkbox is ticked', async () => {
+      const user = userEvent.setup()
+      const onChange = vi.fn()
+
+      render(<SchemaRenderer schema={schema} data={{ name: 'Max' }} onChange={onChange} readOnly={false} />)
+
+      const ownerCheckbox = screen.getByRole('checkbox', { name: 'Send owner' })
+      expect(ownerCheckbox).not.toBeChecked()
+      expect(screen.queryByPlaceholderText(/Enter email/i)).not.toBeInTheDocument()
+      await user.click(ownerCheckbox)
+
+      await waitFor(() => {
+        const latest = latestCall(onChange)
+        expect(latest.owner).toEqual({})
+      })
+      expect(screen.getByPlaceholderText(/Enter email/i)).toBeInTheDocument()
+    })
+
+    it('sets a bool through its true/false select and unsets it through its checkbox', async () => {
+      const user = userEvent.setup()
+      const onChange = vi.fn()
+
+      render(<SchemaRenderer schema={schema} data={{ name: 'Max' }} onChange={onChange} readOnly={false} />)
+
+      const select = screen.getByRole('combobox', { name: 'is_neutered' })
+      expect(select).toHaveValue('')
+
+      await user.selectOptions(select, 'false')
+      await waitFor(() => {
+        expect(latestCall(onChange).is_neutered).toBe(false)
+      })
+
+      await user.click(screen.getByRole('checkbox', { name: 'Send is_neutered' }))
+      await waitFor(() => {
+        expect('is_neutered' in latestCall(onChange)).toBe(false)
       })
     })
 
@@ -515,25 +416,17 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
         is_neutered: true,
       }
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={initialData}
-          onChange={onChange}
-          readOnly={false}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={initialData} onChange={onChange} readOnly={false} />)
 
-      // Toggle boolean to false
-      const checkbox = screen.getByRole('checkbox', { name: /is_neutered/i })
-      await user.click(checkbox)
+      // Set boolean to false
+      await user.selectOptions(screen.getByRole('combobox', { name: 'is_neutered' }), 'false')
 
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
+        const latest = latestCall(onChange)
 
         // Boolean false should be PRESERVED (not deleted)
-        expect(latestCall.is_neutered).toBe(false)
-        expect('is_neutered' in latestCall).toBe(true)
+        expect(latest.is_neutered).toBe(false)
+        expect('is_neutered' in latest).toBe(true)
       })
     })
 
@@ -546,14 +439,7 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
         age_months: 5,
       }
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={initialData}
-          onChange={onChange}
-          readOnly={false}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={initialData} onChange={onChange} readOnly={false} />)
 
       // Set age to zero
       const ageInput = screen.getByDisplayValue('5')
@@ -561,11 +447,11 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
       await user.type(ageInput, '0')
 
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
+        const latest = latestCall(onChange)
 
         // Zero should be PRESERVED (not deleted)
-        expect(latestCall.age_months).toBe(0)
-        expect('age_months' in latestCall).toBe(true)
+        expect(latest.age_months).toBe(0)
+        expect('age_months' in latest).toBe(true)
       })
     })
 
@@ -578,25 +464,19 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
         id: 'pet-123',
       }
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={initialData}
-          onChange={onChange}
-          readOnly={false}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={initialData} onChange={onChange} readOnly={false} />)
 
       // Clear id to empty string
       const idInput = screen.getByDisplayValue('pet-123')
       await user.clear(idInput)
 
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
+        const latest = latestCall(onChange)
 
-        // Empty string means field is cleared - should be DELETED
-        expect('id' in latestCall).toBe(false)
+        // Emptying the input leaves the field out; ticking its checkbox sends an empty string
+        expect('id' in latest).toBe(false)
       })
+      expect(screen.getByRole('checkbox', { name: 'Send id' })).not.toBeChecked()
     })
 
     it('removes array items without leaving undefined', async () => {
@@ -607,16 +487,7 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
         nicknames: ['Maxy', 'Good Boy', 'Buddy'],
       }
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={initialData}
-          onChange={onChange}
-          readOnly={false}
-        />
-      )
-
-      await user.click(screen.getByRole('button', { name: /expand/i }))
+      render(<SchemaRenderer schema={schema} data={initialData} onChange={onChange} readOnly={false} />)
 
       // Find remove buttons (using accessible name or aria-label)
       // The X button should be within the nicknames section
@@ -631,15 +502,15 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
       await user.click(xButtons[1])
 
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
+        const latest = latestCall(onChange)
 
         // Array should have 2 items after removal, no undefined
-        expect(Array.isArray(latestCall.nicknames)).toBe(true)
-        expect(latestCall.nicknames.length).toBe(2)
-        expect(latestCall.nicknames.includes(undefined)).toBe(false)
+        expect(Array.isArray(latest.nicknames)).toBe(true)
+        expect(latest.nicknames.length).toBe(2)
+        expect(latest.nicknames.includes(undefined)).toBe(false)
 
         // Should be either ['Maxy', 'Buddy'] or ['Good Boy', 'Buddy'] depending on which was removed
-        expect(latestCall.nicknames).toContain('Buddy')
+        expect(latest.nicknames).toContain('Buddy')
       })
     })
 
@@ -655,16 +526,7 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
         },
       }
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={initialData}
-          onChange={onChange}
-          readOnly={false}
-        />
-      )
-
-      await user.click(screen.getByRole('button', { name: /expand/i }))
+      render(<SchemaRenderer schema={schema} data={initialData} onChange={onChange} readOnly={false} />)
 
       // Find X buttons for map entries
       const allButtons = screen.getAllByRole('button')
@@ -676,13 +538,13 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
       await user.click(xButtons[0])
 
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
+        const latest = latestCall(onChange)
 
         // Map should have 2 entries after removal
-        expect(Object.keys(latestCall.tags || {}).length).toBe(2)
+        expect(Object.keys(latest.tags || {}).length).toBe(2)
 
         // No undefined values in map
-        const mapValues = Object.values(latestCall.tags || {})
+        const mapValues = Object.values(latest.tags || {})
         expect(mapValues.includes(undefined)).toBe(false)
       })
     })
@@ -707,16 +569,7 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
         },
       }
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={existingPet}
-          onChange={onChange}
-          readOnly={false}
-        />
-      )
-
-      await user.click(screen.getByRole('button', { name: /expand/i }))
+      render(<SchemaRenderer schema={schema} data={existingPet} onChange={onChange} readOnly={false} />)
 
       // Edit name
       const nameInput = screen.getByDisplayValue('Max')
@@ -734,15 +587,15 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
       await user.type(emailInput, 'alice.johnson@example.com')
 
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
+        const latest = latestCall(onChange)
 
         // All edits should be reflected
-        expect(latestCall.name).toBe('Maximus')
-        expect(latestCall.age_months).toBe(36)
-        expect(latestCall.owner?.email).toBe('alice.johnson@example.com')
+        expect(latest.name).toBe('Maximus')
+        expect(latest.age_months).toBe(36)
+        expect(latest.owner?.email).toBe('alice.johnson@example.com')
 
         // No undefined values anywhere
-        const allValues = JSON.stringify(latestCall)
+        const allValues = JSON.stringify(latest)
         expect(allValues.includes('undefined')).toBe(false)
       })
     })
@@ -759,31 +612,16 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
         },
       }
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={existingPet}
-          onChange={onChange}
-          readOnly={false}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={existingPet} onChange={onChange} readOnly={false} />)
 
-      await user.click(screen.getByRole('button', { name: /expand/i }))
-
-      // Clear all owner fields
-      const ownerNameInput = screen.getAllByPlaceholderText(/Enter name/i)[1]
-      await user.clear(ownerNameInput)
-
-      const emailInput = screen.getByDisplayValue('alice@example.com')
-      await user.clear(emailInput)
+      // Remove the whole owner message in one go
+      await user.click(screen.getByRole('checkbox', { name: 'Send owner' }))
 
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
+        const latest = latestCall(onChange)
 
-        // Owner object should still exist but fields cleared
-        expect(latestCall.owner).toBeDefined()
-        expect('name' in (latestCall.owner || {})).toBe(false)
-        expect('email' in (latestCall.owner || {})).toBe(false)
+        expect('owner' in latest).toBe(false)
+        expect(latest.name).toBe('Max')
       })
     })
   })
@@ -793,14 +631,7 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
       const user = userEvent.setup()
       const onChange = vi.fn()
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={{}}
-          onChange={onChange}
-          readOnly={false}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={{}} onChange={onChange} readOnly={false} />)
 
       // Type, clear, type again rapidly
       const nameInput = screen.getByPlaceholderText(/Enter name/i)
@@ -811,10 +642,10 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
       await user.type(nameInput, 'Buddy')
 
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
+        const latest = latestCall(onChange)
 
         // Final value should be set correctly
-        expect(latestCall.name).toBe('Buddy')
+        expect(latest.name).toBe('Buddy')
 
         // No undefined in any call
         onChange.mock.calls.forEach(call => {
@@ -836,14 +667,7 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
         is_neutered: true,
       }
 
-      render(
-        <SchemaRenderer
-          schema={schema}
-          data={initialData}
-          onChange={onChange}
-          readOnly={false}
-        />
-      )
+      render(<SchemaRenderer schema={schema} data={initialData} onChange={onChange} readOnly={false} />)
 
       // Edit multiple fields
       await user.clear(screen.getByDisplayValue('Max'))
@@ -855,19 +679,19 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
       await user.clear(screen.getByDisplayValue('30'))
       await user.type(screen.getByPlaceholderText(/Enter weight_kg/i), '32.5')
 
-      await user.click(screen.getByRole('checkbox', { name: /is_neutered/i }))
+      await user.selectOptions(screen.getByRole('combobox', { name: 'is_neutered' }), 'false')
 
       await waitFor(() => {
-        const latestCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
+        const latest = latestCall(onChange)
 
         // All edits preserved
-        expect(latestCall.name).toBe('Rex')
-        expect(latestCall.age_months).toBe(36)
-        expect(latestCall.weight_kg).toBe(32.5)
-        expect(latestCall.is_neutered).toBe(false)
+        expect(latest.name).toBe('Rex')
+        expect(latest.age_months).toBe(36)
+        expect(latest.weight_kg).toBe(32.5)
+        expect(latest.is_neutered).toBe(false)
 
         // No undefined values
-        expect(Object.values(latestCall).includes(undefined)).toBe(false)
+        expect(Object.values(latest).includes(undefined)).toBe(false)
       })
     })
   })
@@ -880,21 +704,8 @@ describe('SchemaRenderer - Pet Message WRITE Path', () => {
 // ---------------------------------------------------------------------------
 
 describe('SchemaRenderer - Wrapper type field write path', () => {
-  const schema = (() => {
-    const StringValueSchema: DescMessage = {
-      typeName: 'google.protobuf.StringValue',
-      fields: [{ name: 'value', fieldKind: 'scalar', scalar: 9 /* STRING */ } as DescField],
-      oneofs: [], nestedMessages: [], nestedEnums: [],
-    } as DescMessage
-
-    return {
-      typeName: 'test.WrapperHolder',
-      fields: [
-        { name: 'description', fieldKind: 'message', message: StringValueSchema } as DescField,
-      ],
-      oneofs: [], nestedMessages: [], nestedEnums: [],
-    } as DescMessage
-  })()
+  // Pet.description is a google.protobuf.StringValue
+  const schema = petSchema
 
   it('emits raw scalar (not wrapped object) when a wrapper field is filled', async () => {
     const user = userEvent.setup()
@@ -906,7 +717,7 @@ describe('SchemaRenderer - Wrapper type field write path', () => {
     await user.type(input, 'A friendly dog')
 
     await waitFor(() => {
-      const latest = onChange.mock.calls.at(-1)![0]
+      const latest = latestCall(onChange)
       // Must be a raw string, not { value: 'A friendly dog' }
       expect(typeof latest.description).toBe('string')
       expect(latest.description).toBe('A friendly dog')
@@ -923,7 +734,7 @@ describe('SchemaRenderer - Wrapper type field write path', () => {
     await user.clear(input)
 
     await waitFor(() => {
-      const latest = onChange.mock.calls.at(-1)![0]
+      const latest = latestCall(onChange)
       // Key must be deleted — not {} or { value: undefined }
       expect('description' in latest).toBe(false)
     })
@@ -947,11 +758,10 @@ describe('SchemaRenderer - Struct field write path', () => {
         data={{ metadata: { priority: 42 } }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
 
     // Expand to reveal the struct field
-    await user.click(screen.getByRole('button', { name: /expand/i }))
 
     // The kind selector should show number_value
     const kindSelect = screen.getByTestId('structField-kindSelect')
@@ -966,7 +776,7 @@ describe('SchemaRenderer - Struct field write path', () => {
       expect((kindSelect as HTMLSelectElement).value).toBe('number')
 
       // The onChange value must be numeric (0), not a string or undefined
-      const latest = onChange.mock.calls.at(-1)![0]
+      const latest = latestCall(onChange)
       const structValue = (latest.metadata as Record<string, unknown>).priority
       expect(typeof structValue).toBe('number')
       expect(structValue).toBe(0)
@@ -983,19 +793,17 @@ describe('SchemaRenderer - Struct field write path', () => {
         data={{ metadata: { priority: 42, label: 'urgent' } }}
         onChange={onChange}
         readOnly={false}
-      />
+      />,
     )
-
-    await user.click(screen.getByRole('button', { name: /expand/i }))
 
     const numberInput = screen.getByDisplayValue('42')
     await user.clear(numberInput)
 
     await waitFor(() => {
-      const latest = onChange.mock.calls.at(-1)![0]
+      const latest = latestCall(onChange)
       const metadata = latest.metadata as Record<string, unknown>
       expect(typeof metadata.priority).toBe('number') // still number kind, reset to 0
-      expect(metadata.label).toBe('urgent')           // other field unaffected
+      expect(metadata.label).toBe('urgent') // other field unaffected
     })
   })
 })
@@ -1004,7 +812,7 @@ describe('SchemaRenderer - Struct field write path', () => {
 // FieldMaskField write path
 //
 // Two scenarios are tested:
-//   A. No sibling message in parent → free-text KeyInputAdder fallback
+//   A. No sibling message in parent → free-text path rows
 //   B. Sibling message present   → dropdown selector showing derived paths
 // ---------------------------------------------------------------------------
 
@@ -1016,11 +824,11 @@ describe('SchemaRenderer - FieldMaskField write path', () => {
     const onChange = vi.fn()
     render(<SchemaRenderer schema={fieldMaskMessageSchema} data={{}} onChange={onChange} readOnly={false} />)
 
-    await user.type(screen.getByPlaceholderText(/lowerCamelCase path/i), 'displayName')
     await user.click(screen.getByTestId('fieldMask-addButton'))
+    await user.keyboard('displayName{Enter}')
 
     await waitFor(() => {
-      const latest = onChange.mock.calls.at(-1)![0] as Record<string, unknown>
+      const latest = latestCall(onChange)
       expect(latest.mask).toBe('displayName')
       expect(typeof latest.mask).toBe('string')
     })
@@ -1029,37 +837,53 @@ describe('SchemaRenderer - FieldMaskField write path', () => {
   it('appends a second path to the comma-separated string', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
-    render(<SchemaRenderer schema={fieldMaskMessageSchema} data={{ mask: 'name' }} onChange={onChange} readOnly={false} />)
+    render(
+      <SchemaRenderer schema={fieldMaskMessageSchema} data={{ mask: 'name' }} onChange={onChange} readOnly={false} />,
+    )
 
-    await user.type(screen.getByPlaceholderText(/lowerCamelCase path/i), 'email')
     await user.click(screen.getByTestId('fieldMask-addButton'))
+    await user.keyboard('email{Enter}')
 
     await waitFor(() => {
-      expect((onChange.mock.calls.at(-1)![0] as Record<string, unknown>).mask).toBe('name,email')
+      expect(latestCall(onChange).mask).toBe('name,email')
     })
   })
 
   it('removes a path chip, deleting the key entirely when the list empties', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
-    render(<SchemaRenderer schema={fieldMaskMessageSchema} data={{ mask: 'displayName' }} onChange={onChange} readOnly={false} />)
+    render(
+      <SchemaRenderer
+        schema={fieldMaskMessageSchema}
+        data={{ mask: 'displayName' }}
+        onChange={onChange}
+        readOnly={false}
+      />,
+    )
 
     await user.click(screen.getByRole('button', { name: 'Remove path displayName' }))
 
     await waitFor(() => {
-      expect('mask' in (onChange.mock.calls.at(-1)![0] as Record<string, unknown>)).toBe(false)
+      expect('mask' in latestCall(onChange)).toBe(false)
     })
   })
 
   it('removes only the clicked chip, preserving siblings', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
-    render(<SchemaRenderer schema={fieldMaskMessageSchema} data={{ mask: 'name,email,phone' }} onChange={onChange} readOnly={false} />)
+    render(
+      <SchemaRenderer
+        schema={fieldMaskMessageSchema}
+        data={{ mask: 'name,email,phone' }}
+        onChange={onChange}
+        readOnly={false}
+      />,
+    )
 
     await user.click(screen.getByRole('button', { name: 'Remove path email' }))
 
     await waitFor(() => {
-      expect((onChange.mock.calls.at(-1)![0] as Record<string, unknown>).mask).toBe('name,phone')
+      expect(latestCall(onChange).mask).toBe('name,phone')
     })
   })
 
@@ -1068,8 +892,8 @@ describe('SchemaRenderer - FieldMaskField write path', () => {
     const onChange = vi.fn()
     render(<SchemaRenderer schema={fieldMaskMessageSchema} data={{}} onChange={onChange} readOnly={false} />)
 
-    await user.type(screen.getByPlaceholderText(/lowerCamelCase path/i), 'ageMonths')
     await user.click(screen.getByTestId('fieldMask-addButton'))
+    await user.keyboard('ageMonths{Enter}')
 
     await waitFor(() => {
       for (const [call] of onChange.mock.calls as [Record<string, unknown>][]) {
@@ -1077,7 +901,6 @@ describe('SchemaRenderer - FieldMaskField write path', () => {
       }
     })
   })
-
 })
 
 // ---------------------------------------------------------------------------
@@ -1096,7 +919,7 @@ describe('SchemaRenderer - DurationField write path', () => {
     await user.type(screen.getByPlaceholderText(/86400s/i), '864000s')
 
     await waitFor(() => {
-      const latest = onChange.mock.calls.at(-1)![0] as Record<string, unknown>
+      const latest = latestCall(onChange)
       expect(typeof latest.dur).toBe('string')
       expect(latest.dur).toBe('864000s')
     })
@@ -1107,13 +930,13 @@ describe('SchemaRenderer - DurationField write path', () => {
     const onChange = vi.fn()
 
     render(
-      <SchemaRenderer schema={durationMessageSchema} data={{ dur: '86400s' }} onChange={onChange} readOnly={false} />
+      <SchemaRenderer schema={durationMessageSchema} data={{ dur: '86400s' }} onChange={onChange} readOnly={false} />,
     )
 
     await user.clear(screen.getByDisplayValue('86400s'))
 
     await waitFor(() => {
-      expect('dur' in (onChange.mock.calls.at(-1)![0] as Record<string, unknown>)).toBe(false)
+      expect('dur' in latestCall(onChange)).toBe(false)
     })
   })
 
@@ -1122,7 +945,7 @@ describe('SchemaRenderer - DurationField write path', () => {
     const onChange = vi.fn()
 
     render(
-      <SchemaRenderer schema={durationMessageSchema} data={{ dur: '3600s' }} onChange={onChange} readOnly={false} />
+      <SchemaRenderer schema={durationMessageSchema} data={{ dur: '3600s' }} onChange={onChange} readOnly={false} />,
     )
 
     const input = screen.getByDisplayValue('3600s')
@@ -1130,7 +953,7 @@ describe('SchemaRenderer - DurationField write path', () => {
     await user.type(input, '7200s')
 
     await waitFor(() => {
-      const latest = onChange.mock.calls.at(-1)![0] as Record<string, unknown>
+      const latest = latestCall(onChange)
       expect(latest.dur).toBe('7200s')
     })
   })

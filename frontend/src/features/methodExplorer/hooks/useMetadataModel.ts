@@ -2,8 +2,8 @@
 
 import { useCallback, useMemo, useState } from 'react'
 import type { RequestMetadata } from '@grpc-studio/shared'
-import type { MetadataModel, MetadataRow } from '../types'
-import { activeRowCount, rowsToMetadata } from '../utils/metadata'
+import type { MetadataModel, MetadataRow } from '@/features/methodExplorer/types'
+import { activeRowCount, rowsToMetadata } from '@/features/methodExplorer/utils/metadata'
 
 let rowIdCounter = 0
 function nextRowId(): string {

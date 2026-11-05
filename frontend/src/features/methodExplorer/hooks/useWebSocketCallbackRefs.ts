@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import { useEffect, useMemo, useRef } from 'react'
-import type { UseGrpcWebSocketOptions } from './useGrpcWebSocket'
+import type { UseGrpcWebSocketOptions } from '@/features/methodExplorer/hooks/useGrpcWebSocket'
 
 export function useWebSocketCallbackRefs(options: UseGrpcWebSocketOptions) {
   const onResponseRef = useRef(options.onResponse)
@@ -18,8 +18,5 @@ export function useWebSocketCallbackRefs(options: UseGrpcWebSocketOptions) {
     onCloseRef.current = options.onClose
   }, [options.onResponse, options.onError, options.onComplete, options.onOpen, options.onClose])
 
-  return useMemo(
-    () => ({ onResponseRef, onErrorRef, onCompleteRef, onOpenRef, onCloseRef }),
-    [],
-  )
+  return useMemo(() => ({ onResponseRef, onErrorRef, onCompleteRef, onOpenRef, onCloseRef }), [])
 }

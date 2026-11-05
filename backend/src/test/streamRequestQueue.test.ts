@@ -2,7 +2,7 @@
 
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { StreamRequestQueue } from '../websocket/streamRequestQueue.js'
+import { StreamRequestQueue } from '#src/websocket/streamRequestQueue.js'
 
 describe('StreamRequestQueue', () => {
   describe('push and iteration', () => {
@@ -151,10 +151,7 @@ describe('StreamRequestQueue', () => {
       }
 
       // Next push should throw
-      assert.throws(
-        () => queue.push(1001),
-        /Stream queue overflow: maximum 1000 buffered messages exceeded/
-      )
+      assert.throws(() => queue.push(1001), /Stream queue overflow: maximum 1000 buffered messages exceeded/)
     })
 
     it('should enforce custom max queue size', () => {
@@ -164,10 +161,7 @@ describe('StreamRequestQueue', () => {
         queue.push(i)
       }
 
-      assert.throws(
-        () => queue.push(6),
-        /Stream queue overflow: maximum 5 buffered messages exceeded/
-      )
+      assert.throws(() => queue.push(6), /Stream queue overflow: maximum 5 buffered messages exceeded/)
     })
 
     it('should allow push when consumer is actively draining queue', async () => {
@@ -305,7 +299,7 @@ describe('StreamRequestQueue', () => {
 
       assert.deepEqual(values, [
         { id: 1, name: 'Alice' },
-        { id: 2, name: 'Bob' }
+        { id: 2, name: 'Bob' },
       ])
     })
   })

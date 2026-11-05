@@ -1,116 +1,57 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-import type { DescField, DescMessage } from '@bufbuild/protobuf'
+import type { DescEnum, DescField, DescMessage } from '@bufbuild/protobuf'
 import { ScalarType, fromBinary, createFileRegistry } from '@bufbuild/protobuf'
 import { FileDescriptorSetSchema } from '@bufbuild/protobuf/wkt'
-import { WRAPPER_TYPE_TO_SCALAR } from '../types/protoConstants'
-
-export function isTimestampType(typeName: string): boolean {
-  return typeName === 'google.protobuf.Timestamp' || typeName === '.google.protobuf.Timestamp'
-}
-
-export function isDurationType(typeName: string): boolean {
-  return typeName === 'google.protobuf.Duration' || typeName === '.google.protobuf.Duration'
-}
-
-export function isFieldMaskType(typeName: string): boolean {
-  return typeName === 'google.protobuf.FieldMask' || typeName === '.google.protobuf.FieldMask'
-}
-
-export function isAnyType(typeName: string): boolean {
-  return typeName === 'google.protobuf.Any' || typeName === '.google.protobuf.Any'
-}
-
-export function isStructType(typeName: string): boolean {
-  return typeName === 'google.protobuf.Struct' || typeName === '.google.protobuf.Struct'
-}
+import { base64Decode } from '@bufbuild/protobuf/wire'
 
 export function scalarTypeName(s: ScalarType): string {
   return ScalarType[s].toLowerCase()
 }
 
-export function fieldTypeName(field: DescField): string {
+/**
+ * A field's type as written in a .proto file, e.g. `string`, `pkg.Status` or `map<string, pkg.Pet>`.
+ * `nameOf` picks how enum and message types are named: fully qualified by default, or e.g. `d => d.name`.
+ */
+export function fieldTypeName(
+  field: DescField,
+  nameOf: (type: DescEnum | DescMessage) => string = type => type.typeName,
+): string {
   switch (field.fieldKind) {
     case 'scalar':
       return scalarTypeName(field.scalar)
     case 'enum':
-      return field.enum.typeName
+      return nameOf(field.enum)
     case 'message':
-      return field.message.typeName
+      return nameOf(field.message)
     case 'list':
       if (field.listKind === 'scalar') return scalarTypeName(field.scalar)
-      if (field.listKind === 'enum')   return field.enum.typeName
-      return field.message.typeName
+      return nameOf(field.listKind === 'enum' ? field.enum : field.message)
     case 'map': {
       const key = scalarTypeName(field.mapKey)
       const val =
-        field.mapKind === 'scalar' ? scalarTypeName(field.scalar)
-        : field.mapKind === 'enum'   ? field.enum.typeName
-        : field.message.typeName
+        field.mapKind === 'scalar'
+          ? scalarTypeName(field.scalar)
+          : nameOf(field.mapKind === 'enum' ? field.enum : field.message)
       return `map<${key}, ${val}>`
     }
   }
 }
 
-export function fieldNestedMessage(field: DescField): DescMessage | null {
-  if (field.fieldKind === 'message') return field.message
-  if (field.fieldKind === 'list' && field.listKind === 'message') return field.message
-  if (field.fieldKind === 'map'  && field.mapKind  === 'message') return field.message
-  return null
-}
-
-
-export function wrapperPrimitiveType(typeName: string): string | null {
-  return WRAPPER_TYPE_TO_SCALAR[typeName] ?? null
-}
-
-export function parseDescriptorIntoMap(
-  base64: string,
-  target: Map<string, DescMessage>,
-): void {
-  const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0))
-  const fdSet = fromBinary(FileDescriptorSetSchema, bytes)
-  const registry = createFileRegistry(fdSet)
-
-  for (const file of fdSet.file) {
-    if (!file.name) continue
-    const descFile = registry.getFile(file.name)
-    if (!descFile) continue
-    collectMessages(descFile.messages, target)
+export function parseDescriptorIntoMap(base64: string, target: Map<string, DescMessage>): void {
+  const fdSet = fromBinary(FileDescriptorSetSchema, base64Decode(base64))
+  // A registry iterates every type it holds, nested messages included
+  for (const type of createFileRegistry(fdSet)) {
+    if (type.kind === 'message') target.set(type.typeName, type)
   }
 }
 
-function collectMessages(messages: readonly DescMessage[], target: Map<string, DescMessage>): void {
-  for (const msg of messages) {
-    target.set(msg.typeName, msg)
-    if (msg.nestedMessages.length > 0) {
-      collectMessages(msg.nestedMessages, target)
-    }
-  }
+/** The `@type` URL for a message type in an Any, with the same prefix buf's `anyPack` uses. */
+export function anyTypeUrl(typeName: string): string {
+  return `type.googleapis.com/${typeName}`
 }
 
-/**
- * Convert scalar type name string to ScalarType enum.
- * Used for wrapper types that still need string → enum conversion.
- */
-export function scalarTypeFromName(typeName: string): ScalarType {
-  const lower = typeName.toLowerCase()
-  switch (lower) {
-    case 'double': return ScalarType.DOUBLE
-    case 'float': return ScalarType.FLOAT
-    case 'int32': return ScalarType.INT32
-    case 'int64': return ScalarType.INT64
-    case 'uint32': return ScalarType.UINT32
-    case 'uint64': return ScalarType.UINT64
-    case 'sint32': return ScalarType.SINT32
-    case 'sint64': return ScalarType.SINT64
-    case 'fixed32': return ScalarType.FIXED32
-    case 'fixed64': return ScalarType.FIXED64
-    case 'sfixed32': return ScalarType.SFIXED32
-    case 'sfixed64': return ScalarType.SFIXED64
-    case 'bool': return ScalarType.BOOL
-    case 'string': return ScalarType.STRING
-    case 'bytes': return ScalarType.BYTES
-    default: return ScalarType.STRING
-  }
+/** The message type name in an Any's `@type` URL: everything after the last "/", per the Any spec. */
+export function anyTypeName(typeUrl: string): string {
+  return typeUrl.slice(typeUrl.lastIndexOf('/') + 1)
 }

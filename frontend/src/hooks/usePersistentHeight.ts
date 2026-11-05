@@ -20,7 +20,7 @@ import { safeGetJSON, safeSetJSON } from '@/utils/storageHelpers'
  */
 export function usePersistentHeight<T extends HTMLElement = HTMLDivElement>(
   key: string,
-  defaultHeight: string
+  defaultHeight: string,
 ): { ref: (node: T | null) => void; style: React.CSSProperties } {
   // Latest known height, read at render time so a remount restores it. Seeded
   // from storage; updated in place as the user drags (no re-render mid-drag).
@@ -37,7 +37,7 @@ export function usePersistentHeight<T extends HTMLElement = HTMLDivElement>(
 
       // Ignore the observer's initial fire; only persist heights the user drags to.
       let seenInitial = false
-      const observer = new ResizeObserver((entries) => {
+      const observer = new ResizeObserver(entries => {
         const entry = entries[0]
         if (!entry) return
         if (!seenInitial) {
@@ -52,7 +52,7 @@ export function usePersistentHeight<T extends HTMLElement = HTMLDivElement>(
       observer.observe(node)
       observerRef.current = observer
     },
-    [key]
+    [key],
   )
 
   useEffect(
@@ -60,7 +60,7 @@ export function usePersistentHeight<T extends HTMLElement = HTMLDivElement>(
       observerRef.current?.disconnect()
       if (saveTimer.current) clearTimeout(saveTimer.current)
     },
-    []
+    [],
   )
 
   return { ref, style: { height: heightRef.current } }

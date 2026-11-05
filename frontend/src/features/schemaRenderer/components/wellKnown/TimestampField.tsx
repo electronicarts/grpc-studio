@@ -1,9 +1,9 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import React from 'react'
-import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
-import { FormField } from '../../../../components/shared'
-import { MuiDateTimePicker } from '../../../../components/ui/mui-datetime-picker'
+import { useProtoMessageRendererContext } from '@/features/schemaRenderer/stores/schemaRendererContext'
+import { FormField } from '@/components/shared'
+import { MuiDateTimePicker } from '@/components/ui/mui-datetime-picker'
 
 interface TimestampFieldProps {
   name: string
@@ -27,11 +27,7 @@ const TimestampField: React.FC<TimestampFieldProps> = ({ name, value, onChange }
     <FormField label={name} labelMeta={typeMeta}>
       <div className="flex items-center gap-2">
         <div className="flex-1">
-          <MuiDateTimePicker
-            value={isoValue}
-            onChange={handleChange}
-            disabled={readOnly}
-          />
+          <MuiDateTimePicker value={isoValue} onChange={handleChange} disabled={readOnly} />
         </div>
         <span className="whitespace-nowrap text-xs font-medium text-muted-foreground">UTC</span>
       </div>

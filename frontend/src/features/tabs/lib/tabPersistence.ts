@@ -8,7 +8,7 @@
  * own tabs. localStorage holds the most recently saved set and is only read to
  * seed a browser tab with no session state yet (new window, browser restart).
  */
-import type { MethodTab } from '../types'
+import type { MethodTab } from '@/features/tabs/types'
 import { safeGetJSON, safeSetJSON } from '@/utils/storageHelpers'
 
 const TABS_KEY = 'grpc-studio-tabs'

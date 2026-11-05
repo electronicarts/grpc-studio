@@ -1,35 +1,18 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-export {
-  MethodKind,
-  METHOD_KINDS,
-  STREAMING_METHOD_KINDS,
-} from './api/methodKind.js'
+export { withWellKnownTypes } from '#src/protobuf/wellKnownTypesRegistry.js'
 
-export type {
-  JsonPrimitive,
-  JsonObject,
-  JsonArray,
-  JsonValue,
-} from './api/json.js'
+export { MethodKind, METHOD_KINDS, STREAMING_METHOD_KINDS } from '#src/api/methodKind.js'
 
-export {
-  isJsonValue,
-} from './api/json.js'
+export type { JsonObject, JsonValue } from '#src/api/json.js'
 
-export type {
-  StreamingMethodKind,
-} from './api/methodKind.js'
+export { isJsonValue } from '#src/api/json.js'
 
-export {
-  HealthStatus,
-  HEALTH_STATUSES,
-} from './api/health.js'
+export type { StreamingMethodKind } from '#src/api/methodKind.js'
 
-export type {
-  RootRequest,
-  RootResponse,
-} from './api/root.js'
+export { HealthStatus, HEALTH_STATUSES } from '#src/api/health.js'
+
+export type { RootRequest, RootResponse } from '#src/api/root.js'
 
 export type {
   HealthRequest,
@@ -40,54 +23,28 @@ export type {
   ReadinessResponse,
   LivenessRequest,
   LivenessResponse,
-} from './api/health.js'
+} from '#src/api/health.js'
 
-export type {
-  ApiErrorInfo,
-  ApiErrorResponse,
-  NotFoundResponse,
-} from './api/error.js'
+export type { ApiErrorInfo, ApiErrorResponse, NotFoundResponse } from '#src/api/error.js'
 
-export type {
-  ApiMethod,
-  ApiService,
-  ApiServer,
-  DiscoveryRequest,
-  DiscoveryResponse,
-} from './api/discovery.js'
+export type { ApiMethod, ApiService, ApiServer, DiscoveryRequest, DiscoveryResponse } from '#src/api/discovery.js'
 
-export type {
-  DescriptorSetRequest,
-  DescriptorSetResponse,
-} from './api/descriptorSet.js'
+export type { DescriptorSetRequest, DescriptorSetResponse } from '#src/api/descriptorSet.js'
 
 export type {
   InvokeUnaryRequest,
   InvokeUnarySuccessResponse,
   InvokeUnaryErrorResponse,
   InvokeUnaryResponse,
-} from './api/invocation.js'
+} from '#src/api/invocation.js'
 
-export type {
-  RequestMetadata,
-  RequestMetadataValidationResult,
-} from './api/metadata.js'
+export type { RequestMetadata, RequestMetadataValidationResult } from '#src/api/metadata.js'
 
-export {
-  sanitizeRequestMetadata,
-} from './api/metadata.js'
+export { sanitizeRequestMetadata } from '#src/api/metadata.js'
 
-export type {
-  ConfigRequest,
-  PublicConfig,
-  ConfigResponse,
-} from './api/config.js'
+export type { ConfigRequest, PublicConfig, ConfigResponse } from '#src/api/config.js'
 
-export type {
-  StatusRequest,
-  StatusResponse,
-  ServerStatus,
-} from './api/status.js'
+export type { StatusRequest, StatusResponse, ServerStatus } from '#src/api/status.js'
 
 export type {
   CertificateRequest,
@@ -97,12 +54,9 @@ export type {
   CertificateNotConfiguredResponse,
   CertificateConfiguredResponse,
   CertificateResponse,
-} from './api/certificate.js'
+} from '#src/api/certificate.js'
 
-export {
-  CertificateStatus,
-  CERTIFICATE_STATUSES,
-} from './api/certificate.js'
+export { CertificateStatus, CERTIFICATE_STATUSES } from '#src/api/certificate.js'
 
 export type {
   InvokeStreamUserHeaders,
@@ -118,4 +72,4 @@ export type {
   InvokeStreamCompleteResponse,
   InvokeStreamPongResponse,
   InvokeStreamResponse,
-} from './api/websocket.js'
+} from '#src/api/websocket.js'

@@ -1,9 +1,9 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
-import type { MethodTab, UseMethodTabsProps, UseMethodTabsReturn } from '../types'
-import { makeTabId, matchesSelection, nextDuplicateId, type TabSelection } from '../utils/tabIdentity'
-import { restoreTabs, persistTabs, persistActiveTab } from '../lib/tabPersistence'
+import type { MethodTab, UseMethodTabsProps, UseMethodTabsReturn } from '@/features/tabs/types'
+import { makeTabId, matchesSelection, nextDuplicateId, type TabSelection } from '@/features/tabs/utils/tabIdentity'
+import { restoreTabs, persistTabs, persistActiveTab } from '@/features/tabs/lib/tabPersistence'
 import { tabStateStore } from '@/stores'
 
 export function useMethodTabs({
@@ -26,7 +26,7 @@ export function useMethodTabs({
         ? { target: selectedTarget, service: selectedService, method: selectedMethod }
         : null,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [selectedTarget, selectedService?.fullName, selectedMethod?.name]
+    [selectedTarget, selectedService?.fullName, selectedMethod?.name],
   )
 
   // Use ref to avoid stale closures
@@ -97,41 +97,47 @@ export function useMethodTabs({
   }, [pendingShare, onShareConsumed, tabs])
 
   // Open another copy of an existing tab, so the same method can live in multiple tabs.
-  const duplicateTab = useCallback((sourceTabId: string) => {
-    const source = tabs.find(t => t.id === sourceTabId)
-    if (!source) return
-    const newId = nextDuplicateId(source, tabs)
-    setTabs(prev => [...prev, { ...source, id: newId }])
-    setActiveTabId(newId)
-  }, [tabs])
+  const duplicateTab = useCallback(
+    (sourceTabId: string) => {
+      const source = tabs.find(t => t.id === sourceTabId)
+      if (!source) return
+      const newId = nextDuplicateId(source, tabs)
+      setTabs(prev => [...prev, { ...source, id: newId }])
+      setActiveTabId(newId)
+    },
+    [tabs],
+  )
 
-  const closeTab = useCallback((tabId: string) => {
-    // Drop the tab's stored state; its id is deterministic, so a leftover
-    // slice would resurrect stale data if the same method is reopened.
-    tabStateStore.remove(tabId)
+  const closeTab = useCallback(
+    (tabId: string) => {
+      // Drop the tab's stored state; its id is deterministic, so a leftover
+      // slice would resurrect stale data if the same method is reopened.
+      tabStateStore.remove(tabId)
 
-    setTabs(prev => {
-      const newTabs = prev.filter(t => t.id !== tabId)
+      setTabs(prev => {
+        const newTabs = prev.filter(t => t.id !== tabId)
 
-      // If closing active tab, switch to another
-      if (activeTabId === tabId) {
-        if (newTabs.length > 0) {
-          const closingIndex = prev.findIndex(t => t.id === tabId)
-          const newActiveIndex = Math.max(0, closingIndex - 1)
-          setActiveTabId(newTabs[newActiveIndex]?.id || null)
-        } else {
-          setActiveTabId(null)
+        // If closing active tab, switch to another
+        if (activeTabId === tabId) {
+          if (newTabs.length > 0) {
+            const closingIndex = prev.findIndex(t => t.id === tabId)
+            const newActiveIndex = Math.max(0, closingIndex - 1)
+            setActiveTabId(newTabs[newActiveIndex]?.id || null)
+          } else {
+            setActiveTabId(null)
+          }
         }
+
+        return newTabs
+      })
+
+      // Clear the sidebar selection when the closed tab was the selected method.
+      if (selection && tabId === makeTabId(selection.target, selection.service, selection.method)) {
+        onClearSelectionRef.current?.()
       }
-
-      return newTabs
-    })
-
-    // Clear the sidebar selection when the closed tab was the selected method.
-    if (selection && tabId === makeTabId(selection.target, selection.service, selection.method)) {
-      onClearSelectionRef.current?.()
-    }
-  }, [activeTabId, selection])
+    },
+    [activeTabId, selection],
+  )
 
   const closeAllTabs = useCallback(() => {
     tabStateStore.clearAll()

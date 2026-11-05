@@ -5,12 +5,14 @@
  * through gRPC reflection.
  */
 
-import { createFileRegistry, type FileRegistry, create } from '@bufbuild/protobuf'
-import { FileDescriptorSetSchema, type FileDescriptorSet } from '@bufbuild/protobuf/wkt'
-import * as descriptorSetFromReflection from '../grpc/reflection/descriptorSetFromReflection.js'
-import * as reflectionMetadataCache from '../cache/reflectionMetadataCache.js'
-import multiClientManager from '../grpc/multiClientManager.js'
-import logger from '../utils/logger.js'
+import { createFileRegistry, type FileRegistry, type Registry } from '@bufbuild/protobuf'
+import type { FileDescriptorSet } from '@bufbuild/protobuf/wkt'
+import * as descriptorSetFromReflection from '#src/grpc/reflection/descriptorSetFromReflection.js'
+import * as reflectionMetadataCache from '#src/cache/reflectionMetadataCache.js'
+import multiClientManager from '#src/grpc/multiClientManager.js'
+import { withWellKnownTypes } from '@grpc-studio/shared'
+import logger from '#src/utils/logger.js'
+import { errorMessage } from '#src/utils/errorMessage.js'
 
 const repositoryLogger = logger.child({ module: 'reflection-schema-repository' })
 
@@ -18,6 +20,7 @@ const repositoryLogger = logger.child({ module: 'reflection-schema-repository' }
 const serviceNamesCache = reflectionMetadataCache.createReflectionMetadataCache<string[]>()
 const fileDescriptorSetCache = reflectionMetadataCache.createReflectionMetadataCache<FileDescriptorSet>()
 const fileRegistryCache = reflectionMetadataCache.createReflectionMetadataCache<FileRegistry>()
+const targetRegistryCache = reflectionMetadataCache.createReflectionMetadataCache<Registry>()
 
 function scopedKey(target: string, key: string): string {
   return `${target}:${key}`
@@ -50,7 +53,7 @@ export class ReflectionSchemaRepository {
     } catch (error) {
       repositoryLogger.error('Failed to list services', {
         target,
-        error: error instanceof Error ? error.message : String(error),
+        error: errorMessage(error),
       })
       throw error
     }
@@ -72,11 +75,7 @@ export class ReflectionSchemaRepository {
     try {
       const client = await multiClientManager.getReflectionClient(target)
       const callOptions = await multiClientManager.getReflectionCallOptions(target)
-      const fileDescriptorSet = await descriptorSetFromReflection.buildFileDescriptorSet(
-        client,
-        symbol,
-        callOptions
-      )
+      const fileDescriptorSet = await descriptorSetFromReflection.buildFileDescriptorSet(client, symbol, callOptions)
 
       fileDescriptorSetCache.set(cacheKey, fileDescriptorSet)
       repositoryLogger.debug('Built FileDescriptorSet', { target, symbol, files: fileDescriptorSet.file.length })
@@ -86,7 +85,7 @@ export class ReflectionSchemaRepository {
       repositoryLogger.error('Failed to build FileDescriptorSet', {
         target,
         symbol,
-        error: error instanceof Error ? error.message : String(error),
+        error: errorMessage(error),
       })
       throw error
     }
@@ -113,47 +112,42 @@ export class ReflectionSchemaRepository {
       repositoryLogger.error('Failed to build FileRegistry', {
         target,
         symbol,
-        error: error instanceof Error ? error.message : String(error),
+        error: errorMessage(error),
       })
       throw error
     }
   }
 
-  async getAllFileDescriptorSet(target: string): Promise<FileDescriptorSet> {
-    // Build a FileDescriptorSet containing ALL files from ALL services for a target.
-    // This is used for building a comprehensive registry for Any field decoding,
-    // since Any can contain messages from any reflected service.
-    const services = await this.listServices(target)
-    const allDescriptorSets: FileDescriptorSet[] = []
+  /**
+   * One registry with every type from every service on a target, plus the WKTs. Any fields can hold messages
+   * from any reflected service, so requests and responses are converted with this. Built by merging the
+   * per-service registries (already cached) and cached itself, so calls don't rebuild it.
+   */
+  async getTargetRegistry(target: string): Promise<Registry> {
+    const cacheKey = scopedKey(target, 'target-registry')
+    const cached = targetRegistryCache.get(cacheKey)
+    if (cached !== undefined) return cached
 
-    for (const serviceName of services) {
-      try {
-        const descriptorSet = await this.getFileDescriptorSet(target, serviceName)
-        allDescriptorSets.push(descriptorSet)
-      } catch (error) {
-        repositoryLogger.warn('Failed to get descriptor set for service, skipping', {
-          target,
-          serviceName,
-          error: error instanceof Error ? error.message : String(error),
-        })
+    // Services are independent, so look them up concurrently; one that fails is skipped
+    const serviceNames = await this.listServices(target)
+    const results = await Promise.allSettled(serviceNames.map(serviceName => this.getFileRegistry(target, serviceName)))
+    const serviceRegistries: FileRegistry[] = []
+    results.forEach((result, index) => {
+      if (result.status === 'fulfilled') {
+        serviceRegistries.push(result.value)
+        return
       }
-    }
+      repositoryLogger.warn('Failed to get registry for service, skipping', {
+        target,
+        serviceName: serviceNames[index],
+        error: errorMessage(result.reason),
+      })
+    })
 
-    // Merge all files from all descriptor sets, deduplicating by file name.
-    // Services commonly share files (e.g. common.proto, well-known types); passing a
-    // set with duplicate file names to createFileRegistry throws, so we keep the first
-    // occurrence of each name.
-    const filesByName = new Map<string, (typeof allDescriptorSets)[number]['file'][number]>()
-    for (const descriptorSet of allDescriptorSets) {
-      for (const file of descriptorSet.file) {
-        if (!filesByName.has(file.name)) {
-          filesByName.set(file.name, file)
-        }
-      }
-    }
-
-    // Create a proper FileDescriptorSet instance using @bufbuild/protobuf's create helper
-    return create(FileDescriptorSetSchema, { file: Array.from(filesByName.values()) })
+    const registry = withWellKnownTypes(...serviceRegistries)
+    targetRegistryCache.set(cacheKey, registry)
+    repositoryLogger.debug('Built target registry', { target, services: serviceRegistries.length })
+    return registry
   }
 
   clearCache(target?: string): void {
@@ -162,7 +156,7 @@ export class ReflectionSchemaRepository {
       // single target's entries by deleting every key with that prefix.
       const prefix = `${target}:`
       let cleared = 0
-      for (const cache of [serviceNamesCache, fileDescriptorSetCache, fileRegistryCache]) {
+      for (const cache of [serviceNamesCache, fileDescriptorSetCache, fileRegistryCache, targetRegistryCache]) {
         for (const key of [...cache.keys()]) {
           if (key.startsWith(prefix)) {
             cache.delete(key)
@@ -176,6 +170,7 @@ export class ReflectionSchemaRepository {
       serviceNamesCache.clear()
       fileDescriptorSetCache.clear()
       fileRegistryCache.clear()
+      targetRegistryCache.clear()
       repositoryLogger.info('Cleared all reflection schema caches')
     }
   }

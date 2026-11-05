@@ -3,13 +3,13 @@
 import { randomUUID } from 'node:crypto'
 import type { IncomingHttpHeaders, Server } from 'node:http'
 import { WebSocket, WebSocketServer, type VerifyClientCallbackAsync } from 'ws'
-import configManager from '../config/configManager.js'
-import { getUserContextFromHeaders } from '../middlewares/userContextMiddleware.js'
-import { evaluateOriginPolicy } from '../security/originPolicy.js'
-import logger from '../utils/logger.js'
-import { wsActiveConnections, wsConnectionsTotal, wsConnectionDuration } from '../metrics/metrics.js'
-import { WebSocketConnection } from './websocketConnection.js'
-import * as websocketProtocol from './websocketProtocol.js'
+import configManager from '#src/config/configManager.js'
+import { getUserContextFromHeaders } from '#src/middlewares/userContextMiddleware.js'
+import { evaluateOriginPolicy } from '#src/security/originPolicy.js'
+import logger from '#src/utils/logger.js'
+import { wsActiveConnections, wsConnectionsTotal, wsConnectionDuration } from '#src/metrics/metrics.js'
+import { WebSocketConnection } from '#src/websocket/websocketConnection.js'
+import * as websocketProtocol from '#src/websocket/websocketProtocol.js'
 
 const serverLogger = logger.child({ module: 'websocket-server' })
 const WEBSOCKET_PATH = '/ws/grpc'
@@ -37,7 +37,7 @@ export function createWebSocketServer(httpServer: Server): WebSocketServer {
   wss.on('connection', (ws, request) => {
     acceptConnection(ws as LiveWebSocket, request.headers, request.url)
   })
-  wss.on('error', (error) => {
+  wss.on('error', error => {
     serverLogger.error('WebSocket server error', { error: error.message })
   })
 
@@ -57,7 +57,7 @@ export function closeWebSocketServer(wss: WebSocketServer | null): Promise<void>
 
   closeAllConnections()
 
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     wss.close(() => {
       serverLogger.info('WebSocket server closed')
       resolve()
@@ -75,12 +75,12 @@ const verifyWebSocketOrigin: VerifyClientCallbackAsync = (info, callback) => {
   if (!decision.allowed) {
     if (decision.reason === 'missing_origin') {
       serverLogger.warn('Rejecting WebSocket connection without origin header', {
-        remoteAddress: info.req.socket.remoteAddress
+        remoteAddress: info.req.socket.remoteAddress,
       })
     } else {
       serverLogger.warn('Rejecting WebSocket connection from disallowed origin', {
         origin: info.origin,
-        remoteAddress: info.req.socket.remoteAddress
+        remoteAddress: info.req.socket.remoteAddress,
       })
     }
 
@@ -142,7 +142,7 @@ function acceptConnection(ws: LiveWebSocket, headers: IncomingHttpHeaders, path:
     wsConnectionDuration.observe({}, Number(process.hrtime.bigint() - connectedAt) / 1e9)
     closeConnection(connectionId)
   })
-  ws.on('error', (error) => {
+  ws.on('error', error => {
     serverLogger.error('WebSocket error', { connectionId, error: error.message })
     closeConnection(connectionId)
   })

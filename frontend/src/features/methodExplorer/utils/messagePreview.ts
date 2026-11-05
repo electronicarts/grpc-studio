@@ -21,11 +21,14 @@ export function getValuePreview(value: unknown): string {
         return `{${singleKey}: ${getValuePreview(singleValue)}}`
       }
     }
-    const preview = objKeys.slice(0, 2).map(k => {
-      const v = (value as Record<string, unknown>)[k]
-      if (typeof v === 'object') return k
-      return `${k}: ${getValuePreview(v)}`
-    }).join(', ')
+    const preview = objKeys
+      .slice(0, 2)
+      .map(k => {
+        const v = (value as Record<string, unknown>)[k]
+        if (typeof v === 'object') return k
+        return `${k}: ${getValuePreview(v)}`
+      })
+      .join(', ')
     return objKeys.length > 2 ? `{${preview}, ...}` : `{${preview}}`
   }
   return String(value)
@@ -36,9 +39,12 @@ export function getMessagePreview(msg: unknown): string {
   const keys = Object.keys(msg as Record<string, unknown>)
   if (keys.length === 0) return '{}'
 
-  const preview = keys.slice(0, 3).map(key => {
-    return `${key}: ${getValuePreview((msg as Record<string, unknown>)[key])}`
-  }).join(', ')
+  const preview = keys
+    .slice(0, 3)
+    .map(key => {
+      return `${key}: ${getValuePreview((msg as Record<string, unknown>)[key])}`
+    })
+    .join(', ')
 
   return keys.length > 3 ? `${preview}, ...` : preview
 }

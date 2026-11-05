@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import { describe, it, expect } from 'vitest'
-import { isRecord, isJsonObject, cloneJsonObject } from '../jsonUtils'
+import { isRecord, isJsonObject, cloneJsonObject } from '@/utils/jsonUtils'
 
 describe('jsonUtils', () => {
   describe('isRecord', () => {
@@ -45,20 +45,24 @@ describe('jsonUtils', () => {
     })
 
     it('should return true for nested JSON objects', () => {
-      expect(isJsonObject({
-        nested: {
-          deep: {
-            value: 'test'
-          }
-        }
-      })).toBe(true)
+      expect(
+        isJsonObject({
+          nested: {
+            deep: {
+              value: 'test',
+            },
+          },
+        }),
+      ).toBe(true)
     })
 
     it('should return true for objects with JSON arrays', () => {
-      expect(isJsonObject({
-        items: [1, 2, 3],
-        names: ['a', 'b', 'c']
-      })).toBe(true)
+      expect(
+        isJsonObject({
+          items: [1, 2, 3],
+          names: ['a', 'b', 'c'],
+        }),
+      ).toBe(true)
     })
 
     it('should return false for arrays', () => {
@@ -95,9 +99,9 @@ describe('jsonUtils', () => {
       const original = {
         level1: {
           level2: {
-            level3: 'deep'
-          }
-        }
+            level3: 'deep',
+          },
+        },
       }
       const cloned = cloneJsonObject(original)
 
@@ -109,7 +113,7 @@ describe('jsonUtils', () => {
     it('should clone arrays within objects', () => {
       const original = {
         items: [1, 2, 3],
-        nested: [{ a: 1 }, { a: 2 }]
+        nested: [{ a: 1 }, { a: 2 }],
       }
       const cloned = cloneJsonObject(original)
 
@@ -126,7 +130,7 @@ describe('jsonUtils', () => {
         boolean: true,
         nullValue: null,
         array: [1, 2, 3],
-        object: { nested: true }
+        object: { nested: true },
       }
       const cloned = cloneJsonObject(original)
 
@@ -147,7 +151,7 @@ describe('jsonUtils', () => {
 
     it('should not share references after cloning', () => {
       const original = {
-        data: { value: 1 }
+        data: { value: 1 },
       }
       const cloned = cloneJsonObject(original)
 
@@ -190,7 +194,7 @@ describe('jsonUtils', () => {
         unicode: '你好世界',
         emoji: '🌍🎉',
         escaped: 'line1\nline2\ttab',
-        quotes: '"quoted" and \'single\''
+        quotes: '"quoted" and \'single\'',
       }
       const cloned = cloneJsonObject(original)
 
@@ -207,7 +211,7 @@ describe('jsonUtils', () => {
         scientific: 1e10,
         infinity: Infinity,
         negInfinity: -Infinity,
-        nan: NaN
+        nan: NaN,
       }
       const cloned = cloneJsonObject(original)
 

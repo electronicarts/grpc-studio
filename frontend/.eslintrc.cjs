@@ -6,6 +6,8 @@ module.exports = {
     'plugin:@typescript-eslint/recommended',
     'plugin:react-hooks/recommended',
     'plugin:tailwindcss/recommended',
+    // Last: turns off rules that only concern formatting, which Prettier owns
+    'prettier',
   ],
   ignorePatterns: ['dist', '.eslintrc.cjs'],
   parser: '@typescript-eslint/parser',
@@ -46,6 +48,10 @@ module.exports = {
         {
           group: ['protobufjs/*', 'google-protobuf/*'],
           message: 'Frontend protobuf handling must use @bufbuild/protobuf.',
+        },
+        {
+          group: ['./*', '../*'],
+          message: 'Import through the @/ alias (e.g. @/features/...) instead of a relative path.',
         },
       ],
     }],

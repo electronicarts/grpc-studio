@@ -6,7 +6,7 @@ import {
   saveRequest,
   deleteHistoryItem,
   clearHistory,
-} from '../requestHistory'
+} from '@/features/methodExplorer/utils/requestHistory'
 
 describe('requestHistory', () => {
   beforeEach(() => {

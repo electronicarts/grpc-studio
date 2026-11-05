@@ -15,7 +15,7 @@ import {
 import type { FileDescriptorProto, FileDescriptorSet } from '@bufbuild/protobuf/wkt'
 import type { CallOptions } from '@grpc/grpc-js'
 import type { GrpcReflection } from 'grpc-js-reflection-client'
-import logger from '../../utils/logger.js'
+import logger from '#src/utils/logger.js'
 
 const descriptorSetLogger = logger.child({ module: 'descriptor-set-from-reflection' })
 
@@ -44,7 +44,7 @@ type CollectedDescriptors = {
 export async function buildFileDescriptorSet(
   client: GrpcReflection,
   symbol: string,
-  options: CallOptions = {}
+  options: CallOptions = {},
 ): Promise<FileDescriptorSet> {
   const methods = getDescriptorMethods(client)
   const collected = await collectDescriptorsForSymbol(methods, symbol, options)
@@ -57,7 +57,7 @@ export async function buildFileDescriptorSet(
 async function collectDescriptorsForSymbol(
   methods: DescriptorByteFetchMethods,
   symbol: string,
-  options: CallOptions
+  options: CallOptions,
 ): Promise<CollectedDescriptors> {
   const initialFiles = decodeDescriptorBytes(await methods.getProtoDescriptorBySymbol(symbol, options))
   const files = new Map<string, FileDescriptorProto>()
@@ -119,7 +119,7 @@ function logReflectionFetchFailure(importName: string, error: unknown): void {
 
 function pruneUnresolvedImports(
   files: Map<string, FileDescriptorProto>,
-  unresolvedImports: Set<string>
+  unresolvedImports: Set<string>,
 ): Map<string, FileDescriptorProto> {
   if (unresolvedImports.size === 0) return files
 
@@ -141,8 +141,8 @@ function pruneUnresolvedImports(
 
 function pruneDependencyList(
   file: FileDescriptorProto,
-  unresolvedImports: Set<string>
-): { file: FileDescriptorProto, removedImports: string[] } {
+  unresolvedImports: Set<string>,
+): { file: FileDescriptorProto; removedImports: string[] } {
   const removedImports: string[] = []
   const indexMap = new Map<number, number>()
   const keptDependencies: string[] = []
@@ -185,7 +185,6 @@ function normalizeJsonNames(files: Map<string, FileDescriptorProto>): Map<string
     const normalizedFile = clone(FileDescriptorProtoSchema, file)
     normalized.set(name, {
       ...normalizedFile,
-      syntax: normalizedFile.syntax || 'proto2',
       messageType: file.messageType.map(normalizeMessageJsonNames),
     })
   }
@@ -194,7 +193,7 @@ function normalizeJsonNames(files: Map<string, FileDescriptorProto>): Map<string
 }
 
 function normalizeMessageJsonNames(
-  message: FileDescriptorProto['messageType'][number]
+  message: FileDescriptorProto['messageType'][number],
 ): FileDescriptorProto['messageType'][number] {
   const normalized = clone(DescriptorProtoSchema, message)
   normalized.field = message.field.map(field => {

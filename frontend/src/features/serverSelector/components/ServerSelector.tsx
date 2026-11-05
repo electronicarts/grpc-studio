@@ -1,21 +1,17 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import { RefreshCw } from 'lucide-react'
-import { useServerSelector } from '../hooks/useServerSelector'
-import { ServerItem } from './ServerItem'
+import { useServerSelector } from '@/features/serverSelector/hooks/useServerSelector'
+import { ServerItem } from '@/features/serverSelector/components/ServerItem'
 import { Panel } from '@/components/ui/panel'
 import { DropdownMenu } from '@/components/ui/dropdownMenu'
-import type { ServerSelectorProps } from '../types'
+import type { ServerSelectorProps } from '@/features/serverSelector/types'
 
 export function ServerSelector({ selectedServerNames, onServerSelect }: ServerSelectorProps) {
-  const {
-    servers,
-    serverStatuses,
-    toggleServer,
-    displayText,
-    reload,
-    reloading,
-  } = useServerSelector({ selectedServerNames, onServerSelect })
+  const { servers, serverStatuses, toggleServer, displayText, reload, reloading } = useServerSelector({
+    selectedServerNames,
+    onServerSelect,
+  })
 
   const handleRefresh = () => {
     if (selectedServerNames.length === 0) {
@@ -28,11 +24,12 @@ export function ServerSelector({ selectedServerNames, onServerSelect }: ServerSe
     }
   }
 
-  const refreshTooltip = selectedServerNames.length === 0
-    ? "Refresh all servers"
-    : selectedServerNames.length === 1
-    ? `Refresh ${selectedServerNames[0]}`
-    : `Refresh ${selectedServerNames.length} selected servers`
+  const refreshTooltip =
+    selectedServerNames.length === 0
+      ? 'Refresh all servers'
+      : selectedServerNames.length === 1
+        ? `Refresh ${selectedServerNames[0]}`
+        : `Refresh ${selectedServerNames.length} selected servers`
 
   return (
     <Panel padded>
@@ -40,7 +37,12 @@ export function ServerSelector({ selectedServerNames, onServerSelect }: ServerSe
         {/* Label */}
         <label className="flex flex-shrink-0 items-center gap-2 whitespace-nowrap text-sm font-medium text-foreground/90">
           <svg className="size-4 text-info" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"
+            />
           </svg>
           Target Servers:
         </label>
@@ -50,9 +52,7 @@ export function ServerSelector({ selectedServerNames, onServerSelect }: ServerSe
           <button
             onClick={() => onServerSelect([])}
             className={`w-full px-3 py-2 text-left text-sm hover:bg-accent ${
-              selectedServerNames.length === 0
-                ? 'bg-info/10 font-medium text-info'
-                : 'text-foreground'
+              selectedServerNames.length === 0 ? 'bg-info/10 font-medium text-info' : 'text-foreground'
             }`}
           >
             All Servers ({servers.length})
@@ -60,7 +60,7 @@ export function ServerSelector({ selectedServerNames, onServerSelect }: ServerSe
 
           <div className="my-1 border-t border-border" />
 
-          {servers.map((server) => (
+          {servers.map(server => (
             <ServerItem
               key={server.name}
               server={server}

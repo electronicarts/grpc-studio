@@ -1,8 +1,14 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-import type { StreamCallbacks, StreamHandle, UnaryResult } from '../../types/index.js'
-import { grpcRequestsTotal, grpcRequestDuration, grpcActiveStreams, grpcStreamMessages } from '../../metrics/collectors/grpcMetrics.js'
-import logger from '../../utils/logger.js'
+import type { StreamCallbacks, StreamHandle, UnaryResult } from '#src/types/index.js'
+import {
+  grpcRequestsTotal,
+  grpcRequestDuration,
+  grpcActiveStreams,
+  grpcStreamMessages,
+} from '#src/metrics/collectors/grpcMetrics.js'
+import logger from '#src/utils/logger.js'
+import type { StreamingMethodKind } from '@grpc-studio/shared'
 
 const instrumentationLogger = logger.child({ module: 'grpc-instrumentation' })
 
@@ -12,7 +18,7 @@ const instrumentationLogger = logger.child({ module: 'grpc-instrumentation' })
 export async function instrumentUnaryCall(
   serviceName: string,
   methodName: string,
-  fn: () => Promise<UnaryResult>
+  fn: () => Promise<UnaryResult>,
 ): Promise<UnaryResult> {
   const start = process.hrtime.bigint()
   const labels = { service: serviceName, method: methodName, rpc_type: 'unary' }
@@ -55,9 +61,9 @@ export async function instrumentUnaryCall(
 export async function instrumentStreamCall(
   serviceName: string,
   methodName: string,
-  rpcType: 'client_streaming' | 'server_streaming' | 'bidi_streaming',
+  rpcType: StreamingMethodKind,
   originalCallbacks: StreamCallbacks,
-  fn: (wrappedCallbacks: StreamCallbacks) => Promise<StreamHandle>
+  fn: (wrappedCallbacks: StreamCallbacks) => Promise<StreamHandle>,
 ): Promise<StreamHandle> {
   const start = process.hrtime.bigint()
   const labels = { service: serviceName, method: methodName, rpc_type: rpcType }
@@ -71,7 +77,7 @@ export async function instrumentStreamCall(
   }
 
   const wrappedCallbacks: StreamCallbacks = {
-    onData: (data) => {
+    onData: data => {
       try {
         grpcStreamMessages.inc({ service: serviceName, method: methodName, direction: 'received' })
       } catch {
@@ -92,7 +98,7 @@ export async function instrumentStreamCall(
       originalCallbacks.onEnd()
     },
 
-    onError: (error) => {
+    onError: error => {
       const durationSeconds = Number(process.hrtime.bigint() - start) / 1e9
       try {
         grpcActiveStreams.dec(labels)

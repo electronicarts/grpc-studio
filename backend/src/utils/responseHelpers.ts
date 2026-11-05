@@ -1,15 +1,15 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-import type { Request, Response } from 'express';
-import { isResponseFinished } from './responseLifecycle.js';
+import type { Request, Response } from 'express'
+import { isResponseFinished } from '#src/utils/responseLifecycle.js'
 
 /**
  * Send a success response with the standard envelope the frontend expects:
  * { success: true, data, timestamp }
  */
 export function sendSuccess(res: Response, data: unknown, status = 200): void {
-  if (isResponseFinished(res)) return;
-  res.status(status).json({ success: true, data, timestamp: Date.now() });
+  if (isResponseFinished(res)) return
+  res.status(status).json({ success: true, data, timestamp: Date.now() })
 }
 
 /**
@@ -20,13 +20,13 @@ export function sendSuccess(res: Response, data: unknown, status = 200): void {
  * Controllers should throw AppError instead — the error middleware handles formatting.
  */
 export function sendError(req: Request, res: Response, status: number, code: string, message: string): void {
-  if (isResponseFinished(res)) return;
+  if (isResponseFinished(res)) return
   res.status(status).json({
     error: { code, message },
     timestamp: new Date().toISOString(),
     requestId: req.id,
-  });
+  })
 }
 
 // Kept for backward compat with existing test
-export const responseHelpers = { success: sendSuccess };
+export const responseHelpers = { success: sendSuccess }

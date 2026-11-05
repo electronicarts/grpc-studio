@@ -1,9 +1,9 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react'
-import { useSchemaLoader } from '../hooks/useSchemaReload'
-import { useSchemas } from '../hooks/useSchemas'
-import type { ApiServer } from '../../../types/grpc'
+import { useSchemaLoader } from '@/features/schemaLoader/hooks/useSchemaReload'
+import { useSchemas } from '@/features/schemaLoader/hooks/useSchemas'
+import type { ApiServer } from '@/types/grpc'
 
 interface SchemaLoaderContextType {
   // Data
@@ -41,7 +41,9 @@ export function SchemaLoaderProvider({ children }: { children: React.ReactNode }
     if (loader.lastReloadSuccess === true && !loader.reloading) {
       setShowSuccessNotification(true)
       dismissTimer.current = setTimeout(() => setShowSuccessNotification(false), 3000)
-      return () => { if (dismissTimer.current) clearTimeout(dismissTimer.current) }
+      return () => {
+        if (dismissTimer.current) clearTimeout(dismissTimer.current)
+      }
     }
   }, [loader.lastReloadSuccess, loader.reloading])
 
@@ -61,11 +63,7 @@ export function SchemaLoaderProvider({ children }: { children: React.ReactNode }
     dismissSuccessNotification,
   }
 
-  return (
-    <SchemaLoaderContext.Provider value={value}>
-      {children}
-    </SchemaLoaderContext.Provider>
-  )
+  return <SchemaLoaderContext.Provider value={value}>{children}</SchemaLoaderContext.Provider>
 }
 
 export function useSchemaLoaderContext() {

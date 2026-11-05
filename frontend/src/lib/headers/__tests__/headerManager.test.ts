@@ -1,12 +1,7 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import { beforeEach, describe, expect, it } from 'vitest'
-import {
-  clearUserHeaders,
-  getHttpRequestHeaders,
-  getUserHeaders,
-  setUserHeaders,
-} from '../headerManager'
+import { clearUserHeaders, getHttpRequestHeaders, getUserHeaders, setUserHeaders } from '@/lib/headers/headerManager'
 
 describe('headerManager', () => {
   beforeEach(() => {
@@ -30,10 +25,7 @@ describe('headerManager', () => {
   it('combines user headers with HTTP request headers', () => {
     setUserHeaders({ userId: 'user-1' })
 
-    expect(getHttpRequestHeaders(
-      { 'Content-Type': 'application/json' },
-      { 'X-Request-Id': 'request-1' },
-    )).toEqual({
+    expect(getHttpRequestHeaders({ 'Content-Type': 'application/json' }, { 'X-Request-Id': 'request-1' })).toEqual({
       'Content-Type': 'application/json',
       'X-User-Id': 'user-1',
       'X-Request-Id': 'request-1',

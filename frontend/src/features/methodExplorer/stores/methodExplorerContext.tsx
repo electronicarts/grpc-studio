@@ -2,16 +2,15 @@
 
 import { createContext, useContext, ReactNode, useEffect, useRef } from 'react'
 import type { RequestMetadata } from '@grpc-studio/shared'
-import { GrpcService, GrpcMethod } from '../../../types/grpc'
-import { useRequestModel } from '../hooks/useRequestModel'
-import { useResponseModel } from '../hooks/useResponseModel'
-import { useStreamModel } from '../hooks/useStreamModel'
-import { useHistoryModel } from '../hooks/useHistoryModel'
-import { useMetadataModel, nextRowId } from '../hooks/useMetadataModel'
-import { useMethodInvocation } from '../hooks/useMethodInvocation'
-import { formLogger } from '../../../utils/debugLogger'
-import { canonicalizeProtoJson } from '../utils/payload'
-import { metadataToRows } from '../utils/metadata'
+import { GrpcService, GrpcMethod } from '@/types/grpc'
+import { useRequestModel } from '@/features/methodExplorer/hooks/useRequestModel'
+import { useResponseModel } from '@/features/methodExplorer/hooks/useResponseModel'
+import { useStreamModel } from '@/features/methodExplorer/hooks/useStreamModel'
+import { useHistoryModel } from '@/features/methodExplorer/hooks/useHistoryModel'
+import { useMetadataModel, nextRowId } from '@/features/methodExplorer/hooks/useMetadataModel'
+import { useMethodInvocation } from '@/features/methodExplorer/hooks/useMethodInvocation'
+import { formLogger } from '@/utils/debugLogger'
+import { metadataToRows } from '@/features/methodExplorer/utils/metadata'
 import { tabStateStore, type TabStateSnapshot } from '@/stores'
 import type {
   RequestModel,
@@ -21,7 +20,7 @@ import type {
   HistoryModel,
   MethodInvocation,
   RequestHistoryItem,
-} from '../types'
+} from '@/features/methodExplorer/types'
 
 // ---------------------------------------------------------------------------
 // Context shape — each field is a cohesive domain model
@@ -64,7 +63,13 @@ interface MethodExplorerProviderProps {
 }
 
 export function MethodExplorerProvider({
-  tabId, selectedTarget, selectedService, selectedMethod, initialRequestBody, initialMetadata, children
+  tabId,
+  selectedTarget,
+  selectedService,
+  selectedMethod,
+  initialRequestBody,
+  initialMetadata,
+  children,
 }: MethodExplorerProviderProps) {
   // Rehydrate from the per-tab store when this tab was previously mounted, so
   // switching away (which unmounts idle tabs) and back preserves its state.
@@ -76,13 +81,19 @@ export function MethodExplorerProvider({
   const stream = useStreamModel(restored?.stream)
   // A restored snapshot's rows win; otherwise seed from any shared-link metadata.
   const metadata = useMetadataModel(
-    restored?.request?.metadataRows ?? (initialMetadata ? metadataToRows(initialMetadata, nextRowId) : undefined)
+    restored?.request?.metadataRows ?? (initialMetadata ? metadataToRows(initialMetadata, nextRowId) : undefined),
   )
   const history = useHistoryModel(selectedTarget, selectedService, selectedMethod, restored?.historyVisible)
 
   const execution = useMethodInvocation(
-    selectedTarget, selectedService, selectedMethod,
-    request, response, stream, metadata, history.save
+    selectedTarget,
+    selectedService,
+    selectedMethod,
+    request,
+    response,
+    stream,
+    metadata,
+    history.save,
   )
 
   // Persist a serializable snapshot to the store on every change so an unmount
@@ -116,10 +127,23 @@ export function MethodExplorerProvider({
     })
   }, [
     tabId,
-    request.body, request.formData, request.formKey, request.isFormMode, request.schema, request.validationError,
+    request.body,
+    request.formData,
+    request.formKey,
+    request.isFormMode,
+    request.schema,
+    request.validationError,
     metadata.rows,
-    response.raw, response.data, response.time, response.size, response.schema, response.isFormMode, response.singleExpanded,
-    stream.messages, stream.sentMessages, stream.completed,
+    response.raw,
+    response.data,
+    response.time,
+    response.size,
+    response.schema,
+    response.isFormMode,
+    response.singleExpanded,
+    stream.messages,
+    stream.sentMessages,
+    stream.completed,
     history.visible,
   ])
 
@@ -131,7 +155,12 @@ export function MethodExplorerProvider({
   }, [tabId, execution.loading, stream.active])
 
   // On unmount, this tab is no longer doing live work from the tree's view.
-  useEffect(() => () => { tabStateStore.setLiveWork(tabId, false) }, [tabId])
+  useEffect(
+    () => () => {
+      tabStateStore.setLiveWork(tabId, false)
+    },
+    [tabId],
+  )
 
   const prevServiceRef = useRef(selectedService.fullName)
   const prevMethodRef = useRef(selectedMethod.name)
@@ -156,19 +185,14 @@ export function MethodExplorerProvider({
   const loadFromHistory = (item: RequestHistoryItem) => {
     try {
       const { data } = history.parse(item)
-      const canonical = canonicalizeProtoJson(data, request.schema)
-
-      request.setFormData(canonical)
-      request.setBody(JSON.stringify(canonical, null, 2))
+      request.loadData(data)
       metadata.setRows(metadataToRows(item.metadata, nextRowId))
       response.clear()
       history.setVisible(false)
       execution.setError(null)
     } catch (error) {
       request.setBody(
-        typeof item.requestBody === 'string'
-          ? item.requestBody
-          : JSON.stringify(item.requestBody ?? {}, null, 2),
+        typeof item.requestBody === 'string' ? item.requestBody : JSON.stringify(item.requestBody ?? {}, null, 2),
       )
       execution.setError(error instanceof Error ? error.message : 'Failed to load history entry')
       formLogger.error('Failed to parse history JSON:', error)
@@ -176,14 +200,18 @@ export function MethodExplorerProvider({
   }
 
   const value: MethodExplorerContextValue = {
-    selectedTarget, selectedService, selectedMethod,
-    request, response, stream, metadata, history, execution,
-    toggleHistory, loadFromHistory,
+    selectedTarget,
+    selectedService,
+    selectedMethod,
+    request,
+    response,
+    stream,
+    metadata,
+    history,
+    execution,
+    toggleHistory,
+    loadFromHistory,
   }
 
-  return (
-    <MethodExplorerContext.Provider value={value}>
-      {children}
-    </MethodExplorerContext.Provider>
-  )
+  return <MethodExplorerContext.Provider value={value}>{children}</MethodExplorerContext.Provider>
 }

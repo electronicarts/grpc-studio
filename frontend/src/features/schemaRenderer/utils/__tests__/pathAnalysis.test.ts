@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import { describe, it, expect } from 'vitest'
-import { collectExpandablePaths, hasDataAtPath } from '../pathAnalysis'
+import { collectExpandablePaths, hasDataAtPath } from '@/features/schemaRenderer/utils/pathAnalysis'
 import type { DescMessage } from '@bufbuild/protobuf'
 
 describe('pathAnalysis', () => {
@@ -254,11 +254,7 @@ describe('pathAnalysis', () => {
       }
 
       const data = {
-        users: [
-          { name: 'Alice' },
-          { name: 'Bob' },
-          { name: 'Charlie' },
-        ],
+        users: [{ name: 'Alice' }, { name: 'Bob' }, { name: 'Charlie' }],
       }
 
       const paths = collectExpandablePaths(schema as DescMessage, data)
@@ -557,10 +553,7 @@ describe('pathAnalysis', () => {
 
     it('handles array notation in paths', () => {
       const data = {
-        items: [
-          { name: 'item1' },
-          { name: 'item2' },
-        ],
+        items: [{ name: 'item1' }, { name: 'item2' }],
       }
 
       expect(hasDataAtPath(data, 'items[0]')).toBe(true)

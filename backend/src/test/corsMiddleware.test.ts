@@ -3,7 +3,7 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import type { Request, Response, NextFunction } from 'express'
-import { cors, createCors } from '../middlewares/corsMiddleware.js'
+import { cors, createCors } from '#src/middlewares/corsMiddleware.js'
 
 // Mock request/response helpers
 function createMockRequest(method: string, origin?: string): Partial<Request> {
@@ -23,7 +23,7 @@ function createMockResponse(): {
   const state = {
     statusCode: null as number | null,
     jsonData: null as unknown,
-    sendStatusCode: null as number | null
+    sendStatusCode: null as number | null,
   }
 
   const res: Partial<Response> = {
@@ -42,13 +42,13 @@ function createMockResponse(): {
     sendStatus: (code: number) => {
       state.sendStatusCode = code
       return res as Response
-    }
+    },
   }
 
   return {
     res,
     headers,
-    getState: () => ({ ...state })
+    getState: () => ({ ...state }),
   }
 }
 
@@ -60,9 +60,13 @@ describe('CORS Middleware', () => {
       const { res, headers } = createMockResponse()
       let nextCalled = false
 
-      middleware(req as Request, res as Response, (() => {
-        nextCalled = true
-      }) as NextFunction)
+      middleware(
+        req as Request,
+        res as Response,
+        (() => {
+          nextCalled = true
+        }) as NextFunction,
+      )
 
       assert.equal(headers.get('Access-Control-Allow-Origin'), 'http://localhost:3000')
       assert.equal(headers.get('Access-Control-Allow-Credentials'), 'true')
@@ -78,9 +82,13 @@ describe('CORS Middleware', () => {
       const mock1 = createMockResponse()
       let next1Called = false
 
-      middleware(req1 as Request, mock1.res as Response, (() => {
-        next1Called = true
-      }) as NextFunction)
+      middleware(
+        req1 as Request,
+        mock1.res as Response,
+        (() => {
+          next1Called = true
+        }) as NextFunction,
+      )
 
       assert.equal(mock1.headers.get('Access-Control-Allow-Origin'), 'http://localhost:3000')
       assert.equal(next1Called, true)
@@ -90,9 +98,13 @@ describe('CORS Middleware', () => {
       const mock2 = createMockResponse()
       let next2Called = false
 
-      middleware(req2 as Request, mock2.res as Response, (() => {
-        next2Called = true
-      }) as NextFunction)
+      middleware(
+        req2 as Request,
+        mock2.res as Response,
+        (() => {
+          next2Called = true
+        }) as NextFunction,
+      )
 
       assert.equal(mock2.headers.get('Access-Control-Allow-Origin'), 'http://localhost:4173')
       assert.equal(next2Called, true)
@@ -104,9 +116,13 @@ describe('CORS Middleware', () => {
       const mock = createMockResponse()
       let nextCalled = false
 
-      middleware(req as Request, mock.res as Response, (() => {
-        nextCalled = true
-      }) as NextFunction)
+      middleware(
+        req as Request,
+        mock.res as Response,
+        (() => {
+          nextCalled = true
+        }) as NextFunction,
+      )
 
       // Should not set CORS headers for disallowed origin
       assert.equal(mock.headers.has('Access-Control-Allow-Origin'), false)
@@ -120,9 +136,13 @@ describe('CORS Middleware', () => {
       const mock = createMockResponse()
       let nextCalled = false
 
-      middleware(req as Request, mock.res as Response, (() => {
-        nextCalled = true
-      }) as NextFunction)
+      middleware(
+        req as Request,
+        mock.res as Response,
+        (() => {
+          nextCalled = true
+        }) as NextFunction,
+      )
 
       assert.equal(mock.headers.has('Access-Control-Allow-Origin'), false)
       assert.equal(nextCalled, true)
@@ -136,9 +156,13 @@ describe('CORS Middleware', () => {
       const mock = createMockResponse()
       let nextCalled = false
 
-      middleware(req as Request, mock.res as Response, (() => {
-        nextCalled = true
-      }) as NextFunction)
+      middleware(
+        req as Request,
+        mock.res as Response,
+        (() => {
+          nextCalled = true
+        }) as NextFunction,
+      )
 
       assert.equal(mock.headers.get('Access-Control-Allow-Origin'), 'http://localhost:3000')
       assert.equal(mock.headers.get('Access-Control-Allow-Methods'), 'GET, POST, PUT, DELETE, OPTIONS')
@@ -153,9 +177,13 @@ describe('CORS Middleware', () => {
       const mock = createMockResponse()
       let nextCalled = false
 
-      middleware(req as Request, mock.res as Response, (() => {
-        nextCalled = true
-      }) as NextFunction)
+      middleware(
+        req as Request,
+        mock.res as Response,
+        (() => {
+          nextCalled = true
+        }) as NextFunction,
+      )
 
       const state = mock.getState()
       // Should return 403 with error body
@@ -184,16 +212,20 @@ describe('CORS Middleware', () => {
         enabled: true,
         origins: ['http://localhost:3000'],
         credentials: true,
-        strict: true
+        strict: true,
       })
 
       const req = createMockRequest('GET', 'http://evil.com')
       const mock = createMockResponse()
       let nextCalled = false
 
-      middleware(req as Request, mock.res as Response, (() => {
-        nextCalled = true
-      }) as NextFunction)
+      middleware(
+        req as Request,
+        mock.res as Response,
+        (() => {
+          nextCalled = true
+        }) as NextFunction,
+      )
 
       const state = mock.getState()
       // In strict mode, should reject with 403
@@ -208,16 +240,20 @@ describe('CORS Middleware', () => {
         enabled: true,
         origins: ['http://localhost:3000'],
         credentials: true,
-        strict: true
+        strict: true,
       })
 
       const req = createMockRequest('GET', 'http://localhost:3000')
       const mock = createMockResponse()
       let nextCalled = false
 
-      middleware(req as Request, mock.res as Response, (() => {
-        nextCalled = true
-      }) as NextFunction)
+      middleware(
+        req as Request,
+        mock.res as Response,
+        (() => {
+          nextCalled = true
+        }) as NextFunction,
+      )
 
       assert.equal(mock.headers.get('Access-Control-Allow-Origin'), 'http://localhost:3000')
       assert.equal(nextCalled, true)
@@ -228,7 +264,7 @@ describe('CORS Middleware', () => {
         enabled: true,
         origins: ['http://localhost:3000'],
         credentials: true,
-        strict: true
+        strict: true,
       })
 
       const req = createMockRequest('OPTIONS', 'http://evil.com')
@@ -246,7 +282,7 @@ describe('CORS Middleware', () => {
     it('should set Access-Control-Allow-Credentials when enabled', () => {
       const middleware = cors({
         origins: ['http://localhost:3000'],
-        credentials: true
+        credentials: true,
       })
 
       const req = createMockRequest('GET', 'http://localhost:3000')
@@ -261,7 +297,7 @@ describe('CORS Middleware', () => {
       const middleware = createCors({
         enabled: true,
         origins: ['http://localhost:3000'],
-        credentials: false // Disabled
+        credentials: false, // Disabled
       })
 
       const req = createMockRequest('GET', 'http://localhost:3000')
@@ -309,9 +345,13 @@ describe('CORS Middleware', () => {
       const mock = createMockResponse()
       let nextCalled = false
 
-      middleware(req as Request, mock.res as Response, (() => {
-        nextCalled = true
-      }) as NextFunction)
+      middleware(
+        req as Request,
+        mock.res as Response,
+        (() => {
+          nextCalled = true
+        }) as NextFunction,
+      )
 
       // Origin matching is case-sensitive in URL spec
       assert.equal(mock.headers.has('Access-Control-Allow-Origin'), false)
@@ -345,9 +385,13 @@ describe('CORS Middleware', () => {
       const mock = createMockResponse()
       let nextCalled = false
 
-      middleware(req as Request, mock.res as Response, (() => {
-        nextCalled = true
-      }) as NextFunction)
+      middleware(
+        req as Request,
+        mock.res as Response,
+        (() => {
+          nextCalled = true
+        }) as NextFunction,
+      )
 
       assert.equal(mock.headers.get('Access-Control-Allow-Origin'), 'https://app.example.com')
       assert.equal(nextCalled, true)

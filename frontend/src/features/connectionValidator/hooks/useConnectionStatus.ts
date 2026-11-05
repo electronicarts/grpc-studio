@@ -1,8 +1,8 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import { useQuery } from '@tanstack/react-query'
-import type { ServerConnectionStatus } from '../types'
-import { fetchConnectionStatus } from '../api/fetchConnectionStatus'
+import type { ServerConnectionStatus } from '@/features/connectionValidator/types'
+import { fetchConnectionStatus } from '@/features/connectionValidator/api/fetchConnectionStatus'
 
 const POLL_INTERVAL = 10_000
 

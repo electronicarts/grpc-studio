@@ -9,15 +9,12 @@ import {
   type DescMethodClientStreaming,
   type DescMethodServerStreaming,
   type DescMethodUnary,
-  type JsonValue as BufJsonValue,
   type MessageInitShape,
   type Registry,
 } from '@bufbuild/protobuf'
-import type { FileDescriptorSet } from '@bufbuild/protobuf/wkt'
 import { Code, ConnectError, createClient, type CallOptions, type Transport } from '@connectrpc/connect'
-import { buildDynamicRegistry } from './dynamicRegistry.js'
 import type { JsonValue } from '@grpc-studio/shared'
-import type { FormattedGrpcError, StreamCallbacks, StreamHandle } from '../../types/index.js'
+import type { FormattedGrpcError, StreamCallbacks, StreamHandle } from '#src/types/index.js'
 
 /**
  * Supplies the Connect transport used to build reflected clients. Transports are
@@ -31,24 +28,21 @@ export interface TransportProvider {
 const DEFAULT_UNARY_DEADLINE_MS = 30000
 const DEFAULT_STREAM_DEADLINE_MS = 120000
 
-type UnaryClientMethod = (
-  request: MessageInitShape<DescMessage>,
-  options?: CallOptions
-) => Promise<unknown>
+type UnaryClientMethod = (request: MessageInitShape<DescMessage>, options?: CallOptions) => Promise<unknown>
 
 type ServerStreamingClientMethod = (
   request: MessageInitShape<DescMessage>,
-  options?: CallOptions
+  options?: CallOptions,
 ) => AsyncIterable<unknown>
 
 type ClientStreamingClientMethod = (
   request: AsyncIterable<MessageInitShape<DescMessage>>,
-  options?: CallOptions
+  options?: CallOptions,
 ) => Promise<unknown>
 
 type BidiStreamingClientMethod = (
   request: AsyncIterable<MessageInitShape<DescMessage>>,
-  options?: CallOptions
+  options?: CallOptions,
 ) => AsyncIterable<unknown>
 
 type ReflectedClient = Record<string, unknown>
@@ -63,12 +57,11 @@ export class ConnectInvoker {
     method: DescMethodUnary,
     request: JsonValue | undefined,
     headers: OutboundHeaders,
-    fileDescriptorSet: FileDescriptorSet
+    registry: Registry,
   ): Promise<JsonValue> {
-    const registry = buildDynamicRegistry(fileDescriptorSet)
     const response = await this.getClientMethod<UnaryClientMethod>(method)(
       toProtoRequest(method.input, request, registry),
-      this.buildCallOptions(DEFAULT_UNARY_DEADLINE_MS, headers)
+      this.buildCallOptions(DEFAULT_UNARY_DEADLINE_MS, headers),
     )
 
     return toJsonResponse(method.output, response, registry)
@@ -79,17 +72,17 @@ export class ConnectInvoker {
     request: JsonValue | undefined,
     callbacks: StreamCallbacks,
     headers: OutboundHeaders,
-    fileDescriptorSet: FileDescriptorSet
+    registry: Registry,
   ): Promise<StreamHandle> {
-    const registry = buildDynamicRegistry(fileDescriptorSet)
     return this.startResponseStream(
       callbacks,
-      async (signal) => this.getClientMethod<ServerStreamingClientMethod>(method)(
-        toProtoRequest(method.input, request, registry),
-        this.buildCallOptions(DEFAULT_STREAM_DEADLINE_MS, headers, signal)
-      ),
+      async signal =>
+        this.getClientMethod<ServerStreamingClientMethod>(method)(
+          toProtoRequest(method.input, request, registry),
+          this.buildCallOptions(DEFAULT_STREAM_DEADLINE_MS, headers, signal),
+        ),
       method.output,
-      registry
+      registry,
     )
   }
 
@@ -98,18 +91,16 @@ export class ConnectInvoker {
     requests: RequestStream,
     callbacks: StreamCallbacks,
     headers: OutboundHeaders,
-    fileDescriptorSet: FileDescriptorSet
+    registry: Registry,
   ): Promise<StreamHandle> {
     const abortController = new AbortController()
-    const registry = buildDynamicRegistry(fileDescriptorSet)
 
-    this.pumpClientStream(method, requests, callbacks, headers, abortController.signal, registry)
-      .catch((error) => {
-        // Catch unhandled errors from pump to prevent unhandled promise rejections
-        if (!abortController.signal.aborted) {
-          callbacks.onError(formatConnectError(error))
-        }
-      })
+    this.pumpClientStream(method, requests, callbacks, headers, abortController.signal, registry).catch(error => {
+      // Catch unhandled errors from pump to prevent unhandled promise rejections
+      if (!abortController.signal.aborted) {
+        callbacks.onError(formatConnectError(error))
+      }
+    })
 
     return {
       cancel: () => {
@@ -123,17 +114,17 @@ export class ConnectInvoker {
     requests: RequestStream,
     callbacks: StreamCallbacks,
     headers: OutboundHeaders,
-    fileDescriptorSet: FileDescriptorSet
+    registry: Registry,
   ): Promise<StreamHandle> {
-    const registry = buildDynamicRegistry(fileDescriptorSet)
     return this.startResponseStream(
       callbacks,
-      async (signal) => this.getClientMethod<BidiStreamingClientMethod>(method)(
-        toConnectRequestStream(method, requests, registry),
-        this.buildCallOptions(DEFAULT_STREAM_DEADLINE_MS, headers, signal)
-      ),
+      async signal =>
+        this.getClientMethod<BidiStreamingClientMethod>(method)(
+          toConnectRequestStream(method, requests, registry),
+          this.buildCallOptions(DEFAULT_STREAM_DEADLINE_MS, headers, signal),
+        ),
       method.output,
-      registry
+      registry,
     )
   }
 
@@ -141,17 +132,16 @@ export class ConnectInvoker {
     callbacks: StreamCallbacks,
     createStream: (signal: AbortSignal) => Promise<AsyncIterable<unknown>>,
     responseDesc: DescMessage,
-    registry: Registry
+    registry: Registry,
   ): StreamHandle {
     const abortController = new AbortController()
 
-    this.pumpResponseStream(createStream, responseDesc, callbacks, abortController.signal, registry)
-      .catch((error) => {
-        // Catch unhandled errors from pump to prevent unhandled promise rejections
-        if (!abortController.signal.aborted) {
-          callbacks.onError(formatConnectError(error))
-        }
-      })
+    this.pumpResponseStream(createStream, responseDesc, callbacks, abortController.signal, registry).catch(error => {
+      // Catch unhandled errors from pump to prevent unhandled promise rejections
+      if (!abortController.signal.aborted) {
+        callbacks.onError(formatConnectError(error))
+      }
+    })
 
     return {
       cancel: () => {
@@ -165,7 +155,7 @@ export class ConnectInvoker {
     responseDesc: DescMessage,
     callbacks: StreamCallbacks,
     signal: AbortSignal,
-    registry: Registry
+    registry: Registry,
   ): Promise<void> {
     try {
       const stream = await createStream(signal)
@@ -188,12 +178,12 @@ export class ConnectInvoker {
     callbacks: StreamCallbacks,
     headers: OutboundHeaders,
     signal: AbortSignal,
-    registry: Registry
+    registry: Registry,
   ): Promise<void> {
     try {
       const response = await this.getClientMethod<ClientStreamingClientMethod>(method)(
         toConnectRequestStream(method, requests, registry),
-        this.buildCallOptions(DEFAULT_STREAM_DEADLINE_MS, headers, signal)
+        this.buildCallOptions(DEFAULT_STREAM_DEADLINE_MS, headers, signal),
       )
 
       callbacks.onData(toJsonResponse(method.output, response, registry))
@@ -236,18 +226,22 @@ export function formatConnectError(error: unknown): FormattedGrpcError {
   }
 }
 
-function toProtoRequest(desc: DescMessage, data: JsonValue | undefined, registry: Registry): MessageInitShape<DescMessage> {
-  return fromJson(desc, (data ?? {}) as BufJsonValue, { ignoreUnknownFields: true, registry }) as MessageInitShape<DescMessage>
+function toProtoRequest(
+  desc: DescMessage,
+  data: JsonValue | undefined,
+  registry: Registry,
+): MessageInitShape<DescMessage> {
+  return fromJson(desc, data ?? {}, { ignoreUnknownFields: true, registry }) as MessageInitShape<DescMessage>
 }
 
 function toJsonResponse(desc: DescMessage, message: unknown, registry: Registry): JsonValue {
-  return toJson(desc, message as never, { alwaysEmitImplicit: true, useProtoFieldName: true, registry }) as JsonValue
+  return toJson(desc, message as never, { alwaysEmitImplicit: true, useProtoFieldName: true, registry })
 }
 
 async function* toConnectRequestStream(
   method: DescMethod,
   requests: RequestStream,
-  registry: Registry
+  registry: Registry,
 ): AsyncIterable<MessageInitShape<DescMessage>> {
   for await (const request of requests) {
     yield toProtoRequest(method.input, request, registry)

@@ -1,127 +1,78 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-import type { GrpcMethod } from '../../../types/grpc'
-import type { DescField, DescMessage } from '@bufbuild/protobuf'
-import { fieldTypeName, scalarTypeName } from '../../../utils/descUtils'
+import type { DescEnum, DescField, DescMessage } from '@bufbuild/protobuf'
+import { usedTypes } from '@bufbuild/protobuf/reflect'
+import type { GrpcMethod } from '@/types/grpc'
+import { fieldTypeName } from '@/utils/descUtils'
 import { MethodKind } from '@grpc-studio/shared'
 
-function shortType(fqn: string | undefined): string {
-  if (!fqn) return 'unknown'
-  const parts = fqn.split('.')
-  return parts[parts.length - 1]
-}
-
-function formatField(f: DescField, index: number): string {
-  const lines: string[] = []
-  if (f.fieldKind === 'map') {
-    const keyType = scalarTypeName(f.mapKey)
-    const valType = f.mapKind === 'message' ? shortType(f.message.typeName)
-      : f.mapKind === 'enum' ? shortType(f.enum.typeName)
-      : f.scalar !== undefined ? scalarTypeName(f.scalar) : 'unknown'
-    lines.push(`  map<${keyType}, ${valType}> ${f.name} = ${f.proto.number};`)
-    return lines.join('\n')
-  }
+function formatField(f: DescField): string {
   const label = f.fieldKind === 'list' ? 'repeated ' : ''
-  const typeName = shortType(fieldTypeName(f))
-  lines.push(`  ${label}${typeName} ${f.name} = ${f.proto.number ?? index + 1};`)
-  return lines.join('\n')
+  return `  ${label}${fieldTypeName(f, type => type.name)} ${f.name} = ${f.number};`
 }
 
-function formatMessage(
-  typeName: string,
-  schema: DescMessage,
-  resolveSchema: (type: string) => DescMessage | null,
-  visited: Set<string>
-): string {
-  const name = shortType(typeName)
-  const lines: string[] = []
+function formatMessage(schema: DescMessage): string {
+  const lines = [`message ${schema.name} {`]
 
-  lines.push(`message ${name} {`)
-
-  // oneOf groups
-  const oneOfFieldNames = new Set<string>()
-  for (const oneof of schema.oneofs) {
-    lines.push(`  oneof ${oneof.name} {`)
-    for (const f of oneof.fields) {
-      oneOfFieldNames.add(f.name)
-      const ft = shortType(fieldTypeName(f))
-      lines.push(`    ${ft} ${f.name} = ${f.proto.number ?? '?'};`)
+  // Fields and oneof groups in .proto source order
+  for (const member of schema.members) {
+    if (member.kind === 'field') {
+      lines.push(formatField(member))
+      continue
+    }
+    lines.push(`  oneof ${member.name} {`)
+    for (const f of member.fields) {
+      lines.push(`  ${formatField(f)}`)
     }
     lines.push('  }')
   }
 
-  // Regular fields
-  let fieldIndex = 0
-  for (const f of schema.fields) {
-    if (f.oneof === undefined) {
-      lines.push(formatField(f, fieldIndex))
-    }
-    fieldIndex++
-  }
-
   lines.push('}')
-
-  // Collect nested types
-  for (const f of schema.fields) {
-    if (f.fieldKind === 'enum' && !visited.has(f.enum.typeName)) {
-      visited.add(f.enum.typeName)
-      lines.push('')
-      lines.push(`enum ${shortType(f.enum.typeName)} {`)
-      for (const ev of f.enum.values) {
-        lines.push(`  ${ev.name} = ${ev.proto.number};`)
-      }
-      lines.push('}')
-    }
-
-    let nestedMessage: DescMessage | null = null
-    if (f.fieldKind === 'message') nestedMessage = f.message
-    else if (f.fieldKind === 'list' && f.listKind === 'message') nestedMessage = f.message
-    else if (f.fieldKind === 'map' && f.mapKind === 'message') nestedMessage = f.message
-
-    if (nestedMessage && !visited.has(nestedMessage.typeName)) {
-      visited.add(nestedMessage.typeName)
-      lines.push('')
-      lines.push(formatMessage(nestedMessage.typeName, nestedMessage, resolveSchema, visited))
-    }
-  }
-
   return lines.join('\n')
 }
 
+function formatEnum(desc: DescEnum): string {
+  return [`enum ${desc.name} {`, ...desc.values.map(v => `  ${v.name} = ${v.number};`), '}'].join('\n')
+}
+
+/**
+ * The method as .proto text: its service line, then its request and response messages, followed by every
+ * enum and message they use (singular, repeated and map fields, recursively), each printed once.
+ *
+ * @param serviceName the service's short name, e.g. "PetStoreService"
+ */
 export function formatMethodProto(
   serviceName: string,
   method: GrpcMethod,
   resolveSchema: (type: string) => DescMessage | null,
-  options?: { outputOnly?: boolean }
+  options?: { outputOnly?: boolean },
 ): string {
-  const lines: string[] = []
+  const input = resolveSchema(method.inputType)
+  const output = resolveSchema(method.outputType)
+  // A type that hasn't loaded yet has only its full name to go by
+  const nameOf = (desc: DescMessage | null, fullName: string) =>
+    desc?.name ?? fullName.slice(fullName.lastIndexOf('.') + 1)
+  const streams = (kinds: string[]) => kinds.includes(method.kind)
+  const inputName = nameOf(input, method.inputType)
+  const outputName = nameOf(output, method.outputType)
+  const clientStreams = streams([MethodKind.CLIENT_STREAMING, MethodKind.BIDI_STREAMING])
+  const serverStreams = streams([MethodKind.SERVER_STREAMING, MethodKind.BIDI_STREAMING])
+  const inputWrap = clientStreams ? `stream ${inputName}` : inputName
+  const outputWrap = serverStreams ? `stream ${outputName}` : outputName
 
-  const svcShort = shortType(serviceName)
-  const inputShort = shortType(method.inputType)
-  const outputShort = shortType(method.outputType)
-  const inputWrap = (method.kind === MethodKind.CLIENT_STREAMING || method.kind === MethodKind.BIDI_STREAMING) ? `stream ${inputShort}` : inputShort
-  const outputWrap = (method.kind === MethodKind.SERVER_STREAMING || method.kind === MethodKind.BIDI_STREAMING) ? `stream ${outputShort}` : outputShort
-  lines.push(`service ${svcShort} {`)
-  lines.push(`  rpc ${method.name}(${inputWrap}) returns (${outputWrap});`)
-  lines.push('}')
+  const blocks = [
+    [`service ${serviceName} {`, `  rpc ${method.name}(${inputWrap}) returns (${outputWrap});`, '}'].join('\n'),
+  ]
 
-  const visited = new Set<string>()
-
-  if (!options?.outputOnly) {
-    const inputSchema = resolveSchema(method.inputType)
-    if (inputSchema) {
-      visited.add(method.inputType)
-      lines.push('')
-      lines.push(formatMessage(method.inputType, inputSchema, resolveSchema, visited))
+  const printed = new Set<string>()
+  for (const root of [options?.outputOnly ? null : input, output]) {
+    if (!root) continue
+    for (const type of [root, ...usedTypes(root)]) {
+      if (printed.has(type.typeName)) continue
+      printed.add(type.typeName)
+      blocks.push(type.kind === 'message' ? formatMessage(type) : formatEnum(type))
     }
   }
 
-  const outputSchema = resolveSchema(method.outputType)
-  if (outputSchema && !visited.has(method.outputType)) {
-    visited.add(method.outputType)
-    lines.push('')
-    lines.push(formatMessage(method.outputType, outputSchema, resolveSchema, visited))
-  }
-
-  return lines.join('\n')
+  return blocks.join('\n\n')
 }

@@ -3,8 +3,8 @@
 import { describe, it, beforeEach, afterEach, mock } from 'node:test'
 import assert from 'node:assert/strict'
 import type { Request, Response, NextFunction } from 'express'
-import { requestTimeout } from '../middlewares/timeoutMiddleware.js'
-import { AppError } from '../errors/AppError.js'
+import { requestTimeout } from '#src/middlewares/timeoutMiddleware.js'
+import { AppError } from '#src/errors/AppError.js'
 
 // These tests drive time deterministically with node:test mock timers instead of real
 // wall-clock waits — no sleeps, no timing races, instant and reproducible on loaded CI.
@@ -12,7 +12,7 @@ import { AppError } from '../errors/AppError.js'
 function createMockRequest(): Partial<Request> {
   return {
     method: 'GET',
-    path: '/api/test'
+    path: '/api/test',
   }
 }
 
@@ -35,13 +35,13 @@ function createMockResponse(): {
     headersSent: false,
     get writableEnded() {
       return state.finished
-    }
+    },
   }
 
   return {
     res,
     events,
-    finished: state.finished
+    finished: state.finished,
   }
 }
 
@@ -61,9 +61,13 @@ describe('Timeout Middleware', () => {
       const { res } = createMockResponse()
       let nextCalled = false
 
-      middleware(req, res as Response, (() => {
-        nextCalled = true
-      }) as NextFunction)
+      middleware(
+        req,
+        res as Response,
+        (() => {
+          nextCalled = true
+        }) as NextFunction,
+      )
 
       assert.equal(nextCalled, true)
     })
@@ -87,11 +91,15 @@ describe('Timeout Middleware', () => {
       const { res, events } = createMockResponse()
       let timeoutErrorCalled = false
 
-      middleware(req, res as Response, ((err?: unknown) => {
-        if (err instanceof AppError && err.code === 'REQUEST_TIMEOUT') {
-          timeoutErrorCalled = true
-        }
-      }) as NextFunction)
+      middleware(
+        req,
+        res as Response,
+        ((err?: unknown) => {
+          if (err instanceof AppError && err.code === 'REQUEST_TIMEOUT') {
+            timeoutErrorCalled = true
+          }
+        }) as NextFunction,
+      )
 
       // Trigger finish event immediately (clears the timer)
       events.get('finish')!.forEach(h => h())
@@ -108,11 +116,15 @@ describe('Timeout Middleware', () => {
       const { res, events } = createMockResponse()
       let timeoutErrorCalled = false
 
-      middleware(req, res as Response, ((err?: unknown) => {
-        if (err instanceof AppError && err.code === 'REQUEST_TIMEOUT') {
-          timeoutErrorCalled = true
-        }
-      }) as NextFunction)
+      middleware(
+        req,
+        res as Response,
+        ((err?: unknown) => {
+          if (err instanceof AppError && err.code === 'REQUEST_TIMEOUT') {
+            timeoutErrorCalled = true
+          }
+        }) as NextFunction,
+      )
 
       // Trigger close event immediately (clears the timer)
       events.get('close')!.forEach(h => h())
@@ -130,9 +142,13 @@ describe('Timeout Middleware', () => {
       const { res } = createMockResponse()
       let capturedError: unknown = null
 
-      middleware(req, res as Response, ((err?: unknown) => {
-        capturedError = err
-      }) as NextFunction)
+      middleware(
+        req,
+        res as Response,
+        ((err?: unknown) => {
+          capturedError = err
+        }) as NextFunction,
+      )
 
       mock.timers.tick(200)
 
@@ -148,11 +164,15 @@ describe('Timeout Middleware', () => {
       const { res } = createMockResponse()
       let timeoutErrorCalled = false
 
-      middleware(req, res as Response, ((err?: unknown) => {
-        if (err instanceof AppError && err.code === 'REQUEST_TIMEOUT') {
-          timeoutErrorCalled = true
-        }
-      }) as NextFunction)
+      middleware(
+        req,
+        res as Response,
+        ((err?: unknown) => {
+          if (err instanceof AppError && err.code === 'REQUEST_TIMEOUT') {
+            timeoutErrorCalled = true
+          }
+        }) as NextFunction,
+      )
 
       // Just before the default 30s deadline — should not have fired yet.
       mock.timers.tick(29999)
@@ -169,11 +189,15 @@ describe('Timeout Middleware', () => {
       const { res } = createMockResponse()
       let timeoutErrorCalled = false
 
-      middleware(req, res as Response, ((err?: unknown) => {
-        if (err instanceof AppError) {
-          timeoutErrorCalled = true
-        }
-      }) as NextFunction)
+      middleware(
+        req,
+        res as Response,
+        ((err?: unknown) => {
+          if (err instanceof AppError) {
+            timeoutErrorCalled = true
+          }
+        }) as NextFunction,
+      )
 
       mock.timers.tick(100)
 
@@ -187,14 +211,24 @@ describe('Timeout Middleware', () => {
       const req = createMockRequest() as Request
       const mock2 = createMockResponse()
       // Simulate a response that completed before the timer fires.
-      mock2.res = { ...mock2.res, get writableEnded() { return true }, headersSent: true }
+      mock2.res = {
+        ...mock2.res,
+        get writableEnded() {
+          return true
+        },
+        headersSent: true,
+      }
       let timeoutErrorCalled = false
 
-      middleware(req, mock2.res as Response, ((err?: unknown) => {
-        if (err instanceof AppError && err.code === 'REQUEST_TIMEOUT') {
-          timeoutErrorCalled = true
-        }
-      }) as NextFunction)
+      middleware(
+        req,
+        mock2.res as Response,
+        ((err?: unknown) => {
+          if (err instanceof AppError && err.code === 'REQUEST_TIMEOUT') {
+            timeoutErrorCalled = true
+          }
+        }) as NextFunction,
+      )
 
       mock.timers.tick(200)
 
@@ -221,11 +255,15 @@ describe('Timeout Middleware', () => {
       const { res } = createMockResponse()
       let timeoutErrorCalled = false
 
-      middleware(req, res as Response, ((err?: unknown) => {
-        if (err instanceof AppError && err.code === 'REQUEST_TIMEOUT') {
-          timeoutErrorCalled = true
-        }
-      }) as NextFunction)
+      middleware(
+        req,
+        res as Response,
+        ((err?: unknown) => {
+          if (err instanceof AppError && err.code === 'REQUEST_TIMEOUT') {
+            timeoutErrorCalled = true
+          }
+        }) as NextFunction,
+      )
 
       mock.timers.tick(1)
 
@@ -238,11 +276,15 @@ describe('Timeout Middleware', () => {
       const { res } = createMockResponse()
       let timeoutErrorCalled = false
 
-      middleware(req, res as Response, ((err?: unknown) => {
-        if (err instanceof AppError && err.code === 'REQUEST_TIMEOUT') {
-          timeoutErrorCalled = true
-        }
-      }) as NextFunction)
+      middleware(
+        req,
+        res as Response,
+        ((err?: unknown) => {
+          if (err instanceof AppError && err.code === 'REQUEST_TIMEOUT') {
+            timeoutErrorCalled = true
+          }
+        }) as NextFunction,
+      )
 
       // A 0ms timer fires on the next tick.
       mock.timers.tick(0)
@@ -258,11 +300,15 @@ describe('Timeout Middleware', () => {
       const { res } = createMockResponse()
       let timeoutCount = 0
 
-      middleware(req, res as Response, ((err?: unknown) => {
-        if (err instanceof AppError && err.code === 'REQUEST_TIMEOUT') {
-          timeoutCount++
-        }
-      }) as NextFunction)
+      middleware(
+        req,
+        res as Response,
+        ((err?: unknown) => {
+          if (err instanceof AppError && err.code === 'REQUEST_TIMEOUT') {
+            timeoutCount++
+          }
+        }) as NextFunction,
+      )
 
       // Advance well past the deadline — setTimeout is one-shot, so it fires once.
       mock.timers.tick(300)
@@ -276,11 +322,15 @@ describe('Timeout Middleware', () => {
       const { res, events } = createMockResponse()
       let timeoutErrorCalled = false
 
-      middleware(req, res as Response, ((err?: unknown) => {
-        if (err instanceof AppError && err.code === 'REQUEST_TIMEOUT') {
-          timeoutErrorCalled = true
-        }
-      }) as NextFunction)
+      middleware(
+        req,
+        res as Response,
+        ((err?: unknown) => {
+          if (err instanceof AppError && err.code === 'REQUEST_TIMEOUT') {
+            timeoutErrorCalled = true
+          }
+        }) as NextFunction,
+      )
 
       // Partway to the deadline, the response finishes and clears the timer.
       mock.timers.tick(50)

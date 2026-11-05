@@ -1,22 +1,22 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-import { createServer } from 'http';
-import { pathToFileURL } from 'url';
-import configManager from '../config/configManager.js';
-import multiClientManager from '../grpc/multiClientManager.js';
-import certificateRefreshWorker from '../workers/certificateRefreshWorker.js';
-import logger from '../utils/logger.js';
-import * as version from '../utils/version.js';
-import * as appModule from '../app.js';
-import * as websocketServer from '../websocket/websocketServer.js';
-import * as gracefulShutdown from '../utils/gracefulShutdown.js';
-import authManager from '../auth/authManager.js';
-import { observabilityManager } from '../observability/observability.js';
+import { createServer } from 'http'
+import { pathToFileURL } from 'url'
+import configManager from '#src/config/configManager.js'
+import multiClientManager from '#src/grpc/multiClientManager.js'
+import certificateRefreshWorker from '#src/workers/certificateRefreshWorker.js'
+import logger from '#src/utils/logger.js'
+import * as version from '#src/utils/version.js'
+import * as appModule from '#src/app.js'
+import * as websocketServer from '#src/websocket/websocketServer.js'
+import * as gracefulShutdown from '#src/utils/gracefulShutdown.js'
+import authManager from '#src/auth/authManager.js'
+import { observabilityManager } from '#src/observability/observability.js'
 
-const httpServerLogger = logger.child({ module: 'http-server' });
+const httpServerLogger = logger.child({ module: 'http-server' })
 
 interface StartHttpServerOptions {
-  initializeObservability?: boolean;
+  initializeObservability?: boolean
 }
 
 /**
@@ -25,46 +25,46 @@ interface StartHttpServerOptions {
  */
 export async function startHttpServer(options: StartHttpServerOptions = {}) {
   try {
-    const { initializeObservability = true } = options;
+    const { initializeObservability = true } = options
 
     httpServerLogger.info('Initializing gRPC Studio HTTP server', {
       version: version.APP_VERSION,
       nodeVersion: process.version,
-    });
+    })
 
     if (initializeObservability) {
       // Direct imports of this module still initialize observability here. The
       // normal process entrypoint initializes it earlier, before app imports.
-      observabilityManager.initialize(configManager.getObservabilityConfig());
+      observabilityManager.initialize(configManager.getObservabilityConfig())
     }
 
-    await authManager.initialize(configManager.getAuthConfig());
+    await authManager.initialize(configManager.getAuthConfig())
 
     // Initialize multi-client manager for all configured targets
-    await multiClientManager.initialize();
+    await multiClientManager.initialize()
     httpServerLogger.info('Initialized multi-client manager', {
       targets: multiClientManager.getTargetNames(),
-    });
+    })
 
     // Start background certificate refresh worker (non-blocking)
-    await certificateRefreshWorker.start();
+    await certificateRefreshWorker.start()
 
     // Create Express app
-    const app = appModule.createExpressApp();
+    const app = appModule.createExpressApp()
 
     // Create HTTP server
-    const httpServer = createServer(app);
+    const httpServer = createServer(app)
 
     // Create WebSocket server
-    const wss = websocketServer.createWebSocketServer(httpServer);
+    const wss = websocketServer.createWebSocketServer(httpServer)
 
     // Setup graceful shutdown
-    const servers = { httpServer, wss };
-    gracefulShutdown.setupGracefulShutdown(servers);
+    const servers = { httpServer, wss }
+    gracefulShutdown.setupGracefulShutdown(servers)
 
     // Start listening on the configured host (not hardcoded '0.0.0.0')
-    const serverConfig = configManager.getServerConfig();
-    const targets = configManager.getTargets();
+    const serverConfig = configManager.getServerConfig()
+    const targets = configManager.getTargets()
 
     await new Promise<void>((resolve, reject) => {
       httpServer.listen(serverConfig.port, serverConfig.host, () => {
@@ -75,37 +75,40 @@ export async function startHttpServer(options: StartHttpServerOptions = {}) {
           authPlugin: authManager.getCurrentPluginName(),
           targetCount: targets.length,
           targets: targets.map(t => ({ name: t.name, address: `${t.host}:${t.port}`, mode: t.mode })),
-        });
-        resolve();
-      });
+        })
+        resolve()
+      })
 
-      httpServer.on('error', (error) => {
+      httpServer.on('error', error => {
         if ((error as NodeJS.ErrnoException).code === 'EADDRINUSE') {
-          httpServerLogger.error(`Port ${serverConfig.port} is already in use`);
+          httpServerLogger.error(`Port ${serverConfig.port} is already in use`)
         } else {
-          httpServerLogger.error('HTTP server error', { error: error.message });
+          httpServerLogger.error('HTTP server error', { error: error.message })
         }
-        reject(error);
-      });
-    });
+        reject(error)
+      })
+    })
 
-    return servers;
-
+    return servers
   } catch (error) {
-    httpServerLogger.error('Failed to start HTTP server', { error: error instanceof Error ? error.message : String(error) });
-    throw error;
+    httpServerLogger.error('Failed to start HTTP server', {
+      error: error instanceof Error ? error.message : String(error),
+    })
+    throw error
   }
 }
 
 // Start HTTP server if this file is run directly
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
-  startHttpServer().catch((error) => {
-    httpServerLogger.error('Failed to start HTTP server', { error: error instanceof Error ? error.message : String(error) });
-    process.exit(1);
-  });
+  startHttpServer().catch(error => {
+    httpServerLogger.error('Failed to start HTTP server', {
+      error: error instanceof Error ? error.message : String(error),
+    })
+    process.exit(1)
+  })
 }
 
 // Re-export for external use
-export { createExpressApp } from '../app.js';
-export { createWebSocketServer, closeWebSocketServer } from '../websocket/websocketServer.js';
-export { setupGracefulShutdown, isServerShuttingDown } from '../utils/gracefulShutdown.js';
+export { createExpressApp } from '#src/app.js'
+export { createWebSocketServer, closeWebSocketServer } from '#src/websocket/websocketServer.js'
+export { setupGracefulShutdown, isServerShuttingDown } from '#src/utils/gracefulShutdown.js'

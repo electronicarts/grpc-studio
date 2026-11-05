@@ -4,7 +4,7 @@ import { X } from 'lucide-react'
 import { cn } from '@/utils/cn'
 import { TONES, type Tone } from '@/utils/tones'
 import { formatDate } from '@/utils/dateFormatters'
-import type { CertificateInfo, StatusConfig } from '../types'
+import type { CertificateInfo, StatusConfig } from '@/features/certificateValidator/types'
 
 interface CertificateDetailsProps {
   certInfo: CertificateInfo
@@ -34,12 +34,7 @@ function getTimeRemainingClass(certInfo: CertificateInfo): string {
   return cn(TONES[tone].bg, TONES[tone].text)
 }
 
-export function CertificateDetails({
-  certInfo,
-  config,
-  formatTimeRemaining,
-  onClose,
-}: CertificateDetailsProps) {
+export function CertificateDetails({ certInfo, config, formatTimeRemaining, onClose }: CertificateDetailsProps) {
   const readableCert = certInfo.status !== 'unreadable' ? certInfo : null
   const unreadableError = certInfo.status === 'unreadable' ? certInfo.error : null
   const tone = TONES[config.tone]
@@ -70,9 +65,7 @@ export function CertificateDetails({
           {readableCert?.subject && (
             <div>
               <span className="text-muted-foreground">Subject: </span>
-              <span className="break-all font-mono text-xs text-foreground">
-                {readableCert.subject}
-              </span>
+              <span className="break-all font-mono text-xs text-foreground">{readableCert.subject}</span>
             </div>
           )}
 
@@ -80,9 +73,7 @@ export function CertificateDetails({
             <>
               <div>
                 <span className="text-muted-foreground">Valid From: </span>
-                <span className="text-foreground">
-                  {formatDate(readableCert.validFrom)}
-                </span>
+                <span className="text-foreground">{formatDate(readableCert.validFrom)}</span>
               </div>
 
               <div>
@@ -102,9 +93,7 @@ export function CertificateDetails({
 
           {unreadableError && (
             <div className={cn('mt-2 rounded p-2', TONES.danger.bg)}>
-              <span className={cn('text-sm', TONES.danger.text)}>
-                Error: {unreadableError}
-              </span>
+              <span className={cn('text-sm', TONES.danger.text)}>Error: {unreadableError}</span>
             </div>
           )}
         </div>

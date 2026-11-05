@@ -47,10 +47,10 @@ export const SelectableButton = React.forwardRef<HTMLDivElement, SelectableButto
         onKeyDown={handleKeyDown}
         className={cn(
           'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-          className
+          className,
         )}
       />
     )
-  }
+  },
 )
 SelectableButton.displayName = 'SelectableButton'

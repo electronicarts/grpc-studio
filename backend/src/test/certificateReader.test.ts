@@ -2,8 +2,8 @@
 
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { parseOpensslX509Output } from '../utils/certificateUtils.js'
-import { buildCertificateInfo, checkCertificateMetadata } from '../utils/certificateStatus.js'
+import { parseOpensslX509Output } from '#src/utils/certificateUtils.js'
+import { buildCertificateInfo, checkCertificateMetadata } from '#src/utils/certificateStatus.js'
 
 const warnDaysCritical = 7
 const warnDaysWarning = 30
@@ -12,11 +12,7 @@ describe('certificate metadata', () => {
   it('derives readable UI info from cached metadata', () => {
     const now = Date.parse('2026-01-01T00:00:00.000Z')
     const certInfo = parseOpensslX509Output(
-      [
-        'notAfter=Jan 11 00:00:00 2026 GMT',
-        'notBefore=Dec 01 00:00:00 2025 GMT',
-        'subject=CN=test',
-      ].join('\n'),
+      ['notAfter=Jan 11 00:00:00 2026 GMT', 'notBefore=Dec 01 00:00:00 2025 GMT', 'subject=CN=test'].join('\n'),
     )
 
     // Convert to legacy format for buildCertificateInfo
@@ -26,12 +22,7 @@ describe('certificate metadata', () => {
       validTo: certInfo?.validTo.toISOString(),
     }
 
-    const certificate = buildCertificateInfo(
-      metadata,
-      warnDaysCritical,
-      warnDaysWarning,
-      new Date(now)
-    )
+    const certificate = buildCertificateInfo(metadata, warnDaysCritical, warnDaysWarning, new Date(now))
 
     const result = checkCertificateMetadata(metadata, now)
 
@@ -44,18 +35,17 @@ describe('certificate metadata', () => {
 
   it('formats expired certificate age', () => {
     const certInfo = parseOpensslX509Output(
-      'notAfter=Jan 01 11:00:00 2026 GMT\nnotBefore=Dec 01 00:00:00 2025 GMT\nsubject=CN=test\nissuer=C=US'
+      'notAfter=Jan 01 11:00:00 2026 GMT\nnotBefore=Dec 01 00:00:00 2025 GMT\nsubject=CN=test\nissuer=C=US',
     )
-    const metadata = certInfo ? {
-      subject: certInfo.subject,
-      validFrom: certInfo.validFrom.toISOString(),
-      validTo: certInfo.validTo.toISOString(),
-    } : {}
+    const metadata = certInfo
+      ? {
+          subject: certInfo.subject,
+          validFrom: certInfo.validFrom.toISOString(),
+          validTo: certInfo.validTo.toISOString(),
+        }
+      : {}
 
-    const result = checkCertificateMetadata(
-      metadata,
-      Date.parse('2026-01-01T12:00:00.000Z')
-    )
+    const result = checkCertificateMetadata(metadata, Date.parse('2026-01-01T12:00:00.000Z'))
 
     assert.equal(result.valid, false)
     assert.equal(result.error, 'mTLS certificate expired 1 hour ago')
@@ -83,7 +73,7 @@ describe('certificate metadata', () => {
         'notBefore=Dec 01 00:00:00 2025 GMT',
         'subject=CN=test',
         'issuer=C=US, O=Test',
-      ].join('\n')
+      ].join('\n'),
     )
 
     assert.ok(certInfo)

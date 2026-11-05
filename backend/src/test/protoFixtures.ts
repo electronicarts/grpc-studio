@@ -1,12 +1,13 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-import { create, toBinary } from '@bufbuild/protobuf'
+import { create, createFileRegistry, toBinary, type FileRegistry } from '@bufbuild/protobuf'
 import type { MessageInitShape } from '@bufbuild/protobuf'
 import {
   FieldDescriptorProto_Label,
   FieldDescriptorProto_Type,
   FieldDescriptorProtoSchema,
   FileDescriptorProtoSchema,
+  FileDescriptorSetSchema,
 } from '@bufbuild/protobuf/wkt'
 import type { FileDescriptorProto } from '@bufbuild/protobuf/wkt'
 
@@ -29,7 +30,11 @@ export function field(
   } as MessageInitShape<typeof FieldDescriptorProtoSchema>
 }
 
-export function messageField(name: string, number: number, typeName: string): MessageInitShape<typeof FieldDescriptorProtoSchema> {
+export function messageField(
+  name: string,
+  number: number,
+  typeName: string,
+): MessageInitShape<typeof FieldDescriptorProtoSchema> {
   return field(name, number, T.MESSAGE, { typeName })
 }
 
@@ -41,6 +46,11 @@ export function fileDescriptor(
     syntax: 'proto3',
     ...init,
   })
+}
+
+/** A real buf registry built from the given files, as reflection would produce. */
+export function fileRegistry(...files: FileDescriptorProto[]): FileRegistry {
+  return createFileRegistry(create(FileDescriptorSetSchema, { file: files }))
 }
 
 export function descriptorBytes(proto: FileDescriptorProto): Uint8Array {

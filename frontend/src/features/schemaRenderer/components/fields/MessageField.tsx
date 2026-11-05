@@ -2,27 +2,30 @@
 
 import React from 'react'
 import type { DescField } from '@bufbuild/protobuf'
-import { renderWellKnownType } from '../shared/WellKnownTypeRenderer'
-import MessageRenderer from '../core/MessageRenderer'
-import MessageFieldFrame from '../shared/MessageFieldFrame'
+import { renderWellKnownType } from '@/features/schemaRenderer/components/shared/WellKnownTypeRenderer'
+import MessageRenderer from '@/features/schemaRenderer/components/core/MessageRenderer'
+import MessageFieldFrame from '@/features/schemaRenderer/components/shared/MessageFieldFrame'
+import type { FieldPresence } from '@/features/schemaRenderer/components/shared/fieldPresence'
 
 interface MessageFieldProps {
   field: DescField & { fieldKind: 'message' }
   value: unknown
   onChange: (value: unknown) => void
   path: string
+  presence?: FieldPresence
 }
 
-const MessageField: React.FC<MessageFieldProps> = ({ field, value, onChange, path }) => {
+const MessageField: React.FC<MessageFieldProps> = ({ field, value, onChange, path, presence }) => {
   const typeName = field.message.typeName
 
   // Try rendering as a well-known type with a specialized component
   const wktComponent = renderWellKnownType({
-    typeName,
+    message: field.message,
     fieldName: field.name,
     value,
     onChange,
-    path
+    path,
+    presence,
   })
 
   if (wktComponent) {
@@ -31,7 +34,7 @@ const MessageField: React.FC<MessageFieldProps> = ({ field, value, onChange, pat
 
   // Not a WKT - render as regular nested message
   return (
-    <MessageFieldFrame name={field.name} typeName={typeName} path={path}>
+    <MessageFieldFrame name={field.name} typeName={typeName} path={path} presence={presence}>
       <MessageRenderer
         schema={field.message}
         value={(value || {}) as Record<string, unknown>}

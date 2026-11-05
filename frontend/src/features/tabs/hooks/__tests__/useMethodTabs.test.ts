@@ -2,9 +2,9 @@
 
 import { describe, it, expect, beforeEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
-import { useMethodTabs } from '../useMethodTabs'
+import { useMethodTabs } from '@/features/tabs/hooks/useMethodTabs'
 import { tabStateStore, type TabStateSnapshot } from '@/stores'
-import type { GrpcMethod, GrpcService } from '../../../../types/grpc'
+import type { GrpcMethod, GrpcService } from '@/types/grpc'
 import { MethodKind } from '@grpc-studio/shared'
 
 const emptySnapshot = (): TabStateSnapshot => ({
@@ -76,7 +76,10 @@ describe('useMethodTabs', () => {
       const { result: first, unmount } = renderHook(() => useMethodTabs(noSelection))
       act(() => first.current.closeAllTabs())
       unmount()
-      localStorage.setItem('grpc-studio-tabs', JSON.stringify([{ id: 'other', target: 'Server1', service, method, label: 'x' }]))
+      localStorage.setItem(
+        'grpc-studio-tabs',
+        JSON.stringify([{ id: 'other', target: 'Server1', service, method, label: 'x' }]),
+      )
 
       const { result } = renderHook(() => useMethodTabs(noSelection))
 
@@ -117,7 +120,7 @@ describe('useMethodTabs', () => {
 
   it('does not steal focus back to the canonical tab while a duplicate is active', () => {
     // Re-render with the same selection (as happens on any parent re-render).
-    const { result, rerender } = renderHook((props) => useMethodTabs(props), {
+    const { result, rerender } = renderHook(props => useMethodTabs(props), {
       initialProps: baseProps,
     })
     const originalId = result.current.activeTabId!
@@ -133,7 +136,7 @@ describe('useMethodTabs', () => {
   })
 
   it('switches to an existing tab instead of creating a duplicate on re-select', () => {
-    const { result, rerender } = renderHook((props) => useMethodTabs(props), {
+    const { result, rerender } = renderHook(props => useMethodTabs(props), {
       initialProps: baseProps,
     })
     const originalId = result.current.activeTabId!
@@ -148,8 +151,8 @@ describe('useMethodTabs', () => {
     expect(result.current.activeTabId).toBe(originalId)
   })
 
-  it('closeTab clears the tab\'s stored state so a reopened id starts fresh', () => {
-    const { result, rerender } = renderHook((props) => useMethodTabs(props), {
+  it("closeTab clears the tab's stored state so a reopened id starts fresh", () => {
+    const { result, rerender } = renderHook(props => useMethodTabs(props), {
       initialProps: baseProps,
     })
     const id = result.current.activeTabId!
@@ -166,7 +169,7 @@ describe('useMethodTabs', () => {
   })
 
   it('closeAllTabs clears all stored tab state', () => {
-    const { result, rerender } = renderHook((props) => useMethodTabs(props), {
+    const { result, rerender } = renderHook(props => useMethodTabs(props), {
       initialProps: baseProps,
     })
     const firstId = result.current.activeTabId!

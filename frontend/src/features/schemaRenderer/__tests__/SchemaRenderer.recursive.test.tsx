@@ -15,29 +15,17 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import SchemaRenderer from '../components/core/SchemaRenderer'
-import { collectExpandablePaths } from '../utils/pathAnalysis'
-import { filterFields } from '../utils/fieldFiltering'
-import { detectOneOfSelections } from '../utils/oneOfDetection'
-import {
-  recursiveSchema,
-  lineageSchema,
-  recursiveOneofSchema,
-  testData,
-  schemaCache as testSchemaMap,
-} from './protoMessageRenderer.fixtures'
+import SchemaRenderer from '@/features/schemaRenderer/components/core/SchemaRenderer'
+import { collectExpandablePaths } from '@/features/schemaRenderer/utils/pathAnalysis'
+import { filterMembers } from '@/features/schemaRenderer/utils/fieldFiltering'
+import { detectOneOfSelections } from '@/features/schemaRenderer/utils/oneOfDetection'
+import { recursiveSchema, lineageSchema, recursiveOneofSchema, testData } from '@/test/protoMessageRenderer.fixtures'
 
-vi.mock('../../schemaLoader/lib/schemaCache', () => ({
-  schemaCache: {
-    getSchema: vi.fn((_target: string, type: string) => Promise.resolve(testSchemaMap.get(type) || null)),
-    getCacheSize: vi.fn(() => testSchemaMap.size),
-    getSchemaMap: vi.fn(() => new Map(testSchemaMap)),
-    getCachedSchema: vi.fn((_target: string, type: string) => testSchemaMap.get(type) ?? null),
-    subscribe: vi.fn(() => () => {}),
-    get allLoaded() { return true },
-  },
-  needsSchemaLoad: vi.fn(() => false),
-}))
+vi.mock('@/features/schemaLoader/lib/schemaCache', async () => {
+  const { schemaCacheModule } = await import('@/test/schemaCacheMock')
+  const { schemaCache } = await import('@/test/protoMessageRenderer.fixtures')
+  return schemaCacheModule(schemaCache)
+})
 
 describe('cyclic schemas', () => {
   beforeEach(() => {
@@ -96,23 +84,23 @@ describe('cyclic schemas', () => {
     })
   })
 
-  describe('filterFields', () => {
+  describe('filterMembers', () => {
     it('terminates when searching a cyclic schema', () => {
-      const { filteredRegular } = filterFields(recursiveSchema, testData.recursive, {
+      const members = filterMembers(recursiveSchema, testData.recursive, {
         searchQuery: 'zzz-no-match',
         hideEmptyFields: false,
         isRoot: true,
       })
-      expect(filteredRegular).toHaveLength(0)
+      expect(members).toHaveLength(0)
     })
 
     it('still finds a match nested behind a cycle', () => {
-      const { filteredRegular } = filterFields(recursiveSchema, testData.recursive, {
+      const members = filterMembers(recursiveSchema, testData.recursive, {
         searchQuery: 'registryId',
         hideEmptyFields: false,
         isRoot: true,
       })
-      expect(filteredRegular.map(f => f.name)).toContain('lineage')
+      expect(members.map(m => m.name)).toContain('lineage')
     })
   })
 
@@ -135,14 +123,7 @@ describe('cyclic schemas', () => {
     })
 
     it('renders a self-nested response payload', () => {
-      render(
-        <SchemaRenderer
-          schema={recursiveSchema}
-          data={testData.recursive}
-          onChange={vi.fn()}
-          readOnly
-        />
-      )
+      render(<SchemaRenderer schema={recursiveSchema} data={testData.recursive} onChange={vi.fn()} readOnly />)
       expect(screen.getByText('test.Recursive')).toBeInTheDocument()
       expect(screen.getByDisplayValue('root')).toBeInTheDocument()
       // The nested Recursive inside `parent` is expanded because it has data
@@ -151,7 +132,7 @@ describe('cyclic schemas', () => {
 
     it('expandAll terminates on a cyclic schema', async () => {
       const user = userEvent.setup()
-      render(<SchemaRenderer schema={recursiveSchema} data={testData.recursive} onChange={vi.fn()} />)
+      render(<SchemaRenderer schema={recursiveSchema} data={testData.recursive} onChange={vi.fn()} readOnly />)
 
       await user.click(screen.getByTitle('Expand all'))
 
@@ -160,13 +141,13 @@ describe('cyclic schemas', () => {
       expect(screen.getByDisplayValue('great-grandparent')).toBeInTheDocument()
     })
 
-    it('drilling into a recursive field renders the same message type again', async () => {
+    it('ticking a recursive field renders the same message type again, one level deep', async () => {
       const user = userEvent.setup()
       render(<SchemaRenderer schema={recursiveSchema} data={{}} onChange={vi.fn()} />)
 
-      // Expanding `parent` must reveal that Recursive's own fields, one level
+      // Ticking `parent` must reveal that Recursive's own fields, one level
       // at a time — lazily, not by pre-walking the infinite graph.
-      await user.click(screen.getByRole('button', { name: /^parent/ }))
+      await user.click(screen.getByRole('checkbox', { name: 'Send parent' }))
       expect(screen.getAllByText('parent').length).toBeGreaterThan(1)
     })
   })

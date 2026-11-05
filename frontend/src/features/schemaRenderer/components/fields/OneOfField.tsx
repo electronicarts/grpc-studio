@@ -3,12 +3,14 @@
 import React from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Select } from '@/components/ui/select'
-import type { DescField, DescOneof } from '@bufbuild/protobuf'
-import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
-import { getFieldValue } from '../../utils/fieldOperations'
-import { setFieldValue } from '../../utils'
-import { fieldTypeName } from '../../../../utils/descUtils'
-import FieldRenderer from '../core/FieldRenderer'
+import type { DescOneof } from '@bufbuild/protobuf'
+import { useProtoMessageRendererContext } from '@/features/schemaRenderer/stores/schemaRendererContext'
+import { getFieldValue } from '@/features/schemaRenderer/utils/fieldOperations'
+import { setFieldValue } from '@/features/schemaRenderer/utils'
+import { fieldTypeName } from '@/utils/descUtils'
+import FieldRenderer from '@/features/schemaRenderer/components/core/FieldRenderer'
+import { isCompositeField } from '@/features/schemaRenderer/utils/descriptorTraversal'
+import { defaultFieldValue } from '@/features/schemaRenderer/utils/fieldDefaults'
 
 interface OneOfFieldProps {
   oneof: DescOneof
@@ -21,15 +23,19 @@ const OneOfField: React.FC<OneOfFieldProps> = ({ oneof, value, onChange, basePat
   const { readOnly, oneOfSelections, setOneOfSelection } = useProtoMessageRendererContext()
 
   const selectionKey = basePath ? `${basePath}.${oneof.name}` : oneof.name
-  const fields = oneof.fields as unknown as DescField[]
-  
+  const fields = oneof.fields
+
   let selectedField = oneOfSelections.get(selectionKey) || ''
-  
+
   if (!selectedField && value) {
     for (const field of fields) {
       const fieldValue = getFieldValue(value, field.name)
       if (fieldValue !== undefined && fieldValue !== null) {
-        if (typeof fieldValue === 'object' && !Array.isArray(fieldValue) && Object.keys(fieldValue as object).length === 0) {
+        if (
+          typeof fieldValue === 'object' &&
+          !Array.isArray(fieldValue) &&
+          Object.keys(fieldValue as object).length === 0
+        ) {
           continue
         }
         selectedField = field.name
@@ -39,8 +45,6 @@ const OneOfField: React.FC<OneOfFieldProps> = ({ oneof, value, onChange, basePat
   }
 
   const handleSelectionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    if (readOnly) return
-
     const fieldName = e.target.value
     setOneOfSelection(selectionKey, fieldName)
     const newValue = { ...value }
@@ -49,12 +53,10 @@ const OneOfField: React.FC<OneOfFieldProps> = ({ oneof, value, onChange, basePat
     })
     if (fieldName) {
       const field = fields.find(f => f.name === fieldName)
-      if (field) {
-        // Initialize with default value for message types, omit scalars/enums until user provides value
-        if (field.fieldKind !== 'scalar' && field.fieldKind !== 'enum') {
-          newValue[fieldName] = {}
-        }
-        // For scalar/enum, don't set the key - let the user provide the value
+      // Message members start at their default ({}, or a valid Timestamp/Duration/FieldMask value); scalars and
+      // enums stay unset until the user enters a value
+      if (field && isCompositeField(field)) {
+        newValue[fieldName] = defaultFieldValue(field)
       }
     }
     onChange(newValue)
@@ -69,12 +71,7 @@ const OneOfField: React.FC<OneOfFieldProps> = ({ oneof, value, onChange, basePat
         <span className="font-medium text-foreground">{oneof.name}</span>
       </div>
 
-      <Select
-        value={selectedField}
-        onChange={handleSelectionChange}
-        disabled={readOnly}
-        className="border-brand/30"
-      >
+      <Select value={selectedField} onChange={handleSelectionChange} disabled={readOnly} className="border-brand/30">
         <option value="">Select an option</option>
         {fields.map(f => (
           <option key={f.name} value={f.name}>

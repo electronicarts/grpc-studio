@@ -1,10 +1,10 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import React from 'react'
-import UnaryMessageDisplay from './UnaryMessageDisplay'
-import ReceivedStreamingPanel from './ReceivedStreamingPanel'
-import { useMethodExplorerContext } from '../stores'
-import { useMethodKind } from '../hooks/useMethodKind'
+import UnaryMessageDisplay from '@/features/methodExplorer/components/UnaryMessageDisplay'
+import ReceivedStreamingPanel from '@/features/methodExplorer/components/ReceivedStreamingPanel'
+import { useMethodExplorerContext } from '@/features/methodExplorer/stores'
+import { useMethodKind } from '@/features/methodExplorer/hooks/useMethodKind'
 
 /**
  * Routes to the appropriate response display based on the selected method type:

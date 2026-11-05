@@ -23,8 +23,8 @@ export function safeGetJSON<T>(key: string, area: StorageArea = 'local'): T | nu
 }
 
 export interface StorageResult {
-  success: boolean;
-  error?: string;
+  success: boolean
+  error?: string
 }
 
 export function safeSetJSON<T>(key: string, value: T, area: StorageArea = 'local'): StorageResult {
@@ -33,15 +33,19 @@ export function safeSetJSON<T>(key: string, value: T, area: StorageArea = 'local
     return { success: true }
   } catch (error) {
     if (error instanceof DOMException && error.name === 'QuotaExceededError') {
-      try { storageFor(area).removeItem(key) } catch { /* best-effort */ }
+      try {
+        storageFor(area).removeItem(key)
+      } catch {
+        /* best-effort */
+      }
       return {
         success: false,
-        error: 'Storage quota exceeded. Consider clearing old history.'
+        error: 'Storage quota exceeded. Consider clearing old history.',
       }
     }
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to save to storage'
+      error: error instanceof Error ? error.message : 'Failed to save to storage',
     }
   }
 }
@@ -62,11 +66,15 @@ export function safeGetString(key: string): string | null {
 export function safeSetString(key: string, value: string): void {
   try {
     localStorage.setItem(key, value)
-  } catch { /* best-effort */ }
+  } catch {
+    /* best-effort */
+  }
 }
 
 export function safeRemove(key: string): void {
   try {
     localStorage.removeItem(key)
-  } catch { /* best-effort */ }
+  } catch {
+    /* best-effort */
+  }
 }

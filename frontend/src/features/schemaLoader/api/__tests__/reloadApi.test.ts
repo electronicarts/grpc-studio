@@ -1,8 +1,8 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import { describe, it, expect } from 'vitest'
-import { mergeReloadedTarget } from '../reloadApi'
-import type { ApiServer } from '../../../../types/grpc'
+import { mergeReloadedTarget } from '@/features/schemaLoader/api/reloadApi'
+import type { ApiServer } from '@/types/grpc'
 
 const server = (name: string, servicesCount: number): ApiServer => ({
   name,

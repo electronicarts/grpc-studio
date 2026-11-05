@@ -1,9 +1,9 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import React from 'react'
-import StreamingBadge from './StreamingBadge'
-import { getStreamingType } from '../utils/streamingType'
-import type { MethodItemProps } from '../types'
+import StreamingBadge from '@/features/serviceExplorer/components/StreamingBadge'
+import { getStreamingType } from '@/features/serviceExplorer/utils/streamingType'
+import type { MethodItemProps } from '@/features/serviceExplorer/types'
 import { SelectableButton } from '@/components/ui/selectableButton'
 
 const MethodItem: React.FC<MethodItemProps> = ({ method, service, server, isSelected, onSelect }) => {
@@ -11,9 +11,7 @@ const MethodItem: React.FC<MethodItemProps> = ({ method, service, server, isSele
     <SelectableButton
       onActivate={() => onSelect(method, service, server)}
       className={`w-full rounded-lg p-3 text-left transition-all duration-200 ${
-        isSelected
-          ? 'bg-info text-white shadow-lg shadow-info/25'
-          : 'text-foreground/90 hover:bg-accent'
+        isSelected ? 'bg-info text-white shadow-lg shadow-info/25' : 'text-foreground/90 hover:bg-accent'
       }`}
     >
       <div className="flex items-start justify-between gap-2">

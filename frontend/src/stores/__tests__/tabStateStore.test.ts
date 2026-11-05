@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import { describe, it, expect, beforeEach } from 'vitest'
-import { tabStateStore, type TabStateSnapshot } from '../tabStateStore'
+import { tabStateStore, type TabStateSnapshot } from '@/stores/tabStateStore'
 
 const snapshot = (body: string): TabStateSnapshot => ({
   request: { body, formData: {}, formKey: 0, isFormMode: true, schema: null, validationError: null },
@@ -34,7 +34,9 @@ describe('tabStateStore', () => {
 
     it('does not notify subscribers when only a snapshot changes', () => {
       let calls = 0
-      const unsub = tabStateStore.subscribe(() => { calls++ })
+      const unsub = tabStateStore.subscribe(() => {
+        calls++
+      })
       tabStateStore.setSnapshot('tabA', snapshot('A'))
       expect(calls).toBe(0)
       unsub()
@@ -52,7 +54,9 @@ describe('tabStateStore', () => {
 
     it('notifies subscribers when live work changes', () => {
       let calls = 0
-      const unsub = tabStateStore.subscribe(() => { calls++ })
+      const unsub = tabStateStore.subscribe(() => {
+        calls++
+      })
       tabStateStore.setLiveWork('tabA', true)
       expect(calls).toBe(1)
       unsub()
@@ -61,7 +65,9 @@ describe('tabStateStore', () => {
     it('does not notify when live work is unchanged', () => {
       tabStateStore.setLiveWork('tabA', true)
       let calls = 0
-      const unsub = tabStateStore.subscribe(() => { calls++ })
+      const unsub = tabStateStore.subscribe(() => {
+        calls++
+      })
       tabStateStore.setLiveWork('tabA', true) // no-op
       expect(calls).toBe(0)
       unsub()
@@ -89,7 +95,9 @@ describe('tabStateStore', () => {
     it('remove() notifies subscribers when the tab had live work', () => {
       tabStateStore.setLiveWork('tabA', true)
       let calls = 0
-      const unsub = tabStateStore.subscribe(() => { calls++ })
+      const unsub = tabStateStore.subscribe(() => {
+        calls++
+      })
       tabStateStore.remove('tabA')
       expect(calls).toBe(1)
       unsub()

@@ -1,9 +1,9 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-export type JsonPrimitive = string | number | boolean | null
-export type JsonObject = { [key: string]: JsonValue }
-export type JsonArray = JsonValue[]
-export type JsonValue = JsonPrimitive | JsonObject | JsonArray
+import type { JsonValue } from '@bufbuild/protobuf'
+
+// The JSON types protobuf JSON is built from; shared so API payloads use the same ones as buf's toJson/fromJson
+export type { JsonObject, JsonValue } from '@bufbuild/protobuf'
 
 export function isJsonValue(value: unknown): value is JsonValue {
   if (value === null) return true

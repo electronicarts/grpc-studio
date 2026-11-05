@@ -11,17 +11,16 @@ import {
   type JsonValue,
   type StreamingMethodKind,
 } from '@grpc-studio/shared'
-import { getUserHeadersFromStreamPayload } from '../middlewares/userContextMiddleware.js'
-import { wsMessagesTotal, wsMessageSizeBytes } from '../metrics/metrics.js'
-import logger from '../utils/logger.js'
+import { getUserHeadersFromStreamPayload } from '#src/middlewares/userContextMiddleware.js'
+import { wsMessagesTotal, wsMessageSizeBytes } from '#src/metrics/metrics.js'
+import logger from '#src/utils/logger.js'
 
 const STREAMING_METHOD_KIND_SET = new Set<StreamingMethodKind>(STREAMING_METHOD_KINDS)
 const protocolLogger = logger.child({ module: 'websocket-protocol' })
 const MAX_RESPONSE_PAYLOAD_BYTES = 10 * 1024 * 1024 // 10MB
 
 export type ParseClientMessageResult =
-  | { ok: true; message: InvokeStreamClientMessage }
-  | { ok: false; error: string; tooLarge?: boolean }
+  { ok: true; message: InvokeStreamClientMessage } | { ok: false; error: string; tooLarge?: boolean }
 
 export function parseClientMessage(data: RawData, maxBytes: number): ParseClientMessageResult {
   const text = rawDataToString(data)
@@ -101,7 +100,12 @@ function parseStartPayload(payload: unknown): InvokeStreamStartPayload | null {
   if (!isObject(payload)) return null
 
   const { target, service, method, methodKind } = payload
-  if (typeof target !== 'string' || typeof service !== 'string' || typeof method !== 'string' || !isStreamingMethodKind(methodKind)) {
+  if (
+    typeof target !== 'string' ||
+    typeof service !== 'string' ||
+    typeof method !== 'string' ||
+    !isStreamingMethodKind(methodKind)
+  ) {
     return null
   }
 

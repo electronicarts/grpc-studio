@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import { ScalarType } from '@bufbuild/protobuf'
-import { isRecord } from '../../../utils/jsonUtils'
+import { isRecord } from '@/utils/jsonUtils'
 
 export type StructKind = 'null' | 'number' | 'string' | 'bool' | 'struct' | 'list'
 
@@ -32,7 +32,7 @@ export function structKind(value: unknown): StructKind {
 }
 
 export function structKindFieldName(kind: StructKind): string {
-  return STRUCT_KIND_OPTIONS.find((option) => option.kind === kind)?.fieldName ?? 'string_value'
+  return STRUCT_KIND_OPTIONS.find(option => option.kind === kind)?.fieldName ?? 'string_value'
 }
 
 export function defaultStructValue(kind: StructKind): unknown {

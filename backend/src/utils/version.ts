@@ -5,4 +5,4 @@
  * environment variable that npm injects when scripts run via `npm run ...`.
  * Falls back to '0.0.0' for direct `node` invocations without npm.
  */
-export const APP_VERSION: string = process.env.npm_package_version ?? '0.0.0';
+export const APP_VERSION: string = process.env.npm_package_version ?? '0.0.0'

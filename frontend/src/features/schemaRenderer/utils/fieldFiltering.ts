@@ -1,11 +1,11 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import type { DescField, DescMessage, DescOneof } from '@bufbuild/protobuf'
-import { isEmpty } from './scalarTypeUtils'
-import { valueMatchesSearch } from './searchUtils'
-import { getFieldValue as getFieldValueUtil } from './fieldOperations'
-import { canDescendInto } from './descriptorTraversal'
-import { fieldNestedMessage, fieldTypeName } from '../../../utils/descUtils'
+import { isEmpty } from '@/features/schemaRenderer/utils/scalarTypeUtils'
+import { valueMatchesSearch } from '@/features/schemaRenderer/utils/searchUtils'
+import { getFieldValue as getFieldValueUtil } from '@/features/schemaRenderer/utils/fieldOperations'
+import { canDescendInto } from '@/features/schemaRenderer/utils/descriptorTraversal'
+import { fieldTypeName } from '@/utils/descUtils'
 
 /**
  * Does anything inside `schema` match `query`?
@@ -38,7 +38,7 @@ function fieldOrChildrenMatch(
 ): boolean {
   if (fieldMatchesField(field, fieldValue, query)) return true
 
-  const nested = fieldNestedMessage(field)
+  const nested = field.message
   if (!nested || !canDescendInto(nested, fieldValue != null, ancestorTypes)) return false
   return hasMatchingChildren(nested, query, fieldValue, ancestorTypes)
 }
@@ -52,41 +52,32 @@ function fieldMatchesField(field: DescField, fieldValue: unknown, query: string)
   return false
 }
 
-export function filterFields(
+/**
+ * The message's fields and oneof groups to show, in .proto source order (buf's `members`), narrowed by the
+ * search query (top level only) and, in response views, to those with data.
+ */
+export function filterMembers(
   schema: DescMessage,
   value: Record<string, unknown>,
   options: {
     searchQuery: string
     hideEmptyFields: boolean
     isRoot: boolean
-  }
-): { filteredRegular: DescField[]; filteredOneOf: DescOneof[] } {
-  const { searchQuery, hideEmptyFields, isRoot } = options
-  const regularFields = schema.fields.filter(f => f.oneof === undefined)
+  },
+): (DescField | DescOneof)[] {
+  const { hideEmptyFields } = options
+  const query = options.isRoot ? options.searchQuery : ''
 
-  const matches = (f: DescField) =>
-    fieldOrChildrenMatch(f, getFieldValueUtil(value, f.name), searchQuery)
+  const hasData = (f: DescField) => !isEmpty(getFieldValueUtil(value, f.name))
+  const matches = (f: DescField) => fieldOrChildrenMatch(f, getFieldValueUtil(value, f.name), query)
 
-  let filteredRegular = isRoot && searchQuery
-    ? regularFields.filter(matches)
-    : regularFields
-
-  if (hideEmptyFields) {
-    filteredRegular = filteredRegular.filter(f => !isEmpty(getFieldValueUtil(value, f.name)))
-  }
-
-  let filteredOneOf = isRoot && searchQuery
-    ? schema.oneofs.filter((oneof) => {
-        if (oneof.name.toLowerCase().includes(searchQuery.toLowerCase())) return true
-        return oneof.fields.some(f => matches(f as unknown as DescField))
-      })
-    : schema.oneofs
-
-  if (hideEmptyFields) {
-    filteredOneOf = filteredOneOf.filter((oneof) =>
-      oneof.fields.some(f => !isEmpty(getFieldValueUtil(value, f.name)))
-    )
-  }
-
-  return { filteredRegular, filteredOneOf }
+  return schema.members.filter(member => {
+    if (member.kind === 'oneof') {
+      const oneofMatches = member.name.toLowerCase().includes(query.toLowerCase()) || member.fields.some(matches)
+      if (query && !oneofMatches) return false
+      return !hideEmptyFields || member.fields.some(hasData)
+    }
+    if (query && !matches(member)) return false
+    return !hideEmptyFields || hasData(member)
+  })
 }

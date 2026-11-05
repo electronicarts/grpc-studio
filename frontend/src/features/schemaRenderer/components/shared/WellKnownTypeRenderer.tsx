@@ -6,20 +6,24 @@
  */
 
 import React from 'react'
-import { isTimestampType, isDurationType, isFieldMaskType, isStructType, isAnyType, wrapperPrimitiveType } from '../../../../utils/descUtils'
-import TimestampField from '../wellKnown/TimestampField'
-import DurationField from '../wellKnown/DurationField'
-import FieldMaskField from '../wellKnown/FieldMaskField'
-import WrapperField from '../wellKnown/WrapperField'
-import AnyField from '../wellKnown/AnyField'
-import StructField from '../struct/StructField'
+import type { DescMessage } from '@bufbuild/protobuf'
+import { wellKnownType } from '@/features/schemaRenderer/utils/wellKnownTypes'
+import TimestampField from '@/features/schemaRenderer/components/wellKnown/TimestampField'
+import DurationField from '@/features/schemaRenderer/components/wellKnown/DurationField'
+import FieldMaskField from '@/features/schemaRenderer/components/wellKnown/FieldMaskField'
+import WrapperField from '@/features/schemaRenderer/components/wellKnown/WrapperField'
+import AnyField from '@/features/schemaRenderer/components/wellKnown/AnyField'
+import StructField from '@/features/schemaRenderer/components/struct/StructField'
+import type { FieldPresence } from '@/features/schemaRenderer/components/shared/fieldPresence'
 
 interface WellKnownTypeRendererProps {
-  typeName: string
+  message: DescMessage
   fieldName: string
   value: unknown
   onChange: (value: unknown) => void
   path: string
+  /** Passed to object-like types (Struct), which show it in their frame like regular messages. */
+  presence?: FieldPresence
 }
 
 /**
@@ -27,41 +31,32 @@ interface WellKnownTypeRendererProps {
  * Returns the component if it's a WKT, or null if it should be rendered as a regular message.
  */
 export function renderWellKnownType(props: WellKnownTypeRendererProps): React.ReactElement | null {
-  const { typeName, fieldName, value, onChange, path } = props
+  const { message, fieldName, value, onChange, path, presence } = props
 
-  if (isTimestampType(typeName)) {
-    return <TimestampField name={fieldName} value={value} onChange={onChange} />
+  const wellKnown = wellKnownType(message)
+  switch (wellKnown?.kind) {
+    case 'timestamp':
+      return <TimestampField name={fieldName} value={value} onChange={onChange} />
+    case 'duration':
+      return <DurationField name={fieldName} value={value} onChange={onChange} />
+    case 'fieldMask':
+      return <FieldMaskField name={fieldName} value={value} onChange={onChange} />
+    case 'any':
+      return <AnyField name={fieldName} value={value} onChange={onChange} />
+    case 'struct':
+      return (
+        <StructField
+          name={fieldName}
+          typeName={message.typeName}
+          value={value}
+          onChange={onChange as (value: Record<string, unknown>) => void}
+          path={path}
+          presence={presence}
+        />
+      )
+    case 'wrapper':
+      return <WrapperField name={fieldName} desc={wellKnown.desc} value={value} onChange={onChange} />
+    default:
+      return null
   }
-
-  if (isDurationType(typeName)) {
-    return <DurationField name={fieldName} value={value} onChange={onChange} />
-  }
-
-  if (isFieldMaskType(typeName)) {
-    return <FieldMaskField name={fieldName} value={value} onChange={onChange} />
-  }
-
-  if (isAnyType(typeName)) {
-    return <AnyField name={fieldName} value={value} onChange={onChange} />
-  }
-
-  if (isStructType(typeName)) {
-    return (
-      <StructField
-        name={fieldName}
-        typeName={typeName}
-        value={value}
-        onChange={onChange as (value: Record<string, unknown>) => void}
-        path={path}
-      />
-    )
-  }
-
-  const wrapperType = wrapperPrimitiveType(typeName)
-  if (wrapperType) {
-    return <WrapperField name={fieldName} typeName={typeName} value={value} onChange={onChange} />
-  }
-
-  // Not a WKT
-  return null
 }

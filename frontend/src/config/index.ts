@@ -2,13 +2,13 @@
 
 // Configuration loader — fetch, parse, validate, store.
 
-import { createLogger } from '@/utils/debugLogger';
-import type { FrontendConfig } from './types';
-import { parseYamlConfig } from './yamlParser';
-import { validateConfig } from './configValidator';
-import { setConfig } from './configState';
+import { createLogger } from '@/utils/debugLogger'
+import type { FrontendConfig } from '@/config/types'
+import { parseYamlConfig } from '@/config/yamlParser'
+import { validateConfig } from '@/config/configValidator'
+import { setConfig } from '@/config/configState'
 
-const logger = createLogger('Config');
+const logger = createLogger('Config')
 
 /**
  * Load configuration from /config/frontend.yaml.
@@ -16,39 +16,39 @@ const logger = createLogger('Config');
  */
 export const loadConfig = async (): Promise<FrontendConfig> => {
   try {
-    logger.info('Loading frontend configuration from /config/frontend.yaml...');
+    logger.info('Loading frontend configuration from /config/frontend.yaml...')
 
-    const response = await fetch('/config/frontend.yaml');
+    const response = await fetch('/config/frontend.yaml')
 
     if (!response.ok) {
-      throw new Error(`Configuration not found: HTTP ${response.status} ${response.statusText}`);
+      throw new Error(`Configuration not found: HTTP ${response.status} ${response.statusText}`)
     }
 
-    const yamlText = await response.text();
+    const yamlText = await response.text()
 
     if (!yamlText.trim()) {
-      throw new Error('Configuration file is empty');
+      throw new Error('Configuration file is empty')
     }
 
-    const parsedConfig = parseYamlConfig(yamlText);
+    const parsedConfig = parseYamlConfig(yamlText)
 
     if (!parsedConfig) {
-      throw new Error('Failed to parse configuration YAML');
+      throw new Error('Failed to parse configuration YAML')
     }
 
-    validateConfig(parsedConfig);
-    setConfig(parsedConfig);
-    logger.info('Configuration loaded successfully');
+    validateConfig(parsedConfig)
+    setConfig(parsedConfig)
+    logger.info('Configuration loaded successfully')
 
-    return parsedConfig;
+    return parsedConfig
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown configuration error';
-    logger.error('❌ FATAL: Failed to load configuration:', errorMessage);
-    throw new Error(`Configuration loading failed: ${errorMessage}`);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown configuration error'
+    logger.error('❌ FATAL: Failed to load configuration:', errorMessage)
+    throw new Error(`Configuration loading failed: ${errorMessage}`)
   }
-};
+}
 
 // Re-export public API
-export type { FrontendConfig } from './types';
-export { getConfig, isConfigLoaded } from './configState';
-export { buildApiUrl, buildCustomApiUrl } from './urlBuilder';
+export type { FrontendConfig } from '@/config/types'
+export { getConfig, isConfigLoaded } from '@/config/configState'
+export { buildApiUrl, buildCustomApiUrl } from '@/config/urlBuilder'

@@ -1,7 +1,7 @@
 {
   "name": "@grpc-studio/shared",
   "version": "2.0.0",
-  "description": "Shared types for gRPC Studio — single source of truth for API contracts",
+  "description": "Shared API types and protobuf helpers for gRPC Studio — single source of truth for API contracts",
   "type": "module",
   "exports": {
     ".": {
@@ -15,6 +15,16 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
+    "@bufbuild/protobuf": "^2.13.0",
     "typescript": "^6.0.3"
+  },
+  "peerDependencies": {
+    "@bufbuild/protobuf": "^2.13.0"
+  },
+  "imports": {
+    "#src/*": {
+      "production": "./dist/*",
+      "default": "./src/*"
+    }
   }
 }

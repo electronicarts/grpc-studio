@@ -2,8 +2,8 @@
 
 import React from 'react'
 import { Input } from '@/components/ui/input'
-import { FormField } from '../../../../components/shared'
-import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
+import { FormField } from '@/components/shared'
+import { useProtoMessageRendererContext } from '@/features/schemaRenderer/stores/schemaRendererContext'
 
 interface DurationFieldProps {
   name: string
@@ -20,7 +20,6 @@ const DurationField: React.FC<DurationFieldProps> = ({ name, value, onChange }) 
   const displayValue = typeof value === 'string' ? value : ''
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (readOnly) return
     onChange(e.target.value || undefined)
   }
 

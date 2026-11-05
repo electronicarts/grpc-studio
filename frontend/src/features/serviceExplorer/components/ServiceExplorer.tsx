@@ -2,17 +2,13 @@
 
 import React, { useState, useMemo, useCallback, useRef } from 'react'
 import { Server, PanelLeftClose } from 'lucide-react'
-import ServiceItem from './ServiceItem'
-import MethodItem from './MethodItem'
+import ServiceItem from '@/features/serviceExplorer/components/ServiceItem'
+import MethodItem from '@/features/serviceExplorer/components/MethodItem'
 import { Panel } from '@/components/ui/panel'
 import { SearchInput } from '@/components/ui/searchInput'
-import type { ServiceExplorerProps } from '../types'
-import type { GrpcService } from '../../../types/grpc'
-import { useSchemas } from '../../schemaLoader'
-
-function serviceLabel(service: GrpcService): string {
-  return service.name ?? service.fullName.split('.').pop() ?? service.fullName
-}
+import type { ServiceExplorerProps } from '@/features/serviceExplorer/types'
+import type { GrpcService } from '@/types/grpc'
+import { useSchemas } from '@/features/schemaLoader'
 
 interface ServiceExplorerWithServerProps extends ServiceExplorerProps {
   selectedServerNames: string[]
@@ -57,7 +53,7 @@ const ServiceExplorer: React.FC<ServiceExplorerWithServerProps> = ({
         service,
         serverName: server.name,
         serverTarget: server.target,
-      }))
+      })),
     )
   }, [filteredServers])
 
@@ -67,10 +63,8 @@ const ServiceExplorer: React.FC<ServiceExplorerWithServerProps> = ({
 
     const query = serviceSearchQuery.toLowerCase()
     return allServices.filter(({ service }) => {
-      const serviceMatches = (service.name ?? service.fullName).toLowerCase().includes(query)
-      const methodMatches = service.methods.some((method) =>
-        method.name.toLowerCase().includes(query)
-      )
+      const serviceMatches = service.name.toLowerCase().includes(query)
+      const methodMatches = service.methods.some(method => method.name.toLowerCase().includes(query))
       return serviceMatches || methodMatches
     })
   }, [allServices, serviceSearchQuery])
@@ -103,31 +97,32 @@ const ServiceExplorer: React.FC<ServiceExplorerWithServerProps> = ({
     }
   }, [serviceSearchQuery, filteredServices, selectedService])
 
-  const toggleService = useCallback((service: GrpcService, serverName: string) => {
-    const server = servers.find(s => s.name === serverName)
-    if (!server) return
+  const toggleService = useCallback(
+    (service: GrpcService, serverName: string) => {
+      const server = servers.find(s => s.name === serverName)
+      if (!server) return
 
-    const key = serviceKey(serverName, service)
+      const key = serviceKey(serverName, service)
 
-    // Only collapse when the row is both selected and expanded; otherwise select it.
-    // A row can be expanded without being selected (e.g. search auto-expand), so
-    // keying the collapse purely off expansion would swallow the first click.
-    const isActive =
-      selectedTarget === serverName &&
-      selectedService?.fullName === service.fullName &&
-      expandedService === key
+      // Only collapse when the row is both selected and expanded; otherwise select it.
+      // A row can be expanded without being selected (e.g. search auto-expand), so
+      // keying the collapse purely off expansion would swallow the first click.
+      const isActive =
+        selectedTarget === serverName && selectedService?.fullName === service.fullName && expandedService === key
 
-    if (isActive) {
-      setExpandedService(null)
-    } else {
-      onServiceSelect(service, server)
-      setExpandedService(key)
-    }
-  }, [selectedTarget, selectedService, expandedService, onServiceSelect, servers])
+      if (isActive) {
+        setExpandedService(null)
+      } else {
+        onServiceSelect(service, server)
+        setExpandedService(key)
+      }
+    },
+    [selectedTarget, selectedService, expandedService, onServiceSelect, servers],
+  )
 
   const sortedServices = useMemo(
-    () => [...filteredServices].sort((a, b) => serviceLabel(a.service).localeCompare(serviceLabel(b.service))),
-    [filteredServices]
+    () => [...filteredServices].sort((a, b) => a.service.name.localeCompare(b.service.name)),
+    [filteredServices],
   )
 
   if (servers.length === 0) {
@@ -148,7 +143,12 @@ const ServiceExplorer: React.FC<ServiceExplorerWithServerProps> = ({
         <div className="mb-3 flex items-center gap-3">
           <h2 className="flex items-center gap-2 whitespace-nowrap text-sm font-medium text-foreground/90">
             <svg className="size-4 text-info" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
+              />
             </svg>
             Services
           </h2>
@@ -157,7 +157,7 @@ const ServiceExplorer: React.FC<ServiceExplorerWithServerProps> = ({
           <SearchInput
             placeholder="Search..."
             value={serviceSearchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
+            onChange={e => onSearchChange(e.target.value)}
           />
 
           {onCollapse && (
@@ -177,21 +177,15 @@ const ServiceExplorer: React.FC<ServiceExplorerWithServerProps> = ({
       {/* Service List */}
       <div className="flex-1 space-y-2 overflow-y-auto p-4">
         {sortedServices.length === 0 ? (
-          <div className="py-8 text-center text-sm text-muted-foreground">
-            No services match "{serviceSearchQuery}"
-          </div>
+          <div className="py-8 text-center text-sm text-muted-foreground">No services match "{serviceSearchQuery}"</div>
         ) : (
           sortedServices.map(({ service, serverName, serverTarget }) => {
-            const isSelected =
-              selectedTarget === serverName &&
-              selectedService?.fullName === service.fullName
+            const isSelected = selectedTarget === serverName && selectedService?.fullName === service.fullName
             const isExpanded = expandedService === serviceKey(serverName, service)
             const server = servers.find(s => s.name === serverName)
 
             // Sort methods
-            const sortedMethods = isSelected
-              ? [...service.methods].sort((a, b) => a.name.localeCompare(b.name))
-              : []
+            const sortedMethods = isSelected ? [...service.methods].sort((a, b) => a.name.localeCompare(b.name)) : []
 
             return (
               <div key={`${serverName}::${service.fullName}`}>
@@ -199,29 +193,31 @@ const ServiceExplorer: React.FC<ServiceExplorerWithServerProps> = ({
                   service={service}
                   isSelected={isSelected}
                   isExpanded={isExpanded}
-                  onToggle={(svc) => toggleService(svc, serverName)}
+                  onToggle={svc => toggleService(svc, serverName)}
                   serverName={serverName}
                   serverTarget={serverTarget}
                 >
-                  {isSelected && server && sortedMethods.map((method) => {
-                    // Method selection must match target, service and method name —
-                    // the same method can exist on multiple servers.
-                    const isMethodSelected =
-                      selectedTarget === serverName &&
-                      selectedMethod?.name === method.name &&
-                      selectedService?.fullName === service.fullName
+                  {isSelected &&
+                    server &&
+                    sortedMethods.map(method => {
+                      // Method selection must match target, service and method name —
+                      // the same method can exist on multiple servers.
+                      const isMethodSelected =
+                        selectedTarget === serverName &&
+                        selectedMethod?.name === method.name &&
+                        selectedService?.fullName === service.fullName
 
-                    return (
-                      <MethodItem
-                        key={method.name}
-                        method={method}
-                        service={service}
-                        server={server}
-                        isSelected={isMethodSelected}
-                        onSelect={onMethodSelect}
-                      />
-                    )
-                  })}
+                      return (
+                        <MethodItem
+                          key={method.name}
+                          method={method}
+                          service={service}
+                          server={server}
+                          isSelected={isMethodSelected}
+                          onSelect={onMethodSelect}
+                        />
+                      )
+                    })}
                 </ServiceItem>
               </div>
             )

@@ -1,6 +1,6 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-import type { ResponseModel, ResponseStatus } from '../types'
+import type { ResponseModel, ResponseStatus } from '@/features/methodExplorer/types'
 
 export function stringifyPretty(value: unknown): string {
   return JSON.stringify(value, null, 2)

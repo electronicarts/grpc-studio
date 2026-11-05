@@ -1,11 +1,11 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { parseYamlConfig } from '../yamlParser'
-import { validateConfig } from '../configValidator'
-import { setConfig, getConfig, isConfigLoaded } from '../configState'
-import { buildApiUrl, buildCustomApiUrl } from '../urlBuilder'
-import type { FrontendConfig } from '../types'
+import { parseYamlConfig } from '@/config/yamlParser'
+import { validateConfig } from '@/config/configValidator'
+import { setConfig, getConfig, isConfigLoaded } from '@/config/configState'
+import { buildApiUrl, buildCustomApiUrl } from '@/config/urlBuilder'
+import type { FrontendConfig } from '@/config/types'
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -304,9 +304,7 @@ describe('urlBuilder', () => {
 
   describe('buildCustomApiUrl', () => {
     it('builds URL with baseUrl + custom path', () => {
-      expect(buildCustomApiUrl('/api/grpc/batch-schema')).toBe(
-        'http://localhost:3001/api/grpc/batch-schema'
-      )
+      expect(buildCustomApiUrl('/api/grpc/batch-schema')).toBe('http://localhost:3001/api/grpc/batch-schema')
     })
 
     it('prepends / if path does not start with one', () => {
@@ -341,12 +339,15 @@ describe('loadConfig', () => {
   })
 
   it('fetches, parses, validates, and stores config', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-      ok: true,
-      text: () => Promise.resolve(MINIMAL_YAML),
-    }))
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        text: () => Promise.resolve(MINIMAL_YAML),
+      }),
+    )
 
-    const { loadConfig } = await import('../index')
+    const { loadConfig } = await import('@/config/index')
     const config = await loadConfig()
 
     expect(fetch).toHaveBeenCalledWith('/config/frontend.yaml')
@@ -355,40 +356,49 @@ describe('loadConfig', () => {
   })
 
   it('throws on HTTP error', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-      ok: false,
-      status: 404,
-      statusText: 'Not Found',
-    }))
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+        statusText: 'Not Found',
+      }),
+    )
 
-    const { loadConfig } = await import('../index')
+    const { loadConfig } = await import('@/config/index')
     await expect(loadConfig()).rejects.toThrow('Configuration loading failed')
   })
 
   it('throws on empty response body', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-      ok: true,
-      text: () => Promise.resolve('   '),
-    }))
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        text: () => Promise.resolve('   '),
+      }),
+    )
 
-    const { loadConfig } = await import('../index')
+    const { loadConfig } = await import('@/config/index')
     await expect(loadConfig()).rejects.toThrow('Configuration file is empty')
   })
 
   it('throws on invalid YAML', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-      ok: true,
-      text: () => Promise.resolve('key: [invalid: yaml: {'),
-    }))
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        text: () => Promise.resolve('key: [invalid: yaml: {'),
+      }),
+    )
 
-    const { loadConfig } = await import('../index')
+    const { loadConfig } = await import('@/config/index')
     await expect(loadConfig()).rejects.toThrow('Failed to parse configuration YAML')
   })
 
   it('throws on fetch network error', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Network error')))
 
-    const { loadConfig } = await import('../index')
+    const { loadConfig } = await import('@/config/index')
     await expect(loadConfig()).rejects.toThrow('Configuration loading failed')
   })
 })

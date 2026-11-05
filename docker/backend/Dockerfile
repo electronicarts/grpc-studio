@@ -81,4 +81,5 @@ ENV GRPC_STUDIO_CONFIG=/config/backend.yaml
 ENTRYPOINT ["dumb-init", "--"]
 
 # Start the application
-CMD ["node", "backend/dist/server/httpServer.js"]
+# `production` resolves the backend's #src/* imports to the compiled dist/ (see backend/package.json "imports")
+CMD ["node", "--conditions=production", "backend/dist/server/httpServer.js"]

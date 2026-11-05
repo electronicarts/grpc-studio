@@ -3,9 +3,9 @@
 import React from 'react'
 import { Forward, Check } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import { GrpcService, GrpcMethod } from '../../../types/grpc'
-import { useCopyToClipboard } from '../../../utils/useCopyToClipboard'
-import { useMethodKind } from '../hooks/useMethodKind'
+import { GrpcService, GrpcMethod } from '@/types/grpc'
+import { useCopyToClipboard } from '@/utils/useCopyToClipboard'
+import { useMethodKind } from '@/features/methodExplorer/hooks/useMethodKind'
 import { MethodKind } from '@grpc-studio/shared'
 
 interface MethodHeaderProps {
@@ -35,12 +35,8 @@ const MethodHeader: React.FC<MethodHeaderProps> = ({ selectedService, selectedMe
         <div className="flex min-w-0 items-center space-x-4">
           <img src="/logo.svg" alt="" className="size-12 flex-shrink-0 rounded-xl" />
           <div className="min-w-0">
-            <h1 className="break-words text-2xl font-semibold text-foreground">
-              {selectedMethod.name}
-            </h1>
-            <p className="mt-1 break-all text-muted-foreground">
-              {selectedService.fullName}
-            </p>
+            <h1 className="break-words text-2xl font-semibold text-foreground">{selectedMethod.name}</h1>
+            <p className="mt-1 break-all text-muted-foreground">{selectedService.fullName}</p>
           </div>
         </div>
         <div className="flex flex-shrink-0 items-center space-x-3">

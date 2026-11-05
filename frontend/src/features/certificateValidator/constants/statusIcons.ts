@@ -2,7 +2,7 @@
 
 import type { ElementType } from 'react'
 import { Shield, ShieldAlert, ShieldX, ShieldCheck } from 'lucide-react'
-import type { CertificateStatusType } from '../types'
+import type { CertificateStatusType } from '@/features/certificateValidator/types'
 
 /**
  * Canonical mapping from certificate status to its lucide icon.

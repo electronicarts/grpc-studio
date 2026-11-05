@@ -5,7 +5,7 @@ import { Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
-import type { MetadataModel } from '../types'
+import type { MetadataModel } from '@/features/methodExplorer/types'
 
 interface MetadataEditorProps {
   metadata: MetadataModel
@@ -44,17 +44,17 @@ const MetadataEditor: React.FC<MetadataEditorProps> = ({ metadata, disabled = fa
         <p className="py-2 text-xs text-muted-foreground">No metadata. Click Add to send a custom header.</p>
       ) : (
         <div className="space-y-2">
-          {metadata.rows.map((row) => (
+          {metadata.rows.map(row => (
             <div key={row.id} className="flex items-center gap-2">
               <Switch
                 checked={row.enabled}
-                onCheckedChange={(checked) => metadata.updateRow(row.id, { enabled: checked })}
+                onCheckedChange={checked => metadata.updateRow(row.id, { enabled: checked })}
                 disabled={disabled}
                 aria-label={row.enabled ? 'Disable header' : 'Enable header'}
               />
               <Input
                 value={row.key}
-                onChange={(e) => metadata.updateRow(row.id, { key: e.target.value })}
+                onChange={e => metadata.updateRow(row.id, { key: e.target.value })}
                 placeholder="header-name"
                 disabled={disabled}
                 className="h-8 flex-1 font-mono text-xs"
@@ -64,7 +64,7 @@ const MetadataEditor: React.FC<MetadataEditorProps> = ({ metadata, disabled = fa
               />
               <Input
                 value={row.value}
-                onChange={(e) => metadata.updateRow(row.id, { value: e.target.value })}
+                onChange={e => metadata.updateRow(row.id, { value: e.target.value })}
                 placeholder="value"
                 disabled={disabled}
                 className="h-8 flex-1 font-mono text-xs"

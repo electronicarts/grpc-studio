@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react'
 import { useConnectionStatus } from '@/features/connectionValidator'
 import { useSchemaLoader, useSchemas } from '@/features/schemaLoader'
-import type { UseServerSelectorReturn } from '../types'
+import type { UseServerSelectorReturn } from '@/features/serverSelector/types'
 
 interface UseServerSelectorProps {
   selectedServerNames: string[]
@@ -18,10 +18,7 @@ export function useServerSelector({
 
   // Display target servers in a stable alphabetical order by name, regardless of
   // the order the backend/config returns them in.
-  const servers = useMemo(
-    () => [...unsortedServers].sort((a, b) => a.name.localeCompare(b.name)),
-    [unsortedServers]
-  )
+  const servers = useMemo(() => [...unsortedServers].sort((a, b) => a.name.localeCompare(b.name)), [unsortedServers])
 
   const { servers: serverStatuses } = useConnectionStatus()
   const { reload, reloading } = useSchemaLoader()

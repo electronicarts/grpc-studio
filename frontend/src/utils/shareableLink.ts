@@ -14,6 +14,7 @@
  *   md = request metadata (optional; map of string keys to string values)
  */
 
+import { base64Decode, base64Encode } from '@bufbuild/protobuf/wire'
 import { sanitizeRequestMetadata, type RequestMetadata } from '@grpc-studio/shared'
 
 export interface SharedRequestState {
@@ -36,7 +37,7 @@ export function buildShareableUrl(
   serviceFullName: string,
   methodName: string,
   requestBody: Record<string, unknown>,
-  metadata?: RequestMetadata | null
+  metadata?: RequestMetadata | null,
 ): string {
   const payload: SharedRequestState = {
     s: serviceFullName,
@@ -45,10 +46,7 @@ export function buildShareableUrl(
     ...(metadata && Object.keys(metadata).length > 0 ? { md: metadata } : {}),
   }
   const json = JSON.stringify(payload)
-  const encoded = btoa(unescape(encodeURIComponent(json)))
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '')
+  const encoded = base64Encode(new TextEncoder().encode(json), 'url')
 
   const base = `${window.location.origin}${window.location.pathname}`
   return `${base}#${SHARE_PREFIX}${encoded}`
@@ -64,11 +62,8 @@ export function parseShareableUrl(): SharedRequestState | null {
 
   const encoded = hash.slice(SHARE_PREFIX.length)
   try {
-    // Restore standard base64 from URL-safe variant
-    let base64 = encoded.replace(/-/g, '+').replace(/_/g, '/')
-    while (base64.length % 4 !== 0) base64 += '='
-
-    const json = decodeURIComponent(escape(atob(base64)))
+    // base64Decode accepts the URL-safe, unpadded variant directly
+    const json = new TextDecoder('utf-8', { fatal: true }).decode(base64Decode(encoded))
     const payload = JSON.parse(json) as SharedRequestState
 
     if (
@@ -84,9 +79,7 @@ export function parseShareableUrl(): SharedRequestState | null {
     // entirely if it is malformed so a bad fragment can't break restoration.
     if (payload.md !== undefined) {
       const sanitized = sanitizeRequestMetadata(payload.md)
-      payload.md = sanitized.ok && Object.keys(sanitized.metadata).length > 0
-        ? sanitized.metadata
-        : undefined
+      payload.md = sanitized.ok && Object.keys(sanitized.metadata).length > 0 ? sanitized.metadata : undefined
     }
 
     return payload

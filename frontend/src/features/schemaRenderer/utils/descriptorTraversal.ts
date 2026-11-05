@@ -1,8 +1,7 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import type { DescField, DescMessage } from '@bufbuild/protobuf'
-import { fieldNestedMessage } from '../../../utils/descUtils'
-import { isRecord } from '../../../utils/jsonUtils'
+import { isRecord } from '@/utils/jsonUtils'
 
 export function isCompositeField(field: DescField): boolean {
   return field.fieldKind !== 'scalar' && field.fieldKind !== 'enum'
@@ -31,11 +30,7 @@ export const MAX_TRAVERSAL_DEPTH = 64
  * @param ancestorTypes type names of the messages currently being walked,
  *   outermost first, including the message that owns the field.
  */
-export function canDescendInto(
-  nested: DescMessage,
-  hasData: boolean,
-  ancestorTypes: readonly string[],
-): boolean {
+export function canDescendInto(nested: DescMessage, hasData: boolean, ancestorTypes: readonly string[]): boolean {
   if (ancestorTypes.length >= MAX_TRAVERSAL_DEPTH) return false
   return hasData || !ancestorTypes.includes(nested.typeName)
 }
@@ -64,12 +59,9 @@ export interface NestedMessageSlot {
  * Without it they yield a single slot for the field itself, so schema-only
  * walks (an empty request form) still reach the nested type.
  */
-export function nestedMessageSlots(
-  field: DescField,
-  fieldValue: unknown,
-  fieldPath: string,
-): NestedMessageSlot[] {
-  const schema = fieldNestedMessage(field)
+export function nestedMessageSlots(field: DescField, fieldValue: unknown, fieldPath: string): NestedMessageSlot[] {
+  // buf sets `message` for message fields and for lists and maps of messages
+  const schema = field.message
   if (!schema) return []
 
   if (field.fieldKind === 'list' && Array.isArray(fieldValue)) {

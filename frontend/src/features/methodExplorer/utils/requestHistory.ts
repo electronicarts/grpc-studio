@@ -2,9 +2,9 @@
 
 // Manages request history in localStorage
 import type { RequestMetadata } from '@grpc-studio/shared'
-import type { ResponseStatus, RequestHistoryItem } from '../types'
-import { safeGetJSON, safeSetJSON, safeRemove } from '../../../utils/storageHelpers'
-import { createLogger } from '../../../utils/debugLogger'
+import type { ResponseStatus, RequestHistoryItem } from '@/features/methodExplorer/types'
+import { safeGetJSON, safeSetJSON, safeRemove } from '@/utils/storageHelpers'
+import { createLogger } from '@/utils/debugLogger'
 
 const MAX_HISTORY_ITEMS = 20
 const historyLogger = createLogger('History')

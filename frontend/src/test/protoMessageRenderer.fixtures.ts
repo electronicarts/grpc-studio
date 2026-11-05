@@ -2,39 +2,8 @@
 
 import { create, createFileRegistry } from '@bufbuild/protobuf'
 import type { DescMessage } from '@bufbuild/protobuf'
-import {
-  FieldDescriptorProto_Label,
-  FieldDescriptorProto_Type,
-  FileDescriptorSetSchema,
-} from '@bufbuild/protobuf/wkt'
-
-const L = FieldDescriptorProto_Label
-const T = FieldDescriptorProto_Type
-
-type FieldInit = {
-  name: string
-  number: number
-  type: FieldDescriptorProto_Type
-  label?: FieldDescriptorProto_Label
-  typeName?: string
-  oneofIndex?: number
-}
-
-function field(init: FieldInit) {
-  return {
-    label: L.OPTIONAL,
-    jsonName: init.name,
-    ...init,
-  }
-}
-
-function messageField(name: string, number: number, typeName: string, extra: Partial<FieldInit> = {}) {
-  return field({ name, number, type: T.MESSAGE, typeName, ...extra })
-}
-
-function enumField(name: string, number: number, typeName: string) {
-  return field({ name, number, type: T.ENUM, typeName })
-}
+import { FileDescriptorSetSchema } from '@bufbuild/protobuf/wkt'
+import { L, T, enumField, field, messageField } from '@/test/descriptors'
 
 const fdSet = create(FileDescriptorSetSchema, {
   file: [
@@ -59,9 +28,7 @@ const fdSet = create(FileDescriptorSetSchema, {
       enumType: [
         {
           name: 'NullValue',
-          value: [
-            { name: 'NULL_VALUE', number: 0 },
-          ],
+          value: [{ name: 'NULL_VALUE', number: 0 }],
         },
       ],
       messageType: [
@@ -77,15 +44,19 @@ const fdSet = create(FileDescriptorSetSchema, {
               ],
             },
           ],
-          field: [
-            messageField('fields', 1, '.google.protobuf.Struct.FieldsEntry', { label: L.REPEATED }),
-          ],
+          field: [messageField('fields', 1, '.google.protobuf.Struct.FieldsEntry', { label: L.REPEATED })],
         },
         {
           name: 'Value',
           oneofDecl: [{ name: 'kind' }],
           field: [
-            field({ name: 'null_value', number: 1, type: T.ENUM, typeName: '.google.protobuf.NullValue', oneofIndex: 0 }),
+            field({
+              name: 'null_value',
+              number: 1,
+              type: T.ENUM,
+              typeName: '.google.protobuf.NullValue',
+              oneofIndex: 0,
+            }),
             field({ name: 'number_value', number: 2, type: T.DOUBLE, oneofIndex: 0 }),
             field({ name: 'string_value', number: 3, type: T.STRING, oneofIndex: 0 }),
             field({ name: 'bool_value', number: 4, type: T.BOOL, oneofIndex: 0 }),
@@ -95,9 +66,7 @@ const fdSet = create(FileDescriptorSetSchema, {
         },
         {
           name: 'ListValue',
-          field: [
-            messageField('values', 1, '.google.protobuf.Value', { label: L.REPEATED }),
-          ],
+          field: [messageField('values', 1, '.google.protobuf.Value', { label: L.REPEATED })],
         },
       ],
     },
@@ -108,9 +77,7 @@ const fdSet = create(FileDescriptorSetSchema, {
       messageType: [
         {
           name: 'FieldMask',
-          field: [
-            field({ name: 'paths', number: 1, type: T.STRING, label: L.REPEATED }),
-          ],
+          field: [field({ name: 'paths', number: 1, type: T.STRING, label: L.REPEATED })],
         },
       ],
     },
@@ -123,7 +90,7 @@ const fdSet = create(FileDescriptorSetSchema, {
           name: 'Any',
           field: [
             field({ name: 'type_url', number: 1, type: T.STRING }),
-            field({ name: 'value',    number: 2, type: T.BYTES  }),
+            field({ name: 'value', number: 2, type: T.BYTES }),
           ],
         },
       ],
@@ -137,7 +104,7 @@ const fdSet = create(FileDescriptorSetSchema, {
           name: 'Duration',
           field: [
             field({ name: 'seconds', number: 1, type: T.INT64 }),
-            field({ name: 'nanos',   number: 2, type: T.INT32 }),
+            field({ name: 'nanos', number: 2, type: T.INT32 }),
           ],
         },
       ],
@@ -147,18 +114,25 @@ const fdSet = create(FileDescriptorSetSchema, {
       package: 'google.protobuf',
       syntax: 'proto3',
       messageType: [
-        { name: 'Int32Value',  field: [field({ name: 'value', number: 1, type: T.INT32  })] },
+        { name: 'Int32Value', field: [field({ name: 'value', number: 1, type: T.INT32 })] },
         { name: 'StringValue', field: [field({ name: 'value', number: 1, type: T.STRING })] },
-        { name: 'FloatValue',  field: [field({ name: 'value', number: 1, type: T.FLOAT  })] },
+        { name: 'FloatValue', field: [field({ name: 'value', number: 1, type: T.FLOAT })] },
         { name: 'DoubleValue', field: [field({ name: 'value', number: 1, type: T.DOUBLE })] },
-        { name: 'BoolValue',   field: [field({ name: 'value', number: 1, type: T.BOOL   })] },
+        { name: 'BoolValue', field: [field({ name: 'value', number: 1, type: T.BOOL })] },
       ],
     },
     {
       name: 'schema_renderer_test.proto',
       package: 'test',
       syntax: 'proto3',
-      dependency: ['google/protobuf/timestamp.proto', 'google/protobuf/struct.proto', 'google/protobuf/field_mask.proto', 'google/protobuf/any.proto', 'google/protobuf/duration.proto', 'google/protobuf/wrappers.proto'],
+      dependency: [
+        'google/protobuf/timestamp.proto',
+        'google/protobuf/struct.proto',
+        'google/protobuf/field_mask.proto',
+        'google/protobuf/any.proto',
+        'google/protobuf/duration.proto',
+        'google/protobuf/wrappers.proto',
+      ],
       enumType: [
         {
           name: 'Status',
@@ -171,10 +145,22 @@ const fdSet = create(FileDescriptorSetSchema, {
       ],
       messageType: [
         {
-          name: 'NestedValue',
+          // proto3 `optional` fields: explicit presence via synthetic oneofs
+          name: 'OptionalFields',
           field: [
-            field({ name: 'name', number: 1, type: T.STRING }),
+            field({ name: 'label', number: 1, type: T.STRING, oneofIndex: 0, proto3Optional: true }),
+            field({ name: 'count', number: 2, type: T.INT32, oneofIndex: 1, proto3Optional: true }),
+            field({ name: 'flag', number: 3, type: T.BOOL, oneofIndex: 2, proto3Optional: true }),
+            field({ name: 'plain', number: 4, type: T.STRING }),
+            messageField('child', 5, '.test.NestedValue'),
+            // proto and JSON names differ, as for any snake_case field compiled by protoc
+            { ...field({ name: 'max_count', number: 6, type: T.INT32 }), jsonName: 'maxCount' },
           ],
+          oneofDecl: [{ name: '_label' }, { name: '_count' }, { name: '_flag' }],
+        },
+        {
+          name: 'NestedValue',
+          field: [field({ name: 'name', number: 1, type: T.STRING })],
         },
         {
           name: 'AllScalars',
@@ -187,15 +173,11 @@ const fdSet = create(FileDescriptorSetSchema, {
         },
         {
           name: 'EnumMessage',
-          field: [
-            enumField('status', 1, '.test.Status'),
-          ],
+          field: [enumField('status', 1, '.test.Status')],
         },
         {
           name: 'RepeatedFields',
-          field: [
-            field({ name: 'repeatedString', number: 1, label: L.REPEATED, type: T.STRING }),
-          ],
+          field: [field({ name: 'repeatedString', number: 1, label: L.REPEATED, type: T.STRING })],
         },
         {
           name: 'MapFields',
@@ -209,8 +191,39 @@ const fdSet = create(FileDescriptorSetSchema, {
               ],
             },
           ],
+          field: [messageField('stringToString', 1, '.test.MapFields.StringToStringEntry', { label: L.REPEATED })],
+        },
+        {
+          // Collections whose items aren't strings: numbers, enums and well-known types
+          name: 'TypedCollections',
+          nestedType: [
+            {
+              name: 'CountsEntry',
+              options: { mapEntry: true },
+              field: [
+                field({ name: 'key', number: 1, type: T.STRING }),
+                field({ name: 'value', number: 2, type: T.INT32 }),
+              ],
+            },
+            {
+              name: 'FlagsEntry',
+              options: { mapEntry: true },
+              field: [
+                field({ name: 'key', number: 1, type: T.STRING }),
+                field({ name: 'value', number: 2, type: T.BOOL }),
+              ],
+            },
+            {
+              name: 'StatusesEntry',
+              options: { mapEntry: true },
+              field: [field({ name: 'key', number: 1, type: T.STRING }), enumField('value', 2, '.test.Status')],
+            },
+          ],
           field: [
-            messageField('stringToString', 1, '.test.MapFields.StringToStringEntry', { label: L.REPEATED }),
+            messageField('counts', 1, '.test.TypedCollections.CountsEntry', { label: L.REPEATED }),
+            messageField('statuses', 2, '.test.TypedCollections.StatusesEntry', { label: L.REPEATED }),
+            messageField('times', 3, '.google.protobuf.Timestamp', { label: L.REPEATED }),
+            messageField('flags', 4, '.test.TypedCollections.FlagsEntry', { label: L.REPEATED }),
           ],
         },
         {
@@ -243,9 +256,7 @@ const fdSet = create(FileDescriptorSetSchema, {
         },
         {
           name: 'StructMessage',
-          field: [
-            messageField('metadata', 1, '.google.protobuf.Struct'),
-          ],
+          field: [messageField('metadata', 1, '.google.protobuf.Struct')],
         },
         {
           name: 'OneofItem',
@@ -259,9 +270,7 @@ const fdSet = create(FileDescriptorSetSchema, {
         },
         {
           name: 'RepeatedWithOneof',
-          field: [
-            messageField('items', 1, '.test.OneofItem', { label: L.REPEATED }),
-          ],
+          field: [messageField('items', 1, '.test.OneofItem', { label: L.REPEATED })],
         },
         {
           name: 'MapWithOneof',
@@ -269,36 +278,26 @@ const fdSet = create(FileDescriptorSetSchema, {
             {
               name: 'EntriesEntry',
               options: { mapEntry: true },
-              field: [
-                field({ name: 'key', number: 1, type: T.STRING }),
-                messageField('value', 2, '.test.OneofItem'),
-              ],
+              field: [field({ name: 'key', number: 1, type: T.STRING }), messageField('value', 2, '.test.OneofItem')],
             },
           ],
-          field: [
-            messageField('entries', 1, '.test.MapWithOneof.EntriesEntry', { label: L.REPEATED }),
-          ],
+          field: [messageField('entries', 1, '.test.MapWithOneof.EntriesEntry', { label: L.REPEATED })],
         },
         {
           name: 'DeeplyNested',
-          field: [
-            field({ name: 'name', number: 1, type: T.STRING }),
-            messageField('child', 2, '.test.NestedValue'),
-          ],
+          field: [field({ name: 'name', number: 1, type: T.STRING }), messageField('child', 2, '.test.NestedValue')],
         },
         {
           name: 'FieldMaskMessage',
-          field: [ messageField('mask', 1, '.google.protobuf.FieldMask') ],
+          field: [messageField('mask', 1, '.google.protobuf.FieldMask')],
         },
         {
           name: 'AnyMessage',
-          field: [ messageField('payload', 1, '.google.protobuf.Any') ],
+          field: [messageField('payload', 1, '.google.protobuf.Any')],
         },
         {
           name: 'DurationMessage',
-          field: [
-            messageField('dur', 1, '.google.protobuf.Duration'),
-          ],
+          field: [messageField('dur', 1, '.google.protobuf.Duration')],
         },
         {
           name: 'WrapperMessage',
@@ -321,10 +320,7 @@ const fdSet = create(FileDescriptorSetSchema, {
             {
               name: 'ByNameEntry',
               options: { mapEntry: true },
-              field: [
-                field({ name: 'key', number: 1, type: T.STRING }),
-                messageField('value', 2, '.test.Recursive'),
-              ],
+              field: [field({ name: 'key', number: 1, type: T.STRING }), messageField('value', 2, '.test.Recursive')],
             },
           ],
           field: [
@@ -380,6 +376,8 @@ export const anyMessageSchema = schema('test.AnyMessage')
 export const durationMessageSchema = schema('test.DurationMessage')
 const wrapperMessageSchema = schema('test.WrapperMessage')
 export const allScalarsSchema = schema('test.AllScalars')
+export const optionalFieldsSchema = schema('test.OptionalFields')
+export const typedCollectionsSchema = schema('test.TypedCollections')
 export const enumSchema = schema('test.EnumMessage')
 export const repeatedFieldsSchema = schema('test.RepeatedFields')
 export const mapFieldsSchema = schema('test.MapFields')
@@ -395,39 +393,43 @@ export const recursiveSchema = schema('test.Recursive')
 export const lineageSchema = schema('test.Lineage')
 export const recursiveOneofSchema = schema('test.RecursiveOneof')
 
-export const schemaCache = new Map<string, DescMessage>([
-  wrapperMessageSchema,
-  allScalarsSchema,
-  enumSchema,
-  repeatedFieldsSchema,
-  mapFieldsSchema,
-  oneofBasicSchema,
-  multipleOneofSchema,
-  wellKnownTypesSchema,
-  structMessageSchema,
-  repeatedWithOneofSchema,
-  mapWithOneofSchema,
-  deeplyNestedSchema,
-  comprehensiveSchema,
-  recursiveSchema,
-  lineageSchema,
-  recursiveOneofSchema,
-  schema('google.protobuf.Timestamp'),
-  schema('google.protobuf.Struct'),
-  schema('google.protobuf.Value'),
-  schema('google.protobuf.ListValue'),
-  fieldMaskMessageSchema,
-  anyMessageSchema,
-  durationMessageSchema,
-  schema('google.protobuf.FieldMask'),
-  schema('google.protobuf.Any'),
-  schema('google.protobuf.Duration'),
-  schema('google.protobuf.Int32Value'),
-  schema('google.protobuf.StringValue'),
-  schema('google.protobuf.FloatValue'),
-  schema('test.NestedValue'),
-  schema('test.OneofItem'),
-].map(desc => [desc.typeName, desc]))
+export const schemaCache = new Map<string, DescMessage>(
+  [
+    wrapperMessageSchema,
+    allScalarsSchema,
+    optionalFieldsSchema,
+    typedCollectionsSchema,
+    enumSchema,
+    repeatedFieldsSchema,
+    mapFieldsSchema,
+    oneofBasicSchema,
+    multipleOneofSchema,
+    wellKnownTypesSchema,
+    structMessageSchema,
+    repeatedWithOneofSchema,
+    mapWithOneofSchema,
+    deeplyNestedSchema,
+    comprehensiveSchema,
+    recursiveSchema,
+    lineageSchema,
+    recursiveOneofSchema,
+    schema('google.protobuf.Timestamp'),
+    schema('google.protobuf.Struct'),
+    schema('google.protobuf.Value'),
+    schema('google.protobuf.ListValue'),
+    fieldMaskMessageSchema,
+    anyMessageSchema,
+    durationMessageSchema,
+    schema('google.protobuf.FieldMask'),
+    schema('google.protobuf.Any'),
+    schema('google.protobuf.Duration'),
+    schema('google.protobuf.Int32Value'),
+    schema('google.protobuf.StringValue'),
+    schema('google.protobuf.FloatValue'),
+    schema('test.NestedValue'),
+    schema('test.OneofItem'),
+  ].map(desc => [desc.typeName, desc]),
+)
 
 export const testData = {
   repeatedWithOneof: {
@@ -462,19 +464,14 @@ export const testData = {
       name: 'grandparent',
       parent: { name: 'great-grandparent' },
     },
-    children: [
-      { name: 'child-a', children: [{ name: 'grandchild' }] },
-      { name: 'child-b' },
-    ],
+    children: [{ name: 'child-a', children: [{ name: 'grandchild' }] }, { name: 'child-b' }],
     byName: {
       'entry-a': { name: 'mapped-a', parent: { name: 'mapped-a-parent' } },
     },
     lineage: {
       registryId: 'REG-1',
       ancestor: { name: 'lineage-ancestor', parent: { name: 'deep-ancestor' } },
-      branches: [
-        { registryId: 'REG-1-A', branches: [{ registryId: 'REG-1-A-1' }] },
-      ],
+      branches: [{ registryId: 'REG-1-A', branches: [{ registryId: 'REG-1-A-1' }] }],
     },
   },
 }

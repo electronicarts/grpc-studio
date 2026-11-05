@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { ApiClientError } from '../apiClient'
+import { ApiClientError } from '@/lib/http/apiClient'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -57,27 +57,27 @@ describe('ApiClient.request', () => {
 
   it('unwraps the standard backend envelope { success, data }', async () => {
     global.fetch = mockFetch({ success: true, data: { id: 1 }, timestamp: '2026' }) as unknown as typeof fetch
-    const { apiClient } = await import('../apiClient')
+    const { apiClient } = await import('@/lib/http/apiClient')
     const result = await apiClient.request<{ id: number }>('/test', 'GET')
     expect(result).toEqual({ id: 1 })
   })
 
   it('returns raw response when envelope is absent', async () => {
     global.fetch = mockFetch({ name: 'raw' }) as unknown as typeof fetch
-    const { apiClient } = await import('../apiClient')
+    const { apiClient } = await import('@/lib/http/apiClient')
     const result = await apiClient.request<{ name: string }>('/test', 'GET')
     expect(result).toEqual({ name: 'raw' })
   })
 
   it('throws ApiClientError on 4xx with structured error body', async () => {
     global.fetch = mockFetch({ error: 'Unauthorized' }, 401) as unknown as typeof fetch
-    const { apiClient } = await import('../apiClient')
+    const { apiClient } = await import('@/lib/http/apiClient')
     await expect(apiClient.request('/test', 'GET')).rejects.toBeInstanceOf(ApiClientError)
   })
 
   it('throws ApiClientError with CERTIFICATE_EXPIRED code', async () => {
     global.fetch = mockFetch({ code: 'CERTIFICATE_EXPIRED', message: 'cert expired' }, 403) as unknown as typeof fetch
-    const { apiClient } = await import('../apiClient')
+    const { apiClient } = await import('@/lib/http/apiClient')
     try {
       await apiClient.request('/test', 'GET')
     } catch (err) {
@@ -88,14 +88,14 @@ describe('ApiClient.request', () => {
 
   it('returns empty object for empty response body', async () => {
     global.fetch = mockFetch('') as unknown as typeof fetch
-    const { apiClient } = await import('../apiClient')
+    const { apiClient } = await import('@/lib/http/apiClient')
     const result = await apiClient.request('/test', 'GET')
     expect(result).toEqual({})
   })
 
   it('parses gRPC error format from error string', async () => {
     global.fetch = mockFetch({ error: 'Code: NotFound Message: item not found' }, 404) as unknown as typeof fetch
-    const { apiClient } = await import('../apiClient')
+    const { apiClient } = await import('@/lib/http/apiClient')
     try {
       await apiClient.request('/test', 'GET')
     } catch (err) {
@@ -107,7 +107,7 @@ describe('ApiClient.request', () => {
 
   it('throws on HTML error pages', async () => {
     global.fetch = mockFetch('<!DOCTYPE html><html>502 Bad Gateway</html>', 502) as unknown as typeof fetch
-    const { apiClient } = await import('../apiClient')
+    const { apiClient } = await import('@/lib/http/apiClient')
     try {
       await apiClient.request('/test', 'GET')
     } catch (err) {

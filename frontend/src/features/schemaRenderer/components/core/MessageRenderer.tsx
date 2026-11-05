@@ -1,13 +1,13 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import React from 'react'
-import type { DescMessage, DescField } from '@bufbuild/protobuf'
-import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
-import { setFieldValue } from '../../utils'
-import { getFieldValue } from '../../utils/fieldOperations'
-import { filterFields } from '../../utils/fieldFiltering'
-import FieldRenderer from './FieldRenderer'
-import OneOfField from '../fields/OneOfField'
+import type { DescMessage } from '@bufbuild/protobuf'
+import { useProtoMessageRendererContext } from '@/features/schemaRenderer/stores/schemaRendererContext'
+import { setFieldValue } from '@/features/schemaRenderer/utils'
+import { getFieldValue } from '@/features/schemaRenderer/utils/fieldOperations'
+import { filterMembers } from '@/features/schemaRenderer/utils/fieldFiltering'
+import FieldRenderer from '@/features/schemaRenderer/components/core/FieldRenderer'
+import OneOfField from '@/features/schemaRenderer/components/fields/OneOfField'
 
 interface MessageRendererProps {
   schema: DescMessage
@@ -22,53 +22,40 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({
   value,
   onChange,
   basePath = '',
-  isRoot = false
+  isRoot = false,
 }) => {
   const { searchQuery, hideEmptyFields } = useProtoMessageRendererContext()
 
-  const { filteredRegular, filteredOneOf } = filterFields(schema, value, {
+  const members = filterMembers(schema, value, {
     searchQuery,
     hideEmptyFields,
-    isRoot
+    isRoot,
   })
 
   return (
     <div className="space-y-4">
-      {/* Render oneOf groups first */}
-      {filteredOneOf.map((oneof) => (
-        <div key={oneof.name}>
-          <OneOfField
-            oneof={oneof}
-            value={value}
-            onChange={onChange}
-            basePath={basePath}
-          />
+      {/* Fields and oneof groups in .proto source order */}
+      {members.map(member => (
+        <div key={`${member.kind}:${member.name}`}>
+          {member.kind === 'oneof' ? (
+            <OneOfField oneof={member} value={value} onChange={onChange} basePath={basePath} />
+          ) : (
+            <FieldRenderer
+              field={member}
+              value={getFieldValue(value, member.name)}
+              onChange={val => onChange(setFieldValue(value, member.name, val))}
+              path={basePath ? `${basePath}.${member.name}` : member.name}
+            />
+          )}
         </div>
       ))}
 
-      {/* Render regular fields */}
-      {filteredRegular.map((field: DescField) => (
-        <div key={field.name}>
-          <FieldRenderer
-            field={field}
-            value={getFieldValue(value, field.name)}
-            onChange={val => onChange(setFieldValue(value, field.name, val))}
-            path={basePath ? `${basePath}.${field.name}` : field.name}
-
-          />
-        </div>
-      ))}
-      
-      {isRoot && searchQuery && filteredRegular.length === 0 && filteredOneOf.length === 0 && (
-        <div className="py-4 text-center text-sm italic text-muted-foreground">
-          No fields matching "{searchQuery}"
-        </div>
+      {isRoot && searchQuery && members.length === 0 && (
+        <div className="py-4 text-center text-sm italic text-muted-foreground">No fields matching "{searchQuery}"</div>
       )}
-      
-      {isRoot && hideEmptyFields && !searchQuery && filteredRegular.length === 0 && filteredOneOf.length === 0 && (
-        <div className="py-4 text-center text-sm italic text-muted-foreground">
-          No populated fields in response
-        </div>
+
+      {isRoot && hideEmptyFields && !searchQuery && members.length === 0 && (
+        <div className="py-4 text-center text-sm italic text-muted-foreground">No populated fields in response</div>
       )}
     </div>
   )

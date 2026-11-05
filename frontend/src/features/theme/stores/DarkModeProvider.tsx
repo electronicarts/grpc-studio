@@ -2,7 +2,7 @@
 
 import { ReactNode, useState, useEffect, useCallback } from 'react'
 import { safeGetJSON, safeSetJSON } from '@/utils/storageHelpers'
-import { DarkModeContext } from './darkModeContext'
+import { DarkModeContext } from '@/features/theme/stores/darkModeContext'
 
 const STORAGE_KEY = 'darkMode'
 
@@ -16,7 +16,7 @@ export function DarkModeProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const toggleDarkMode = useCallback(() => {
-    setDarkMode((prev) => {
+    setDarkMode(prev => {
       const next = !prev
       safeSetJSON(STORAGE_KEY, next)
       document.documentElement.classList.toggle('dark', next)
@@ -24,9 +24,5 @@ export function DarkModeProvider({ children }: { children: ReactNode }) {
     })
   }, [])
 
-  return (
-    <DarkModeContext.Provider value={{ darkMode, toggleDarkMode }}>
-      {children}
-    </DarkModeContext.Provider>
-  )
+  return <DarkModeContext.Provider value={{ darkMode, toggleDarkMode }}>{children}</DarkModeContext.Provider>
 }

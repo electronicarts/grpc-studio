@@ -2,10 +2,15 @@
 
 import type { GrpcMethod } from '@/types/grpc'
 import { ApiClientError } from '@/lib/http/apiClient'
-import { applyResponseSchema, normalizeResponseMessage } from '../utils/responseHandlerUtils'
-import type { Payload } from '../utils/payload'
-import { applyResponseSnapshot, errorStatus, okStatus, stringifyPretty } from '../utils/responseStatus'
-import type { ResponseModel, ResponseStatus, StreamModel } from '../types'
+import { applyResponseSchema, normalizeResponseMessage } from '@/features/methodExplorer/utils/responseHandlerUtils'
+import type { Payload } from '@/features/methodExplorer/utils/payload'
+import {
+  applyResponseSnapshot,
+  errorStatus,
+  okStatus,
+  stringifyPretty,
+} from '@/features/methodExplorer/utils/responseStatus'
+import type { ResponseModel, ResponseStatus, StreamModel } from '@/features/methodExplorer/types'
 import type { InvokeUnaryResponse } from '@grpc-studio/shared'
 
 interface UseUnaryInvocationRecorderOptions {
@@ -42,17 +47,19 @@ export function useUnaryInvocationRecorder({
     applyResponseSchema(selectedTarget, selectedMethod, response)
 
     if (result.success) {
-      saveToHistory(
-        prepared.display,
-        okStatus(duration, size),
-      )
+      saveToHistory(prepared.display, okStatus(duration, size))
     }
   }
 
   function recordUnaryError(apiError: ApiClientError, prepared: Payload): void {
     saveToHistory(
       prepared.display,
-      errorStatus(apiError.code ?? `HTTP ${apiError.status}`, apiError.message, requestDuration(), apiError.message.length),
+      errorStatus(
+        apiError.code ?? `HTTP ${apiError.status}`,
+        apiError.message,
+        requestDuration(),
+        apiError.message.length,
+      ),
     )
   }
 

@@ -15,7 +15,7 @@
     "build": "tsc",
     "test": "GRPC_STUDIO_CONFIG=../config/backend.yaml tsx --test src/test/*.test.ts",
     "lint": "eslint src/ --ext .ts",
-    "format": "prettier --write src/",
+    "format": "prettier --write \"src/**/*.ts\"",
     "health": "curl -f http://localhost:3001/health || exit 1",
     "typecheck": "tsc --noEmit",
     "typecheck:test": "tsc --noEmit -p tsconfig.test.json"
@@ -43,7 +43,6 @@
     "@typescript-eslint/eslint-plugin": "^8.59.2",
     "@typescript-eslint/parser": "^8.59.2",
     "eslint": "^8.57.0",
-    "prettier": "^3.0.0",
     "tsx": "^4.21.0",
     "typescript": "^6.0.3"
   },
@@ -65,5 +64,11 @@
   "bugs": {
     "url": "https://github.com/prsawant/gRPC-Studio/issues"
   },
-  "homepage": "https://github.com/prsawant/gRPC-Studio#readme"
+  "homepage": "https://github.com/prsawant/gRPC-Studio#readme",
+  "imports": {
+    "#src/*": {
+      "production": "./dist/*",
+      "default": "./src/*"
+    }
+  }
 }

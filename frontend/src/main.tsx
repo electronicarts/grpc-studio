@@ -3,12 +3,12 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import App from './App.tsx'
-import { AuthProvider, initializeAuthFromYaml } from './features/auth'
-import { DarkModeProvider } from './features/theme'
-import { loadConfig } from './config'
-import { createLogger } from './utils/debugLogger'
-import './globals.css'
+import App from '@/App.tsx'
+import { AuthProvider, initializeAuthFromYaml } from '@/features/auth'
+import { DarkModeProvider } from '@/features/theme'
+import { loadConfig } from '@/config'
+import { createLogger } from '@/utils/debugLogger'
+import '@/globals.css'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -42,11 +42,11 @@ function getErrorMessage(error: unknown): string {
 }
 
 loadConfig()
-  .then(async (config) => {
+  .then(async config => {
     await initializeAuthFromYaml(config.auth)
     renderApp()
   })
-  .catch((error) => {
+  .catch(error => {
     logger.error('Failed to load config:', error)
     renderApp(getErrorMessage(error))
   })

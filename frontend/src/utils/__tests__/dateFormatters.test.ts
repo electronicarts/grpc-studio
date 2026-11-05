@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import { describe, it, expect } from 'vitest'
-import { formatTime, formatDate, formatDateTime } from '../dateFormatters'
+import { formatTime, formatDate, formatDateTime } from '@/utils/dateFormatters'
 
 describe('dateFormatters', () => {
   describe('formatTime', () => {
@@ -30,11 +30,7 @@ describe('dateFormatters', () => {
     })
 
     it('should format different times to the same HH:MM:SS shape and be deterministic', () => {
-      const dates = [
-        new Date('2026-01-01T09:15:30'),
-        new Date('2026-06-15T18:45:00'),
-        new Date('2026-12-31T23:59:59')
-      ]
+      const dates = [new Date('2026-01-01T09:15:30'), new Date('2026-06-15T18:45:00'), new Date('2026-12-31T23:59:59')]
 
       dates.forEach(date => {
         const result = formatTime(date)
@@ -79,7 +75,7 @@ describe('dateFormatters', () => {
       const dates = [
         '2026-01-15', // Jan
         '2026-06-15', // Jun
-        '2026-12-15'  // Dec
+        '2026-12-15', // Dec
       ]
 
       dates.forEach(dateStr => {

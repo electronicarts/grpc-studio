@@ -2,18 +2,14 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, waitFor } from '@testing-library/react'
-import { useAutoLogin } from '../useAutoLogin'
-import { useAuth } from '../useAuth'
+import { useAutoLogin } from '@/features/auth/hooks/useAutoLogin'
+import { useAuth } from '@/features/auth/hooks/useAuth'
 
-vi.mock('../useAuth')
+vi.mock('@/features/auth/hooks/useAuth')
 
 const mockLogin = vi.fn()
 
-function mockAuthState(overrides: {
-  isAuthenticated?: boolean
-  isLoading?: boolean
-  isSsoEnabled?: boolean
-}) {
+function mockAuthState(overrides: { isAuthenticated?: boolean; isLoading?: boolean; isSsoEnabled?: boolean }) {
   vi.mocked(useAuth).mockReturnValue({
     isAuthenticated: false,
     isLoading: false,

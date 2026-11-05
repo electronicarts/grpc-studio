@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import { describe, it, expect } from 'vitest'
-import { formatBytes } from '../bytesUtils'
+import { formatBytes } from '@/utils/bytesUtils'
 
 describe('bytesUtils', () => {
   describe('formatBytes', () => {

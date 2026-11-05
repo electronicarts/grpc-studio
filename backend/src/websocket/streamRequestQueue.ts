@@ -69,7 +69,7 @@ export class StreamRequestQueue<T> implements AsyncIterable<T> {
       return Promise.reject(new Error(`Too many waiting consumers: ${this.maxWaiters}`))
     }
 
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       this.waiters.push(resolve)
     })
   }

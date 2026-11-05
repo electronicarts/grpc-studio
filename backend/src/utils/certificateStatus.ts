@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import { CertificateStatus, type CertificateInfo } from '@grpc-studio/shared'
-import type { CertificateMetadata, CertCheckResult } from '../types/index.js'
+import type { CertificateMetadata, CertCheckResult } from '#src/types/index.js'
 
 const MILLISECONDS_PER_HOUR = 1000 * 60 * 60
 const HOURS_PER_DAY = 24
@@ -10,7 +10,7 @@ export function buildCertificateInfo(
   metadata: CertificateMetadata,
   warnDaysCritical: number,
   warnDaysWarning: number,
-  now = new Date()
+  now = new Date(),
 ): CertificateInfo {
   if (isEmptyCertificateMetadata(metadata)) {
     return { status: CertificateStatus.UNREADABLE, error: 'Could not read certificate metadata' }
@@ -27,9 +27,7 @@ export function buildCertificateInfo(
     validTo: metadata.validTo,
     daysRemaining,
     isNotYetValid: validFrom !== null && validFrom > now,
-    isExpiringSoon: daysRemaining !== null &&
-      daysRemaining >= 0 &&
-      daysRemaining < warnDaysWarning,
+    isExpiringSoon: daysRemaining !== null && daysRemaining >= 0 && daysRemaining < warnDaysWarning,
     isExpired: daysRemaining !== null && daysRemaining < 0,
   }
 }
@@ -73,7 +71,7 @@ function isEmptyCertificateMetadata(metadata: CertificateMetadata): boolean {
 function getCertificateStatus(
   daysRemaining: number | null,
   warnDaysCritical: number,
-  warnDaysWarning: number
+  warnDaysWarning: number,
 ): Exclude<CertificateStatus, typeof CertificateStatus.UNREADABLE> {
   if (daysRemaining === null) return CertificateStatus.UNKNOWN
   if (daysRemaining < 0) return CertificateStatus.EXPIRED
@@ -91,7 +89,7 @@ function getCertificateStatus(
 export function getCertificateHealthStatus(
   daysRemaining: number | undefined,
   warnDaysCritical: number,
-  warnDaysWarning: number
+  warnDaysWarning: number,
 ): 'valid' | 'warning' | 'critical' | 'expired' {
   if (daysRemaining === undefined) return 'valid'
   if (daysRemaining < 0) return 'expired'

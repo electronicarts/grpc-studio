@@ -1,17 +1,10 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import { describe, it, expect } from 'vitest'
-import { ScalarType } from '@bufbuild/protobuf'
-import {
-  scalarTypeName,
-  scalarTypeFromName,
-  fieldTypeName,
-  fieldNestedMessage,
-  isTimestampType,
-  isStructType,
-  wrapperPrimitiveType,
-  parseDescriptorIntoMap
-} from '../descUtils'
+import { ScalarType, create, toBinary } from '@bufbuild/protobuf'
+import { FileDescriptorSetSchema } from '@bufbuild/protobuf/wkt'
+import { base64Encode } from '@bufbuild/protobuf/wire'
+import { scalarTypeName, fieldTypeName, parseDescriptorIntoMap, anyTypeName, anyTypeUrl } from '@/utils/descUtils'
 import type { DescField, DescMessage } from '@bufbuild/protobuf'
 
 describe('descUtils', () => {
@@ -34,7 +27,7 @@ describe('descUtils', () => {
         ScalarType.BOOL,
         ScalarType.FLOAT,
         ScalarType.DOUBLE,
-        ScalarType.BYTES
+        ScalarType.BYTES,
       ]
 
       scalarTypes.forEach(type => {
@@ -50,7 +43,7 @@ describe('descUtils', () => {
     it('should return type name for scalar field', () => {
       const field: Partial<DescField> = {
         fieldKind: 'scalar',
-        scalar: ScalarType.STRING
+        scalar: ScalarType.STRING,
       }
 
       expect(fieldTypeName(field as DescField)).toBe('string')
@@ -59,7 +52,7 @@ describe('descUtils', () => {
     it('should return type name for enum field', () => {
       const field: Partial<DescField> = {
         fieldKind: 'enum',
-        enum: { typeName: 'MyEnum' } as unknown as DescEnum
+        enum: { typeName: 'MyEnum' } as unknown as DescEnum,
       }
 
       expect(fieldTypeName(field as DescField)).toBe('MyEnum')
@@ -68,7 +61,7 @@ describe('descUtils', () => {
     it('should return type name for message field', () => {
       const field: Partial<DescField> = {
         fieldKind: 'message',
-        message: { typeName: 'MyMessage' } as unknown as DescMessage
+        message: { typeName: 'MyMessage' } as unknown as DescMessage,
       }
 
       expect(fieldTypeName(field as DescField)).toBe('MyMessage')
@@ -78,7 +71,7 @@ describe('descUtils', () => {
       const field: Partial<DescField> = {
         fieldKind: 'list',
         listKind: 'scalar',
-        scalar: ScalarType.INT32
+        scalar: ScalarType.INT32,
       }
 
       expect(fieldTypeName(field as DescField)).toBe('int32')
@@ -88,7 +81,7 @@ describe('descUtils', () => {
       const field: Partial<DescField> = {
         fieldKind: 'list',
         listKind: 'enum',
-        enum: { typeName: 'Status' } as unknown as DescEnum
+        enum: { typeName: 'Status' } as unknown as DescEnum,
       }
 
       expect(fieldTypeName(field as DescField)).toBe('Status')
@@ -98,7 +91,7 @@ describe('descUtils', () => {
       const field: Partial<DescField> = {
         fieldKind: 'list',
         listKind: 'message',
-        message: { typeName: 'Item' } as unknown as DescMessage
+        message: { typeName: 'Item' } as unknown as DescMessage,
       }
 
       expect(fieldTypeName(field as DescField)).toBe('Item')
@@ -109,7 +102,7 @@ describe('descUtils', () => {
         fieldKind: 'map',
         mapKey: ScalarType.STRING,
         mapKind: 'scalar',
-        scalar: ScalarType.INT32
+        scalar: ScalarType.INT32,
       }
 
       expect(fieldTypeName(field as DescField)).toBe('map<string, int32>')
@@ -120,7 +113,7 @@ describe('descUtils', () => {
         fieldKind: 'map',
         mapKey: ScalarType.STRING,
         mapKind: 'enum',
-        enum: { typeName: 'Color' } as unknown as DescEnum
+        enum: { typeName: 'Color' } as unknown as DescEnum,
       }
 
       expect(fieldTypeName(field as DescField)).toBe('map<string, Color>')
@@ -131,144 +124,32 @@ describe('descUtils', () => {
         fieldKind: 'map',
         mapKey: ScalarType.STRING,
         mapKind: 'message',
-        message: { typeName: 'Value' } as unknown as DescMessage
+        message: { typeName: 'Value' } as unknown as DescMessage,
       }
 
       expect(fieldTypeName(field as DescField)).toBe('map<string, Value>')
     })
   })
 
-  describe('fieldNestedMessage', () => {
-    it('should return message for message field', () => {
-      const mockMessage = { typeName: 'User' } as DescMessage
-
-      const field: Partial<DescField> = {
-        fieldKind: 'message',
-        message: mockMessage
-      }
-
-      expect(fieldNestedMessage(field as DescField)).toBe(mockMessage)
-    })
-
-    it('should return message for list of messages', () => {
-      const mockMessage = { typeName: 'Item' } as DescMessage
-
-      const field: Partial<DescField> = {
-        fieldKind: 'list',
-        listKind: 'message',
-        message: mockMessage
-      }
-
-      expect(fieldNestedMessage(field as DescField)).toBe(mockMessage)
-    })
-
-    it('should return message for map with message value', () => {
-      const mockMessage = { typeName: 'Data' } as DescMessage
-
-      const field: Partial<DescField> = {
-        fieldKind: 'map',
-        mapKind: 'message',
-        message: mockMessage
-      }
-
-      expect(fieldNestedMessage(field as DescField)).toBe(mockMessage)
-    })
-
-    it('should return null for scalar field', () => {
-      const field: Partial<DescField> = {
-        fieldKind: 'scalar',
-        scalar: ScalarType.STRING
-      }
-
-      expect(fieldNestedMessage(field as DescField)).toBeNull()
-    })
-
-    it('should return null for enum field', () => {
-      const field: Partial<DescField> = {
-        fieldKind: 'enum',
-        enum: { typeName: 'Status' } as unknown as DescEnum
-      }
-
-      expect(fieldNestedMessage(field as DescField)).toBeNull()
-    })
-
-    it('should return null for list of scalars', () => {
-      const field: Partial<DescField> = {
-        fieldKind: 'list',
-        listKind: 'scalar',
-        scalar: ScalarType.INT32
-      }
-
-      expect(fieldNestedMessage(field as DescField)).toBeNull()
-    })
-
-    it('should return null for map with scalar value', () => {
-      const field: Partial<DescField> = {
-        fieldKind: 'map',
-        mapKey: ScalarType.STRING,
-        mapKind: 'scalar',
-        scalar: ScalarType.BOOL
-      }
-
-      expect(fieldNestedMessage(field as DescField)).toBeNull()
-    })
-  })
-
-  describe('isTimestampType', () => {
-    it('should identify google.protobuf.Timestamp', () => {
-      expect(isTimestampType('google.protobuf.Timestamp')).toBe(true)
-    })
-
-    it('should identify .google.protobuf.Timestamp', () => {
-      expect(isTimestampType('.google.protobuf.Timestamp')).toBe(true)
-    })
-
-    it('should return false for non-timestamp types', () => {
-      expect(isTimestampType('google.protobuf.Struct')).toBe(false)
-      expect(isTimestampType('MyMessage')).toBe(false)
-      expect(isTimestampType('string')).toBe(false)
-    })
-  })
-
-  describe('isStructType', () => {
-    it('should identify google.protobuf.Struct', () => {
-      expect(isStructType('google.protobuf.Struct')).toBe(true)
-    })
-
-    it('should identify .google.protobuf.Struct', () => {
-      expect(isStructType('.google.protobuf.Struct')).toBe(true)
-    })
-
-    it('should return false for non-struct types', () => {
-      expect(isStructType('google.protobuf.Timestamp')).toBe(false)
-      expect(isStructType('MyStruct')).toBe(false)
-      expect(isStructType('string')).toBe(false)
-    })
-  })
-
-  describe('wrapperPrimitiveType', () => {
-    it('should return primitive type for wrapper types', () => {
-      expect(wrapperPrimitiveType('google.protobuf.StringValue')).toBe('string')
-      expect(wrapperPrimitiveType('google.protobuf.Int32Value')).toBe('int32')
-      expect(wrapperPrimitiveType('google.protobuf.BoolValue')).toBe('bool')
-      expect(wrapperPrimitiveType('google.protobuf.DoubleValue')).toBe('double')
-      expect(wrapperPrimitiveType('google.protobuf.BytesValue')).toBe('bytes')
-    })
-
-    it('should return null for wrapper types with leading dot', () => {
-      // Wrapper type map doesn't include leading dot versions
-      expect(wrapperPrimitiveType('.google.protobuf.StringValue')).toBeNull()
-      expect(wrapperPrimitiveType('.google.protobuf.Int64Value')).toBeNull()
-    })
-
-    it('should return null for non-wrapper types', () => {
-      expect(wrapperPrimitiveType('google.protobuf.Timestamp')).toBeNull()
-      expect(wrapperPrimitiveType('MyMessage')).toBeNull()
-      expect(wrapperPrimitiveType('string')).toBeNull()
-    })
-  })
-
   describe('parseDescriptorIntoMap', () => {
+    it('should collect top-level and nested messages by their full name', () => {
+      const fdSet = create(FileDescriptorSetSchema, {
+        file: [
+          {
+            name: 'outer.proto',
+            package: 'pkg',
+            syntax: 'proto3',
+            messageType: [{ name: 'Outer', nestedType: [{ name: 'Inner', nestedType: [{ name: 'Deepest' }] }] }],
+          },
+        ],
+      })
+      const target = new Map<string, DescMessage>()
+
+      parseDescriptorIntoMap(base64Encode(toBinary(FileDescriptorSetSchema, fdSet)), target)
+
+      expect([...target.keys()].sort()).toEqual(['pkg.Outer', 'pkg.Outer.Inner', 'pkg.Outer.Inner.Deepest'])
+    })
+
     it('should parse simple descriptor set', () => {
       // Create a minimal valid FileDescriptorSet as base64
       // This is a simplified descriptor for testing
@@ -300,40 +181,6 @@ describe('descUtils', () => {
       expect(target).toBeInstanceOf(Map)
     })
   })
-
-  describe('scalarTypeFromName', () => {
-    it('converts type name strings to ScalarType enum', () => {
-      expect(scalarTypeFromName('string')).toBe(ScalarType.STRING)
-      expect(scalarTypeFromName('int32')).toBe(ScalarType.INT32)
-      expect(scalarTypeFromName('bool')).toBe(ScalarType.BOOL)
-      expect(scalarTypeFromName('double')).toBe(ScalarType.DOUBLE)
-      expect(scalarTypeFromName('bytes')).toBe(ScalarType.BYTES)
-    })
-
-    it('handles all numeric types', () => {
-      expect(scalarTypeFromName('int64')).toBe(ScalarType.INT64)
-      expect(scalarTypeFromName('uint32')).toBe(ScalarType.UINT32)
-      expect(scalarTypeFromName('uint64')).toBe(ScalarType.UINT64)
-      expect(scalarTypeFromName('sint32')).toBe(ScalarType.SINT32)
-      expect(scalarTypeFromName('sint64')).toBe(ScalarType.SINT64)
-      expect(scalarTypeFromName('fixed32')).toBe(ScalarType.FIXED32)
-      expect(scalarTypeFromName('fixed64')).toBe(ScalarType.FIXED64)
-      expect(scalarTypeFromName('sfixed32')).toBe(ScalarType.SFIXED32)
-      expect(scalarTypeFromName('sfixed64')).toBe(ScalarType.SFIXED64)
-      expect(scalarTypeFromName('float')).toBe(ScalarType.FLOAT)
-    })
-
-    it('is case-insensitive', () => {
-      expect(scalarTypeFromName('STRING')).toBe(ScalarType.STRING)
-      expect(scalarTypeFromName('Int32')).toBe(ScalarType.INT32)
-      expect(scalarTypeFromName('BOOL')).toBe(ScalarType.BOOL)
-    })
-
-    it('returns STRING for unknown types', () => {
-      expect(scalarTypeFromName('unknown')).toBe(ScalarType.STRING)
-      expect(scalarTypeFromName('invalid')).toBe(ScalarType.STRING)
-    })
-  })
 })
 
 // Helper functions to create test descriptors
@@ -349,3 +196,15 @@ function createMockDescriptorBase64(): string {
   const mockFDS = new Uint8Array([0x0a, 0x00]) // Empty file list
   return btoa(String.fromCharCode(...mockFDS))
 }
+
+describe('Any type URLs', () => {
+  it('should build the type URL for a message type', () => {
+    expect(anyTypeUrl('pkg.Outer.Inner')).toBe('type.googleapis.com/pkg.Outer.Inner')
+  })
+
+  it('should read the type name after the last slash, whatever the host', () => {
+    expect(anyTypeName('type.googleapis.com/pkg.Outer.Inner')).toBe('pkg.Outer.Inner')
+    expect(anyTypeName('example.com/types/pkg.Msg')).toBe('pkg.Msg')
+    expect(anyTypeName(anyTypeUrl('pkg.Msg'))).toBe('pkg.Msg')
+  })
+})

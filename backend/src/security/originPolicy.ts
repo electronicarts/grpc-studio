@@ -2,9 +2,7 @@
 
 export const DEFAULT_ALLOWED_ORIGINS = ['http://localhost:3000', 'http://localhost:4173']
 
-type OriginPolicyRejectReason =
-  | 'missing_origin'
-  | 'origin_not_allowed'
+type OriginPolicyRejectReason = 'missing_origin' | 'origin_not_allowed'
 
 export interface OriginPolicyOptions {
   enabled?: boolean
@@ -28,7 +26,7 @@ export function validateOriginPolicy({
   if (origins.includes('*') && credentials) {
     throw new Error(
       'CORS misconfiguration: wildcard origin (*) cannot be combined with credentials=true. ' +
-      'Specify explicit origins instead.'
+        'Specify explicit origins instead.',
     )
   }
 }
@@ -40,7 +38,7 @@ export function evaluateOriginPolicy(
     origins = DEFAULT_ALLOWED_ORIGINS,
     credentials = true,
     allowMissingOrigin = true,
-  }: OriginPolicyOptions = {}
+  }: OriginPolicyOptions = {},
 ): OriginPolicyDecision {
   validateOriginPolicy({ enabled, origins, credentials })
 
@@ -49,9 +47,7 @@ export function evaluateOriginPolicy(
   }
 
   if (!origin) {
-    return allowMissingOrigin
-      ? { allowed: true }
-      : { allowed: false, reason: 'missing_origin' }
+    return allowMissingOrigin ? { allowed: true } : { allowed: false, reason: 'missing_origin' }
   }
 
   if (origins.includes(origin) || (!credentials && origins.includes('*'))) {

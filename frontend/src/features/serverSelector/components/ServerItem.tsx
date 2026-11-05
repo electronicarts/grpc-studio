@@ -1,8 +1,9 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-import { statusIcons, statusConfigs } from '../../certificateValidator'
+import { statusIcons, statusConfigs } from '@/features/certificateValidator'
 import { TONES } from '@/utils/tones'
-import type { ServerItemProps } from '../types'
+import type { ServerItemProps } from '@/features/serverSelector/types'
+import { Checkbox } from '@/components/ui/checkbox'
 
 export function ServerItem({ server, serverStatus, isSelected, onToggle }: ServerItemProps) {
   const isConnected = serverStatus?.connected ?? false
@@ -21,12 +22,7 @@ export function ServerItem({ server, serverStatus, isSelected, onToggle }: Serve
         isSelected ? 'bg-info/10' : ''
       }`}
     >
-      <input
-        type="checkbox"
-        checked={isSelected}
-        onChange={() => onToggle(server.name)}
-        className="mr-3 size-4 rounded border-input text-info focus:ring-ring"
-      />
+      <Checkbox checked={isSelected} onChange={() => onToggle(server.name)} className="mr-3" />
       <div className="flex flex-1 items-center gap-2">
         <div className={`size-2 flex-shrink-0 rounded-full ${isConnected ? 'bg-success' : 'bg-danger'}`} />
         <span className="flex-1 truncate text-foreground">{server.name}</span>

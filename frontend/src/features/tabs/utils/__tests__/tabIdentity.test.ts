@@ -1,8 +1,8 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import { describe, it, expect } from 'vitest'
-import { makeTabId, matchesSelection, nextDuplicateId } from '../tabIdentity'
-import type { MethodTab } from '../../types'
+import { makeTabId, matchesSelection, nextDuplicateId } from '@/features/tabs/utils/tabIdentity'
+import type { MethodTab } from '@/features/tabs/types'
 import type { GrpcMethod, GrpcService } from '@/types/grpc'
 import { MethodKind } from '@grpc-studio/shared'
 

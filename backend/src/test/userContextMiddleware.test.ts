@@ -10,13 +10,13 @@ import {
   getCurrentUserContext,
   getCurrentUserId,
   getUserHeadersFromStreamPayload,
-  getUserContextFromStreamPayload
-} from '../middlewares/userContextMiddleware.js'
+  getUserContextFromStreamPayload,
+} from '#src/middlewares/userContextMiddleware.js'
 
 function createMockRequest(headers: Record<string, string>): Partial<Request> {
   return {
     headers,
-    userContext: undefined
+    userContext: undefined,
   }
 }
 
@@ -30,7 +30,7 @@ describe('User Context Middleware', () => {
       const headers = {
         'x-user-id': 'user123',
         'x-user-email': 'test@example.com',
-        'x-user-name': 'Test User'
+        'x-user-name': 'Test User',
       }
 
       const context = getUserContextFromHeaders(headers)
@@ -44,7 +44,7 @@ describe('User Context Middleware', () => {
     it('should handle case-insensitive headers', () => {
       const headers = {
         'X-User-Id': 'user456',
-        'X-USER-EMAIL': 'test2@example.com'
+        'X-USER-EMAIL': 'test2@example.com',
       }
 
       const context = getUserContextFromHeaders(headers)
@@ -56,7 +56,7 @@ describe('User Context Middleware', () => {
 
     it('should return unauthenticated context when no user headers present', () => {
       const headers = {
-        'content-type': 'application/json'
+        'content-type': 'application/json',
       }
 
       const context = getUserContextFromHeaders(headers)
@@ -69,7 +69,7 @@ describe('User Context Middleware', () => {
 
     it('should handle partial user headers', () => {
       const headers = {
-        'x-user-id': 'user789'
+        'x-user-id': 'user789',
       }
 
       const context = getUserContextFromHeaders(headers)
@@ -82,7 +82,7 @@ describe('User Context Middleware', () => {
 
     it('should handle array header values', () => {
       const headers = {
-        'x-user-id': ['user111', 'user222']
+        'x-user-id': ['user111', 'user222'],
       }
 
       const context = getUserContextFromHeaders(headers as any)
@@ -96,7 +96,7 @@ describe('User Context Middleware', () => {
     it('should attach user context to request object', () => {
       const req = createMockRequest({
         'x-user-id': 'user-middleware',
-        'x-user-email': 'middleware@test.com'
+        'x-user-email': 'middleware@test.com',
       }) as Request
 
       const res = createMockResponse() as Response
@@ -133,7 +133,7 @@ describe('User Context Middleware', () => {
       const userContext = {
         userId: 'user-run',
         userEmail: 'run@test.com',
-        userName: 'Run User'
+        userName: 'Run User',
       }
 
       let capturedContext: any = null
@@ -165,7 +165,7 @@ describe('User Context Middleware', () => {
       const userContext = {
         userId: 'partial-user',
         userEmail: null,
-        userName: null
+        userName: null,
       }
 
       let capturedContext: any = null
@@ -229,8 +229,8 @@ describe('User Context Middleware', () => {
       const payload = {
         userHeaders: {
           'x-user-id': 'stream-user',
-          'x-user-email': 'stream@test.com'
-        }
+          'x-user-email': 'stream@test.com',
+        },
       }
 
       const headers = getUserHeadersFromStreamPayload(payload)
@@ -244,8 +244,8 @@ describe('User Context Middleware', () => {
       const payload = {
         userHeaders: {
           'X-USER-ID': 'case-user',
-          'x-user-name': 'Case User'
-        }
+          'x-user-name': 'Case User',
+        },
       }
 
       const headers = getUserHeadersFromStreamPayload(payload)
@@ -263,7 +263,7 @@ describe('User Context Middleware', () => {
 
     it('should return null for non-object userHeaders', () => {
       const payload = {
-        userHeaders: 'invalid'
+        userHeaders: 'invalid',
       }
       const headers = getUserHeadersFromStreamPayload(payload)
       assert.strictEqual(headers, null)
@@ -272,8 +272,8 @@ describe('User Context Middleware', () => {
     it('should return null for non-string header values', () => {
       const payload = {
         userHeaders: {
-          'x-user-id': 123
-        }
+          'x-user-id': 123,
+        },
       }
       const headers = getUserHeadersFromStreamPayload(payload)
       assert.strictEqual(headers, null)
@@ -282,8 +282,8 @@ describe('User Context Middleware', () => {
     it('should return null for unknown header keys', () => {
       const payload = {
         userHeaders: {
-          'x-custom-header': 'value'
-        }
+          'x-custom-header': 'value',
+        },
       }
       const headers = getUserHeadersFromStreamPayload(payload)
       assert.strictEqual(headers, null)
@@ -293,8 +293,8 @@ describe('User Context Middleware', () => {
       const payload = {
         userHeaders: {
           'x-user-id': 'defined-user',
-          'x-user-email': undefined
-        }
+          'x-user-email': undefined,
+        },
       }
 
       const headers = getUserHeadersFromStreamPayload(payload)
@@ -310,8 +310,8 @@ describe('User Context Middleware', () => {
       const payload = {
         userHeaders: {
           'x-user-id': 'stream-context',
-          'x-user-email': 'stream-context@test.com'
-        }
+          'x-user-email': 'stream-context@test.com',
+        },
       }
 
       const context = getUserContextFromStreamPayload(payload)
@@ -324,7 +324,7 @@ describe('User Context Middleware', () => {
 
     it('should return null for invalid payload', () => {
       const payload = {
-        userHeaders: 'invalid'
+        userHeaders: 'invalid',
       }
 
       const context = getUserContextFromStreamPayload(payload)

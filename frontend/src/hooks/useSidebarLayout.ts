@@ -17,12 +17,10 @@ export interface SidebarLayout {
  * (which hosts the collapse button) can share one source of truth.
  */
 export function useSidebarLayout(): SidebarLayout {
-  const [collapsed, setCollapsed] = useState<boolean>(
-    () => safeGetJSON<boolean>(COLLAPSED_STORAGE_KEY) === true
-  )
+  const [collapsed, setCollapsed] = useState<boolean>(() => safeGetJSON<boolean>(COLLAPSED_STORAGE_KEY) === true)
 
   const toggleCollapsed = useCallback(() => {
-    setCollapsed((prev) => {
+    setCollapsed(prev => {
       const next = !prev
       safeSetJSON(COLLAPSED_STORAGE_KEY, next)
       return next

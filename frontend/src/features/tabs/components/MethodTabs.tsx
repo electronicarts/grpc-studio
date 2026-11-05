@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { Copy, X } from 'lucide-react'
-import type { MethodTabsProps } from '../types'
+import type { MethodTabsProps } from '@/features/tabs/types'
 
 export const MethodTabs: React.FC<MethodTabsProps> = ({
   tabs,
@@ -20,21 +20,17 @@ export const MethodTabs: React.FC<MethodTabsProps> = ({
     <div className="border-b border-border bg-muted">
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 flex-1 items-center overflow-x-auto">
-          {tabs.map((tab) => (
+          {tabs.map(tab => (
             <div
               key={tab.id}
               className={`flex flex-shrink-0 cursor-pointer items-center gap-2 border-r border-border px-4 py-3 transition-colors ${
-                activeTabId === tab.id
-                  ? 'bg-card font-medium text-foreground'
-                  : 'text-muted-foreground hover:bg-accent'
+                activeTabId === tab.id ? 'bg-card font-medium text-foreground' : 'text-muted-foreground hover:bg-accent'
               }`}
               onClick={() => onTabSelect(tab.id)}
             >
-              <span className="max-w-xs truncate text-sm">
-                {tab.label}
-              </span>
+              <span className="max-w-xs truncate text-sm">{tab.label}</span>
               <button
-                onClick={(e) => {
+                onClick={e => {
                   e.stopPropagation()
                   onTabDuplicate(tab.id)
                 }}
@@ -45,7 +41,7 @@ export const MethodTabs: React.FC<MethodTabsProps> = ({
                 <Copy className="size-3.5" />
               </button>
               <button
-                onClick={(e) => {
+                onClick={e => {
                   e.stopPropagation()
                   onTabClose(tab.id)
                 }}

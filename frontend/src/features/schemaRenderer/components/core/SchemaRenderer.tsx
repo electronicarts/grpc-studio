@@ -2,9 +2,9 @@
 
 /**
  * SchemaRenderer - A clean protobuf message form renderer
- * 
+ *
  * Based on proto3 spec: https://protobuf.dev/programming-guides/proto3/
- * 
+ *
  * Handles:
  * - Scalar types: string, bytes, bool, int32, int64, uint32, uint64, etc.
  * - Enumerations: Fields with predefined values
@@ -20,11 +20,11 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Search, X, ChevronsUpDown, ChevronRight } from 'lucide-react'
 
-import { ProtoMessageRendererProvider } from '../../stores/schemaRendererContext'
-import MessageRenderer from './MessageRenderer'
-import { useSchemaCacheStatus } from '../../hooks/useSchemaCacheStatus'
-import { useFormState } from '../../hooks/useFormState'
-import type { ProtoMessageRendererProps } from '../../types'
+import { ProtoMessageRendererProvider } from '@/features/schemaRenderer/stores/schemaRendererContext'
+import MessageRenderer from '@/features/schemaRenderer/components/core/MessageRenderer'
+import { useSchemaCacheStatus } from '@/features/schemaRenderer/hooks/useSchemaCacheStatus'
+import { useFormState } from '@/features/schemaRenderer/hooks/useFormState'
+import type { ProtoMessageRendererProps } from '@/features/schemaRenderer/types'
 
 const SchemaRenderer: React.FC<ProtoMessageRendererProps> = ({
   target,
@@ -34,10 +34,10 @@ const SchemaRenderer: React.FC<ProtoMessageRendererProps> = ({
   readOnly = false,
   defaultCollapsed = false,
   showControls = true,
-  hideEmptyFields = false
+  hideEmptyFields = false,
 }) => {
   const { schemasLoaded } = useSchemaCacheStatus(schema)
-  
+
   const {
     formData,
     expanded,
@@ -49,15 +49,11 @@ const SchemaRenderer: React.FC<ProtoMessageRendererProps> = ({
     expandAll,
     collapseAll,
     setOneOfSelection,
-    setSearchQuery
+    setSearchQuery,
   } = useFormState(schema, data, onChange, schemasLoaded, defaultCollapsed)
 
   if (!schema) {
-    return (
-      <div className="rounded-lg border p-4 text-sm text-muted-foreground">
-        No schema available
-      </div>
-    )
+    return <div className="rounded-lg border p-4 text-sm text-muted-foreground">No schema available</div>
   }
 
   const hasExpandableSections = allPaths.size > 0
@@ -80,10 +76,8 @@ const SchemaRenderer: React.FC<ProtoMessageRendererProps> = ({
             to a second line in narrow columns — e.g. the 30% streaming "Sent
             Messages" panel — instead of overflowing and overlapping its neighbour. */}
         <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-2">
-          <div className="min-w-0 truncate text-sm text-muted-foreground">
-            {schema.typeName}
-          </div>
-          
+          <div className="min-w-0 truncate text-sm text-muted-foreground">{schema.typeName}</div>
+
           {showControls && (
             <div className="flex flex-shrink-0 items-center gap-2">
               {/* Search input */}
@@ -105,9 +99,9 @@ const SchemaRenderer: React.FC<ProtoMessageRendererProps> = ({
                   </button>
                 )}
               </div>
-              
-              {/* Expand/Collapse buttons */}
-              {hasExpandableSections && (
+
+              {/* Expand/Collapse buttons. Only read-only views collapse; editing shows every sent field. */}
+              {readOnly && hasExpandableSections && (
                 <div className="flex gap-1">
                   <Button
                     type="button"
@@ -136,14 +130,8 @@ const SchemaRenderer: React.FC<ProtoMessageRendererProps> = ({
             </div>
           )}
         </div>
-        
-        <MessageRenderer
-          schema={schema}
-          value={formData}
-          onChange={updateForm}
-          basePath=""
-          isRoot={true}
-        />
+
+        <MessageRenderer schema={schema} value={formData} onChange={updateForm} basePath="" isRoot={true} />
       </div>
     </ProtoMessageRendererProvider>
   )

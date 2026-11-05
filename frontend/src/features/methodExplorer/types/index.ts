@@ -44,6 +44,8 @@ export interface RequestModel {
 
   setBody(body: string): void
   setFormData(data: Record<string, unknown>): void
+  /** Replaces the form and JSON with `data`, canonicalized; throws if it isn't a valid request. */
+  loadData(data: Record<string, unknown>): void
   toggleMode(checked: boolean): void
   reset(): void
   clear(): void
@@ -142,3 +144,6 @@ export interface MethodInvocation {
   endStream(): void
   cancelStream(): void
 }
+
+/** Which form a JSON view shows: everything, or only what goes over the wire. */
+export type JsonView = 'full' | 'wire'

@@ -3,13 +3,15 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import type { Request, Response, NextFunction } from 'express'
-import { requestLogger } from '../middlewares/loggingMiddleware.js'
+import { requestLogger } from '#src/middlewares/loggingMiddleware.js'
 
 // Capture lines written to console.log (the logger's info sink) during `fn`.
 function captureConsoleLog(fn: () => void): string[] {
   const original = console.log
   const lines: string[] = []
-  console.log = (...args: unknown[]) => { lines.push(args.join(' ')) }
+  console.log = (...args: unknown[]) => {
+    lines.push(args.join(' '))
+  }
   try {
     fn()
   } finally {
@@ -24,7 +26,7 @@ function createMockRequest(headers: Record<string, string> = {}): Partial<Reques
     method: 'GET',
     path: '/api/test',
     get: ((key: string) => headers[key.toLowerCase()]) as Request['get'],
-    headers: headers as any
+    headers: headers as any,
   }
 }
 
@@ -46,7 +48,7 @@ function createMockResponse(): {
       events.set(event, handler)
       return res
     },
-    statusCode: 200
+    statusCode: 200,
   }
 
   return { res: res as unknown as Partial<Response>, headers, events }
@@ -59,9 +61,13 @@ describe('Logging Middleware', () => {
       const { res, headers } = createMockResponse()
       let nextCalled = false
 
-      requestLogger(req, res as Response, (() => {
-        nextCalled = true
-      }) as NextFunction)
+      requestLogger(
+        req,
+        res as Response,
+        (() => {
+          nextCalled = true
+        }) as NextFunction,
+      )
 
       assert.ok(req.id, 'Request ID should be set')
       assert.ok(headers.has('X-Request-Id'), 'Response header should be set')
@@ -72,7 +78,7 @@ describe('Logging Middleware', () => {
     it('should use provided valid UUID request ID', () => {
       const validUuid = '550e8400-e29b-41d4-a716-446655440000'
       const req = createMockRequest({
-        'x-request-id': validUuid
+        'x-request-id': validUuid,
       }) as Request
       const { res, headers } = createMockResponse()
 
@@ -85,7 +91,7 @@ describe('Logging Middleware', () => {
     it('should reject invalid request ID format', () => {
       const invalidId = 'not-a-uuid-123'
       const req = createMockRequest({
-        'x-request-id': invalidId
+        'x-request-id': invalidId,
       }) as Request
       const { res } = createMockResponse()
 
@@ -100,7 +106,7 @@ describe('Logging Middleware', () => {
     it('should reject request ID with CRLF injection attempt', () => {
       const maliciousId = '550e8400\r\nInjected: header'
       const req = createMockRequest({
-        'x-request-id': maliciousId
+        'x-request-id': maliciousId,
       }) as Request
       const { res } = createMockResponse()
 
@@ -116,7 +122,7 @@ describe('Logging Middleware', () => {
     it('should reject request ID with special characters', () => {
       const maliciousId = '<script>alert(1)</script>'
       const req = createMockRequest({
-        'x-request-id': maliciousId
+        'x-request-id': maliciousId,
       }) as Request
       const { res } = createMockResponse()
 
@@ -129,7 +135,7 @@ describe('Logging Middleware', () => {
     it('should handle uppercase UUIDs', () => {
       const upperUuid = '550E8400-E29B-41D4-A716-446655440000'
       const req = createMockRequest({
-        'x-request-id': upperUuid
+        'x-request-id': upperUuid,
       }) as Request
       const { res, headers } = createMockResponse()
 
@@ -142,7 +148,7 @@ describe('Logging Middleware', () => {
     it('should reject UUID with wrong segment lengths', () => {
       const invalidUuid = '550e840-e29b-41d4-a716-446655440000' // First segment too short
       const req = createMockRequest({
-        'x-request-id': invalidUuid
+        'x-request-id': invalidUuid,
       }) as Request
       const { res } = createMockResponse()
 
@@ -193,8 +199,8 @@ describe('Logging Middleware', () => {
         mock.events.get('finish')!()
       })
 
-      const started = lines.find((l) => l.includes('Request started'))
-      const completed = lines.find((l) => l.includes('Request completed'))
+      const started = lines.find(l => l.includes('Request started'))
+      const completed = lines.find(l => l.includes('Request completed'))
       assert.ok(started, 'expected a "Request started" log line')
       assert.ok(completed, 'expected a "Request completed" log line')
       assert.match(started, /"userId":"user-123"/)
@@ -210,7 +216,7 @@ describe('Logging Middleware', () => {
         mock.events.get('finish')!()
       })
 
-      const started = lines.find((l) => l.includes('Request started'))
+      const started = lines.find(l => l.includes('Request started'))
       assert.ok(started, 'expected a "Request started" log line')
       // undefined meta values are dropped by JSON.stringify, so no userId key appears.
       assert.doesNotMatch(started, /userId/)
@@ -231,7 +237,7 @@ describe('Logging Middleware', () => {
 
     it('should handle empty string request ID', () => {
       const req = createMockRequest({
-        'x-request-id': ''
+        'x-request-id': '',
       }) as Request
       const { res } = createMockResponse()
 
@@ -243,7 +249,7 @@ describe('Logging Middleware', () => {
 
     it('should handle whitespace-only request ID', () => {
       const req = createMockRequest({
-        'x-request-id': '   '
+        'x-request-id': '   ',
       }) as Request
       const { res } = createMockResponse()
 
@@ -258,9 +264,13 @@ describe('Logging Middleware', () => {
       const { res, headers } = createMockResponse()
       let headerSetBeforeNext = false
 
-      requestLogger(req, res as Response, (() => {
-        headerSetBeforeNext = headers.has('X-Request-Id')
-      }) as NextFunction)
+      requestLogger(
+        req,
+        res as Response,
+        (() => {
+          headerSetBeforeNext = headers.has('X-Request-Id')
+        }) as NextFunction,
+      )
 
       assert.equal(headerSetBeforeNext, true)
     })
@@ -272,13 +282,13 @@ describe('Logging Middleware', () => {
       'f47ac10b-58cc-4372-a567-0e02b2c3d479',
       '00000000-0000-0000-0000-000000000000',
       'ffffffff-ffff-ffff-ffff-ffffffffffff',
-      'AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE'
+      'AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE',
     ]
 
     validUuids.forEach(uuid => {
       it(`should accept valid UUID: ${uuid}`, () => {
         const req = createMockRequest({
-          'x-request-id': uuid
+          'x-request-id': uuid,
         }) as Request
         const { res } = createMockResponse()
 
@@ -289,18 +299,18 @@ describe('Logging Middleware', () => {
     })
 
     const invalidUuids = [
-      '550e8400-e29b-41d4-a716',  // Too short
+      '550e8400-e29b-41d4-a716', // Too short
       '550e8400-e29b-41d4-a716-446655440000-extra', // Too long
       '550e8400e29b41d4a716446655440000', // No dashes
       'gggggggg-eeee-eeee-eeee-eeeeeeeeeeee', // Invalid hex
-      '550e8400-e29b-41d4-a716-44665544000',  // Last segment too short
-      '550e84000-e29b-41d4-a716-446655440000' // First segment too long
+      '550e8400-e29b-41d4-a716-44665544000', // Last segment too short
+      '550e84000-e29b-41d4-a716-446655440000', // First segment too long
     ]
 
     invalidUuids.forEach(uuid => {
       it(`should reject invalid UUID: ${uuid}`, () => {
         const req = createMockRequest({
-          'x-request-id': uuid
+          'x-request-id': uuid,
         }) as Request
         const { res } = createMockResponse()
 

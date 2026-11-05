@@ -3,12 +3,15 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { ChevronDown, ChevronUp } from 'lucide-react'
-import ViewTabs, { type ViewTab } from './ViewTabs'
-import ResponseActions from './ResponseActions'
-import { ResponseMetadata } from './ResponseMetadata'
-import ProtoViewer from './ProtoViewer'
-import ProtoMessageRenderer from '../../schemaRenderer'
-import { useMethodExplorerContext } from '../stores'
+import ViewTabs, { type ViewTab } from '@/features/methodExplorer/components/ViewTabs'
+import ResponseActions from '@/features/methodExplorer/components/ResponseActions'
+import { ResponseMetadata } from '@/features/methodExplorer/components/ResponseMetadata'
+import ProtoViewer from '@/features/methodExplorer/components/ProtoViewer'
+import ProtoMessageRenderer from '@/features/schemaRenderer'
+import { useMethodExplorerContext } from '@/features/methodExplorer/stores'
+import { wireResponseJson } from '@/features/methodExplorer/utils/responseHandlerUtils'
+import { useJsonView } from '@/features/methodExplorer/hooks/useJsonView'
+import JsonViewSwitch from '@/features/methodExplorer/components/JsonViewSwitch'
 
 /**
  * Renders the single response from a completed unary RPC call.
@@ -21,6 +24,9 @@ const UnaryMessageDisplay: React.FC = () => {
   const effectiveTab = activeTab === 'form' && !hasSchema ? 'json' : activeTab
   const [expanded, setExpanded] = useState(true)
   const prevHasSchemaRef = useRef(hasSchema)
+  const json = useJsonView(hasSchema, () =>
+    wireResponseJson(response.raw, response.data, response.schema, selectedTarget),
+  )
 
   // Switch to form view when schema first loads (only when schema transitions from false to true)
   useEffect(() => {
@@ -52,7 +58,13 @@ const UnaryMessageDisplay: React.FC = () => {
 
       {/* Body */}
       {effectiveTab === 'schema' ? (
-        <ProtoViewer selectedTarget={selectedTarget} selectedService={selectedService} selectedMethod={selectedMethod} inline outputOnly />
+        <ProtoViewer
+          selectedTarget={selectedTarget}
+          selectedService={selectedService}
+          selectedMethod={selectedMethod}
+          inline
+          outputOnly
+        />
       ) : effectiveTab === 'form' && hasSchema ? (
         <div className="rounded-md border bg-muted/50 p-4">
           <ProtoMessageRenderer
@@ -67,13 +79,24 @@ const UnaryMessageDisplay: React.FC = () => {
         </div>
       ) : (
         <div className="rounded-md border bg-muted/50">
-          <div className="flex justify-end px-3 pt-2">
-            <Button variant="ghost" size="sm" onClick={() => setExpanded(v => !v)} className="h-7 px-2 text-xs">
-              {expanded ? <><ChevronUp className="mr-1 size-3" />Collapse</> : <><ChevronDown className="mr-1 size-3" />Expand</>}
+          <div className="flex items-center gap-2 px-3 pt-2">
+            {json.canShowWire && <JsonViewSwitch view={json.view} onChange={json.setView} />}
+            <Button variant="ghost" size="sm" onClick={() => setExpanded(v => !v)} className="ml-auto h-7 px-2 text-xs">
+              {expanded ? (
+                <>
+                  <ChevronUp className="mr-1 size-3" />
+                  Collapse
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="mr-1 size-3" />
+                  Expand
+                </>
+              )}
             </Button>
           </div>
           <pre className={`overflow-auto px-4 pb-4 text-sm ${expanded ? '' : 'max-h-60'}`}>
-            {response.raw}
+            {json.view === 'wire' ? json.wireText : response.raw}
           </pre>
         </div>
       )}

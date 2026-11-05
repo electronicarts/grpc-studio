@@ -1,31 +1,31 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
-import type { CertificateStatusType } from '../types'
-import type { StatusConfig } from '../types'
+import type { CertificateStatusType } from '@/features/certificateValidator/types'
+import type { StatusConfig } from '@/features/certificateValidator/types'
 
 export const statusConfigs: Record<CertificateStatusType, StatusConfig> = {
   valid: {
     tone: 'success',
-    label: 'Certificate Valid'
+    label: 'Certificate Valid',
   },
   warning: {
     tone: 'warning',
-    label: 'Expiring Soon'
+    label: 'Expiring Soon',
   },
   critical: {
     tone: 'critical',
-    label: 'Expires in < 7 days'
+    label: 'Expires in < 7 days',
   },
   expired: {
     tone: 'danger',
-    label: 'Certificate Expired'
+    label: 'Certificate Expired',
   },
   unreadable: {
     tone: 'neutral',
-    label: 'Certificate Unreadable'
+    label: 'Certificate Unreadable',
   },
   unknown: {
     tone: 'neutral',
-    label: 'Certificate Status Unknown'
-  }
+    label: 'Certificate Status Unknown',
+  },
 }

@@ -2,11 +2,12 @@
 
 import React, { useMemo, useSyncExternalStore } from 'react'
 import type { DescMessage } from '@bufbuild/protobuf'
-import { FormField } from '../../../../components/shared'
+import { FormField } from '@/components/shared'
 import { Select } from '@/components/ui/select'
-import { useProtoMessageRendererContext } from '../../stores/schemaRendererContext'
-import { schemaCache } from '../../../schemaLoader/lib/schemaCache'
-import AnyContentRenderer from './AnyContentRenderer'
+import { useProtoMessageRendererContext } from '@/features/schemaRenderer/stores/schemaRendererContext'
+import { schemaCache } from '@/features/schemaLoader/lib/schemaCache'
+import AnyContentRenderer from '@/features/schemaRenderer/components/wellKnown/AnyContentRenderer'
+import { anyTypeName, anyTypeUrl } from '@/utils/descUtils'
 
 interface AnyFieldProps {
   name: string
@@ -20,7 +21,7 @@ function parseAnyValue(value: unknown): { typeName: string; formData: Record<str
   }
   const obj = value as Record<string, unknown>
   const typeUrl = typeof obj['@type'] === 'string' ? obj['@type'] : ''
-  const typeName = typeUrl ? typeUrl.substring(typeUrl.lastIndexOf('/') + 1) : ''
+  const typeName = typeUrl ? anyTypeName(typeUrl) : ''
   const formData = Object.fromEntries(Object.entries(obj).filter(([k]) => k !== '@type'))
   return { typeName, formData }
 }
@@ -41,14 +42,18 @@ const AnyField: React.FC<AnyFieldProps> = ({ name, value, onChange }) => {
   // Subscribe to cache updates so the type list refreshes after reflection loads.
   const cacheVersion = useSyncExternalStore(
     cb => schemaCache.subscribe(cb),
-    () => schemaCache.getCacheSize(),
+    () => schemaCache.getVersion(),
   )
 
   const knownTypeNames = useMemo(
-    () => Array.from(schemaCache.getSchemaMap().keys()).sort(),
+    () =>
+      schemaCache
+        .getTargetSchemas(target)
+        .map(desc => desc.typeName)
+        .sort(),
     // cacheVersion triggers recomputation when new schemas are registered
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [cacheVersion],
+    [cacheVersion, target],
   )
 
   const { typeName: currentTypeName, formData } = parseAnyValue(value)
@@ -57,17 +62,16 @@ const AnyField: React.FC<AnyFieldProps> = ({ name, value, onChange }) => {
     : null
 
   const handleTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    if (readOnly) return
     const typeName = e.target.value
     if (!typeName) {
       onChange(undefined)
     } else {
-      onChange({ '@type': `type.googleapis.com/${typeName}` })
+      onChange({ '@type': anyTypeUrl(typeName) })
     }
   }
 
   const handleFormChange = (data: Record<string, unknown>) => {
-    onChange({ '@type': `type.googleapis.com/${currentTypeName}`, ...data })
+    onChange({ '@type': anyTypeUrl(currentTypeName), ...data })
   }
 
   const typeMeta = <span className="text-xs text-muted-foreground">(google.protobuf.Any)</span>
@@ -85,18 +89,16 @@ const AnyField: React.FC<AnyFieldProps> = ({ name, value, onChange }) => {
         >
           <option value="">Select a type…</option>
           {knownTypeNames.map(t => (
-            <option key={t} value={t}>{t}</option>
+            <option key={t} value={t}>
+              {t}
+            </option>
           ))}
         </Select>
 
         {/* Nested form for the selected type */}
         {currentTypeName && currentSchema && (
           <div className="border-l-2 border-muted pl-3 pt-1">
-            <AnyContentRenderer
-              schema={currentSchema}
-              formData={formData}
-              onChange={handleFormChange}
-            />
+            <AnyContentRenderer schema={currentSchema} formData={formData} onChange={handleFormChange} />
           </div>
         )}
 

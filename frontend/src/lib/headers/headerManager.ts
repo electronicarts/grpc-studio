@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Electronic Arts Inc. All rights reserved.
 
 import type { InvokeStreamUserHeaders } from '@grpc-studio/shared'
-import { createLogger } from '../../utils/debugLogger'
+import { createLogger } from '@/utils/debugLogger'
 
 const logger = createLogger('UserHeaders')
 

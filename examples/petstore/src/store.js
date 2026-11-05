@@ -382,4 +382,4 @@ function randomPetId() {
 // Initialize seed data
 seed();
 
-module.exports = { get, list, create, update, remove, randomPetId, generateId };
+module.exports = { get, list, create, update, remove, randomPetId };

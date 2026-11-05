@@ -3,7 +3,7 @@
 import React from 'react'
 import { MethodExplorer } from '@/features/methodExplorer'
 import { useHasLiveWork } from '@/stores'
-import type { MethodTab } from '../types'
+import type { MethodTab } from '@/features/tabs/types'
 
 interface TabPanelProps {
   tab: MethodTab
